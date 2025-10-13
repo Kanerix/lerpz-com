@@ -1,0 +1,25 @@
+[package]
+name = "lerpz-pwd"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+argon2 = { workspace = true, features = ["std"] }
+hex = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+uuid = { workspace = true, features = ["v4"] }
+
+[dev-dependencies]
+criterion = { workspace = true, features = ["html_reports"] }
+dotenvy = { workspace = true }
+
+[[bench]]
+name = "hash_pwd"
+harness = false
+
+[[bench]]
+name = "validate_pwd"
+harness = false

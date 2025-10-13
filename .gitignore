@@ -1,0 +1,24 @@
+# Rust
+/target/
+
+# Node 
+**/.next/
+**/node_modules/
+.pnpm-debug.log*
+npm-debug.log*
+next-env.d.ts
+
+# Environment files
+.env
+!**/.env.docker
+!**/.env.example
+
+# Secrets
+/certs/*
+/keys/*
+
+# Gitkeep
+!**/.gitkeep
+
+# Junk
+.DS_Store

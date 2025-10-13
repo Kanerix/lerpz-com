@@ -1,0 +1,21 @@
+# Git and GitHub
+.git
+.github
+.gitignore
+
+# Docker
+.dockerignore
+docker-compose.yml
+
+# Terraform
+terraform
+
+# Rust & Node
+target
+node_modules
+.next
+
+# Development
+**/certs
+**/.env
+**/.env.*

@@ -1,0 +1,20 @@
+{
+  "name": "lerpz-ai",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "pnpm --filter !lerpz-ai lint",
+    "dev:portal": "pnpm --filter portal dev",
+    "build:portal": "pnpm --filter portal build",
+    "start:portal": "pnpm --filter portal start",
+    "lint:portal": "pnpm --filter portal lint",
+    "format:portal": "pnpm --filter portal format"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": "10.18.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.0"
+  }
+}

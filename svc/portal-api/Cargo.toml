@@ -1,0 +1,41 @@
+[package]
+name = "portal-api"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+authors.workspace = true
+
+[dependencies]
+# Internal
+lerpz-axum = { workspace = true }
+lerpz-model = { workspace = true }
+lerpz-utils = { workspace = true }
+# Database
+bb8 = { workspace = true }
+bb8-redis = { workspace = true }
+redis = { workspace = true }
+sqlx = { workspace = true, features = [
+    "chrono",
+    "macros",
+    "postgres",
+    "runtime-tokio-native-tls",
+    "uuid",
+] }
+# Axum, Tokio and Tower
+axum = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+# Tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+# Serde
+serde = { workspace = true }
+serde_json = { workspace = true }
+# Utilities
+anyhow = { workspace = true }
+chrono = { workspace = true }
+cookie = { workspace = true }
+dotenvy = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+uuid = { workspace = true }
+validator = { workspace = true }
