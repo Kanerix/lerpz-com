@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["lib/*", "svc/entra-mcp", "svc/portal-api"]
+members = ["lib/*", "svc/portal-api"]
 exclude = ["svc/portal"]
 
 [workspace.package]

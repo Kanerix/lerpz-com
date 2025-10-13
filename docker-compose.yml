@@ -24,7 +24,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    
+
   dragonfly:
     image: docker.dragonflydb.io/dragonflydb/dragonfly
     container_name: dragonfly
@@ -51,14 +51,14 @@ services:
     image: traefik:v3.4
     container_name: traefik
     restart: always
-    hostname: postgres
+    hostname: traefik
     domainname: lerpz.local
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=lerpz-network"
-      - "--providers.file.directory=/run/secrets"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
     ports:
@@ -67,15 +67,18 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    configs:
+      - source: traefik-dynamic
+        target: /etc/traefik/dynamic.yml
     secrets:
       - cert.pem
       - key.pem
     networks:
       lerpz-network:
-          aliases:
-            - lerpz.local
+        aliases:
+          - lerpz.local
 
-  lerpz-portal:
+  portal:
     container_name: portal
     restart: always
     init: true
@@ -84,16 +87,19 @@ services:
       dockerfile: svc/portal/Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lerpz-auth-http.rule=Host(`lerpz.local`)"
-      - "traefik.http.routers.lerpz-auth-http.entrypoints=web"
-      - "traefik.http.routers.lerpz-auth-https.rule=Host(`lerpz.local`)"
-      - "traefik.http.routers.lerpz-auth-https.entrypoints=websecure"
-      - "traefik.http.routers.lerpz-auth-https.tls=true"
+      - "traefik.http.routers.portal-http.rule=Host(`lerpz.local`)"
+      - "traefik.http.routers.portal-http.entrypoints=web"
+      - "traefik.http.routers.portal-http.priority=1"
+      - "traefik.http.routers.portal-https.rule=Host(`lerpz.local`)"
+      - "traefik.http.routers.portal-https.entrypoints=websecure"
+      - "traefik.http.routers.portal-https.tls=true"
+      - "traefik.http.routers.portal-https.priority=1"
+      - "traefik.http.services.portal.loadbalancer.server.port=3000"
+    expose:
+      - "3000"
     hostname: lerpz-portal
-    domainname: lerpz.local
+    domainname: portal-lerpz.lerpz.local
     env_file: svc/portal/.env.docker
-    ports:
-      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,10 +108,10 @@ services:
     networks:
       lerpz-network:
         aliases:
-          - lerpz.local
+          - portal.lerpz.local
 
-  lerpz-portal-api:
-    container_name: auth
+  portal-api:
+    container_name: portal-api
     restart: always
     init: true
     build:
@@ -113,16 +119,19 @@ services:
       dockerfile: svc/portal-api/Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lerpz-auth-http.rule=Host(`api.lerpz.local`)"
-      - "traefik.http.routers.lerpz-auth-http.entrypoints=web"
-      - "traefik.http.routers.lerpz-auth-https.rule=Host(`api.lerpz.local`)"
-      - "traefik.http.routers.lerpz-auth-https.entrypoints=websecure"
-      - "traefik.http.routers.lerpz-auth-https.tls=true"
+      - "traefik.http.routers.portal-api-http.rule=Host(`lerpz.local`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.portal-api-http.entrypoints=web"
+      - "traefik.http.routers.portal-api-http.priority=2"
+      - "traefik.http.routers.portal-api-https.rule=Host(`lerpz.local`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.portal-api-https.entrypoints=websecure"
+      - "traefik.http.routers.portal-api-https.tls=true"
+      - "traefik.http.routers.portal-api-https.priority=2"
+      - "traefik.http.services.portal-api.loadbalancer.server.port=3001"
+    expose:
+      - "3001"
     hostname: lerpz-portal-api
-    domainname: api.lerpz.local
+    domainname: portal-api.lerpz.local
     env_file: svc/portal-api/.env.docker
-    ports:
-      - "3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -131,7 +140,20 @@ services:
     networks:
       lerpz-network:
         aliases:
-          - api.lerpz.local
+          - portal-api.lerpz.local
+
+configs:
+  traefik-dynamic:
+    content: |
+      tls:
+        certificates:
+          - certFile: /run/secrets/cert.pem
+            keyFile: /run/secrets/key.pem
+        stores:
+          default:
+            defaultCertificate:
+              certFile: /run/secrets/cert.pem
+              keyFile: /run/secrets/key.pem
 
 secrets:
   cert.pem:
@@ -145,4 +167,5 @@ volumes:
 
 networks:
   lerpz-network:
+    name: lerpz-network
     driver: bridge

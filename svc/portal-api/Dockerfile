@@ -1,17 +1,20 @@
 FROM rust:slim-bookworm AS chef
 
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y --no-install-recommends \
-    build-essential pkg-config libssl-dev
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    build-essential pkg-config libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,target=/root/.cargo/registry/cache \
+RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     cargo install cargo-chef
 
 
 FROM chef AS planner
 WORKDIR /chef
 
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY svc/portal-api ./svc/portal-api
+COPY lib ./lib
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -20,27 +23,35 @@ FROM chef AS builder
 WORKDIR /build
 
 COPY --from=planner /chef/recipe.json ./recipe.json
-RUN --mount=type=cache,target=/build/target \
+RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
+    --mount=type=cache,id=deps,target=/build/target \
     cargo chef cook --release --recipe-path recipe.json
 
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY svc/portal-api ./svc/portal-api
+COPY lib ./lib
 
 ENV SQLX_OFFLINE=true
 
-RUN cargo build --release --bin portal-api
+RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
+    --mount=type=cache,id=target,target=/build/target \
+    cargo build --release --bin portal-api && \
+    cp /build/target/release/portal-api /build/server
 
 
 FROM debian:bookworm-slim AS runtime
-WORKDIR /var/app
+WORKDIR /app
 
-RUN groupadd -r server && \
-    useradd -r -g server -s /usr/sbin/nologin -c "The docker user" docker && \
-    chown -R docker:server /var/app
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    addgroup --system --gid 1001 app && \
+    adduser --system --uid 1001 --ingroup app lerpz
 
-COPY --chown=docker:server --from=builder /build/target/release/portal-api ./
+COPY --chown=lerpz:app --from=builder /build/server ./
 
-USER docker
+USER lerpz
 
 EXPOSE 3001
 
-ENTRYPOINT ["/var/app/portal-api"]
+ENTRYPOINT ["/app/server"]
