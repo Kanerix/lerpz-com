@@ -1,3 +1,3 @@
-import { handlers } from "@lerpz/lib/auth"
+import { handlers } from "@lerpz/lib/auth";
 
-export const { GET, POST } = handlers
+export const { GET, POST } = handlers;

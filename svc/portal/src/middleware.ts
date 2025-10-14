@@ -7,7 +7,7 @@ export default auth((req) => {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 });
 
 export const config = {
