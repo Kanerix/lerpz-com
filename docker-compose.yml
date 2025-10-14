@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:17
     container_name: postgres
-    restart: always
+    restart: on-failure
     hostname: postgres
     domainname: postgres.lerpz.local
     environment:
@@ -28,7 +28,7 @@ services:
   dragonfly:
     image: docker.dragonflydb.io/dragonflydb/dragonfly
     container_name: dragonfly
-    restart: always
+    restart: on-failure
     hostname: dragonfly
     domainname: dragonfly.lerpz.local
     ulimits:
@@ -50,7 +50,7 @@ services:
   traefik:
     image: traefik:v3.4
     container_name: traefik
-    restart: always
+    restart: on-failure
     hostname: traefik
     domainname: lerpz.local
     command:
@@ -80,7 +80,7 @@ services:
 
   portal:
     container_name: portal
-    restart: always
+    restart: on-failure
     init: true
     build:
       context: .
@@ -112,17 +112,17 @@ services:
 
   portal-api:
     container_name: portal-api
-    restart: always
+    restart: on-failure
     init: true
     build:
       context: .
       dockerfile: svc/portal-api/Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.portal-api-http.rule=Host(`lerpz.local`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.portal-api-http.rule=Host(`api.lerpz.local`)"
       - "traefik.http.routers.portal-api-http.entrypoints=web"
       - "traefik.http.routers.portal-api-http.priority=2"
-      - "traefik.http.routers.portal-api-https.rule=Host(`lerpz.local`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.portal-api-https.rule=Host(`api.lerpz.local`)"
       - "traefik.http.routers.portal-api-https.entrypoints=websecure"
       - "traefik.http.routers.portal-api-https.tls=true"
       - "traefik.http.routers.portal-api-https.priority=2"

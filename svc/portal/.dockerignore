@@ -1,7 +1,6 @@
 .next
 .env
 .env.*
-!.env.docker
 node_modules
 .gitignore
 biome.json

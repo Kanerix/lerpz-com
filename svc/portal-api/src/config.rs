@@ -14,6 +14,8 @@ enum Env {
     Production,
     #[strum(serialize = "development")]
     Development,
+    #[strum(serialize = "test")]
+    Test,
 }
 
 /// The main configuration struct for the server.
