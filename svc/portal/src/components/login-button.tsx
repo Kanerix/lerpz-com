@@ -1,4 +1,5 @@
-import { signIn } from "@lerpz/lib/auth";
+import { Button } from "@lerpz/ui/components/button";
+import { signIn } from "@/lib/auth";
 
 export default function LoginButton() {
   const handleForm = async () => {
@@ -10,7 +11,7 @@ export default function LoginButton() {
 
   return (
     <form action={handleForm}>
-      <button type="submit">login</button>
+      <Button type="submit">login</Button>
     </form>
   );
 }

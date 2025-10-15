@@ -1,4 +1,4 @@
-import LoginButton from "@lerpz/components/login-button";
+import LoginButton from "@/components/login-button";
 
 export default function LoginPage() {
   return (

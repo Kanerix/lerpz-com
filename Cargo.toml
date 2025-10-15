@@ -1,12 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["lib/*", "svc/portal-api"]
-exclude = ["svc/portal"]
+members = ["crates/*", "svc/portal-api"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-homepage = "https://identity.lerpz.com"
+homepage = "https://lerpz.com"
 documentation = "https://docs.lerpz.com"
 authors = ["Kasper Jønsson <kas@lerpz.com>"]
 

@@ -1,7 +1,9 @@
-import LoginButton from "@lerpz/components/login-button";
-import LogoutButton from "@lerpz/components/logout-button";
-import { auth } from "@lerpz/lib/auth";
+import { Button } from "@lerpz/ui/components/button";
 import Image from "next/image";
+import { toast } from "sonner";
+import LoginButton from "@/components/login-button";
+import LogoutButton from "@/components/logout-button";
+import { auth } from "@/lib/auth";
 
 export default async function HomePage() {
   const session = await auth();
@@ -33,6 +35,10 @@ export default async function HomePage() {
         <div>{session?.user?.name}</div>
         <LoginButton />
         <LogoutButton />
+
+        <Button onClick={() => toast.success("Event has been created.")}>
+          toast
+        </Button>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <a

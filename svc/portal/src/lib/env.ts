@@ -7,7 +7,7 @@ export const env = createEnv({
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   experimental__runtimeEnv: process.env,
   server: {
-    NODE_ENV: z.enum(["production", "development" ,"test"]),
+    NODE_ENV: z.enum(["production", "development", "test"]),
     AUTH_SECRET: z.string(),
     AUTH_URL: z.url().optional(),
     AUTH_MICROSOFT_ENTRA_ID_CLIENT_ID: z.uuidv4(),

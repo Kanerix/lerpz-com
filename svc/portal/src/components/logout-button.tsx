@@ -1,7 +1,8 @@
-import { signOut } from "@lerpz/lib/auth";
+import { Button } from "@lerpz/ui/components/button";
+import { signOut } from "@/lib/auth";
 
 export default function LogoutButton() {
-  const handleForm = async () => {
+  const handleLogout = async () => {
     "use server";
     return await signOut({
       redirectTo: "/login",
@@ -9,8 +10,8 @@ export default function LogoutButton() {
   };
 
   return (
-    <form action={handleForm}>
-      <button type="submit">logout</button>
+    <form action={handleLogout}>
+      <Button type="submit">logout</Button>
     </form>
   );
 }

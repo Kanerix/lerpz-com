@@ -1,9 +1,8 @@
-import { env } from "@lerpz/lib/env";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import { env } from "@/lib/env";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  debug: env.NODE_ENV === "development",
   secret: env.AUTH_SECRET,
   providers: [
     MicrosoftEntraID({
