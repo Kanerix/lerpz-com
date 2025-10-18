@@ -6,8 +6,11 @@
     "plugins": [{ "name": "next" }],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowJs": true,
     "jsx": "preserve",
-    "noEmit": true
+    "allowJs": true,
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": true
   }
 }
