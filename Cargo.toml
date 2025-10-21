@@ -11,11 +11,11 @@ authors = ["Kasper Jønsson <kas@lerpz.com>"]
 
 [workspace.dependencies]
 # Internal
-lerpz-axum = { path = "lib/lerpz-axum" }
-lerpz-jwt = { path = "lib/lerpz-jwt" }
-lerpz-model = { path = "lib/lerpz-model" }
-lerpz-pwd = { path = "lib/lerpz-pwd" }
-lerpz-utils = { path = "lib/lerpz-utils" }
+lerpz-axum = { path = "crates/lerpz-axum" }
+lerpz-jwt = { path = "crates/lerpz-jwt" }
+lerpz-model = { path = "crates/lerpz-model" }
+lerpz-pwd = { path = "crates/lerpz-pwd" }
+lerpz-utils = { path = "crates/lerpz-utils" }
 # Database
 bb8 = "0.9"
 bb8-redis = "0.24"
@@ -39,7 +39,8 @@ syn = "2.0"
 serde = "1.0"
 serde_json = "1.0"
 serde_urlencoded = "0.7"
-# MCP
+# AI
+async-openai = "0.30"
 rmcp = "0.6"
 # Utilities
 anyhow = "1.0"
@@ -58,6 +59,7 @@ rand = "0.9"
 regex = "1.11"
 reqwest = "0.12"
 schemars = "1.0"
+secrecy = "0.10"
 strum = "0.27"
 thiserror = "2.0"
 url = "2.5"

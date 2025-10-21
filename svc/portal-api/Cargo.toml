@@ -23,7 +23,12 @@ sqlx = { workspace = true, features = [
     "uuid",
 ] }
 # Axum, Tokio and Tower
-axum = { workspace = true }
+axum = { workspace = true, features = [
+    "macros",
+    "tokio",
+    "json",
+    "tracing",
+] }
 tokio = { workspace = true, features = ["full"] }
 # Tracing
 tracing = { workspace = true }
@@ -33,9 +38,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 # Utilities
 anyhow = { workspace = true }
+async-openai = { workspace = true }
 chrono = { workspace = true }
 cookie = { workspace = true }
 dotenvy = { workspace = true }
+secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 uuid = { workspace = true }
 validator = { workspace = true }
