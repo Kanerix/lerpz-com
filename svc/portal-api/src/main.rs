@@ -16,12 +16,16 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 mod api;
 mod config;
 mod state;
+mod utils;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-            EnvFilter::from(format!("{}=debug,info", env!("CARGO_CRATE_NAME")))
+            EnvFilter::from(format!(
+                "{}=debug,lerpz=debug,none",
+                env!("CARGO_CRATE_NAME")
+            ))
         }))
         .with(tracing_subscriber::fmt::layer())
         .init();

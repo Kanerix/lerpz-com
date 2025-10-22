@@ -29,3 +29,9 @@ mkcert lerpz.com api.lerpz.com
 ```
 docker compose up --build
 ```
+
+## Test the chat endpoint
+
+```
+curl http://localhost:3001/api/chat -v -X GET -H "Content-Type: application/json" -d '{"message":"Tell me a joke!"}'
+```
