@@ -1,12 +1,14 @@
+"use client";
+
+import { useMsal } from "@azure/msal-react";
 import { Button } from "@lerpz/ui/components/button";
 import Image from "next/image";
 import { toast } from "sonner";
 import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
-import { auth } from "@/lib/auth";
 
-export default async function HomePage() {
-  const session = await auth();
+export default function HomePage() {
+  const { accounts } = useMsal();
 
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
@@ -32,7 +34,7 @@ export default async function HomePage() {
           </li>
         </ol>
 
-        <div>{session?.user?.name}</div>
+        <div>{accounts[0]?.username}</div>
         <LoginButton />
         <LogoutButton />
 

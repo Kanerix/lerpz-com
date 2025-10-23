@@ -1,17 +1,24 @@
+"use client";
+
+import { useMsal } from "@azure/msal-react";
 import { Button } from "@lerpz/ui/components/button";
-import { signOut } from "@/lib/auth";
 
 export default function LogoutButton() {
-  const handleForm = async () => {
-    "use server";
-    return await signOut({
-      redirectTo: "/login",
-    });
+  const { instance } = useMsal();
+
+  const handleLogout = async () => {
+    try {
+      await instance.logoutRedirect({
+        postLogoutRedirectUri: "/login",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
-    <form action={handleForm}>
-      <Button type="submit">logout</Button>
-    </form>
+    <Button variant="destructive" onClick={handleLogout}>
+      logout
+    </Button>
   );
 }

@@ -1,17 +1,27 @@
+"use client";
+
+import { InteractionStatus } from "@azure/msal-browser";
+import { useMsal } from "@azure/msal-react";
 import { Button } from "@lerpz/ui/components/button";
-import { signIn } from "@/lib/auth";
+import { loginRequest } from "@/lib/msal/config";
 
 export default function LoginButton() {
-  const handleForm = async () => {
-    "use server";
-    return await signIn("microsoft-entra-id", {
-      redirectTo: "/",
-    });
+  const { instance, inProgress } = useMsal();
+
+  const handleLogin = async () => {
+    try {
+      await instance.loginRedirect(loginRequest);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
   };
 
   return (
-    <form action={handleForm}>
-      <Button type="submit">login</Button>
-    </form>
+    <Button
+      onClick={handleLogin}
+      disabled={inProgress !== InteractionStatus.None}
+    >
+      Sign In with Microsoft
+    </Button>
   );
 }
