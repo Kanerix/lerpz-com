@@ -1,5 +1,6 @@
 import { Toaster } from "@lerpz/ui/components/sonner";
 import { MsalProvider } from "@/components/msal-provider";
+import { SWRProvider } from "@/components/swr-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@lerpz/ui/globals.css";
 import type { Metadata } from "next";
@@ -26,17 +27,19 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body className={`${poppins.variable} antialiased`}>
-        <MsalProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-          <Toaster />
-        </MsalProvider>
+        <SWRProvider>
+          <MsalProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+            <Toaster />
+          </MsalProvider>
+        </SWRProvider>
       </body>
     </html>
   );

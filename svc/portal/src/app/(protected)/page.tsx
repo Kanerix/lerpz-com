@@ -4,6 +4,7 @@ import { useMsal } from "@azure/msal-react";
 import { Button } from "@lerpz/ui/components/button";
 import Image from "next/image";
 import { toast } from "sonner";
+import ChatBox from "@/components/chat-box";
 import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
 
@@ -33,6 +34,8 @@ export default function HomePage() {
             Save and see your changes instantly.
           </li>
         </ol>
+
+        <ChatBox />
 
         <div>{accounts[0]?.username}</div>
         <LoginButton />
