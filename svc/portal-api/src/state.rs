@@ -3,11 +3,13 @@ use std::sync::Arc;
 use async_openai::{Client, config::Config};
 use axum::{extract::FromRef, http::HeaderMap};
 use bb8_redis::RedisConnectionManager;
+use lerpz_axum::middleware::azure::AzureConfig;
 use secrecy::{ExposeSecret, SecretString};
 use tokio::sync::RwLock;
 
 #[derive(Clone)]
 pub struct AppState {
+    pub azure_config: Arc<AzureConfig>,
     pub openai: Arc<RwLock<Client<PortkeyConfig>>>,
     pub database: sqlx::PgPool,
     pub redis: bb8::Pool<RedisConnectionManager>,
@@ -61,6 +63,12 @@ impl Config for PortkeyConfig {
 
     fn query(&self) -> Vec<(&str, &str)> {
         vec![]
+    }
+}
+
+impl FromRef<AppState> for Arc<AzureConfig> {
+    fn from_ref(state: &AppState) -> Self {
+        state.azure_config.clone()
     }
 }
 

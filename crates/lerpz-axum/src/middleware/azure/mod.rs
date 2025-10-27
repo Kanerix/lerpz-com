@@ -1,3 +1,7 @@
+//! A middleware that enables azure auth.
+
+use std::sync::Arc;
+
 use axum::{
     extract::{FromRef, FromRequestParts},
     http::request::Parts,
@@ -14,9 +18,9 @@ mod config;
 mod validation;
 
 /// A token representing a user in the Azure Entra system.
-/// 
+///
 /// This can be extracted in any handler by adding it as a parameter.
-/// 
+///
 /// ### Example
 ///
 /// ```rust
@@ -26,7 +30,7 @@ mod validation;
 ///     if !token.has_scope("example/scope") {
 ///         Err(HandlerError::unauthorized())
 ///     }
-///     
+///
 ///     Ok("You have the required scope!".to_string())
 /// }
 /// ```
@@ -50,12 +54,12 @@ pub struct AzureAccessToken {
     pub sub: Option<String>,
 
     /// Version of the Microsoft JWT scheme.
-    /// 
+    ///
     /// The versions and their JSON scheme can be found in [Microsoft
     /// Documentation](https://learn.microsoft.com/en-us/entra/identity-platform/security-tokens).
-    /// 
+    ///
     /// ### Note:
-    /// 
+    ///
     /// Only "v2.0" is supported.
     pub ver: Option<String>,
     /// Scopes assigned to the token.
@@ -169,7 +173,7 @@ impl AzureAccessToken {
 
 impl<S> FromRequestParts<S> for AzureAccessToken
 where
-    AzureConfig: FromRef<S>,
+    Arc<AzureConfig>: FromRef<S>,
     S: Send + Sync,
 {
     type Rejection = HandlerError;
@@ -185,7 +189,7 @@ where
         let header = decode_header(token).map_err(HandlerError::unauthorized_with_error)?;
         let kid = header.kid.ok_or(HandlerError::unauthorized())?;
 
-        let config = AzureConfig::from_ref(state);
+        let config = Arc::<AzureConfig>::from_ref(state);
         let decoding_key = config
             .get_jwk(kid)
             .await?

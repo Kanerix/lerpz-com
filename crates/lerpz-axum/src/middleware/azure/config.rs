@@ -14,7 +14,6 @@ use jsonwebtoken::{DecodingKey, jwk::JwkSet};
 use crate::error::HandlerError;
 
 /// Azure configuration.
-#[derive(Clone)]
 pub struct AzureConfig {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,

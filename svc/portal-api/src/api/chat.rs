@@ -1,6 +1,6 @@
 use async_openai::types::{ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs};
 use axum::{Json, extract::State};
-use lerpz_axum::error::HandlerResult;
+use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::{Deserialize, Serialize};
 
 use crate::{state::AppState, utils::tokens::TokenUsage};
@@ -19,6 +19,7 @@ pub struct ChatMessageResponse {
 
 #[axum::debug_handler]
 pub async fn handler(
+    _: AzureAccessToken,
     State(state): State<AppState>,
     Json(body): Json<ChatMessageRequest>,
 ) -> HandlerResult<Json<ChatMessageResponse>> {

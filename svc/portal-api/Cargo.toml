@@ -8,7 +8,7 @@ authors.workspace = true
 
 [dependencies]
 # Internal
-lerpz-axum = { workspace = true }
+lerpz-axum = { workspace = true, features = ["azure"] }
 lerpz-model = { workspace = true }
 lerpz-utils = { workspace = true }
 # Database

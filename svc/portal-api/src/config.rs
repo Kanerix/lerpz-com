@@ -27,6 +27,8 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::from_env().unwrap
 generate_config!(
     ENV: Env = get_env_parse,
     ADDR: SocketAddr = get_env_parse,
+    ENTRA_ID_TENANT_ID: String = get_env,
+    ENTRA_ID_CLIENT_ID: String = get_env,
     PORTKEY_BASE_URL: String = get_env,
     PORTKEY_PROVIDER: String = get_env,
     PORTKEY_API_KEY: String = get_env,

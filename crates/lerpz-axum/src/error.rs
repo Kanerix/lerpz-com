@@ -260,7 +260,7 @@ where
     D: Serialize + Send + Sync,
 {
     /// Turns any error into a [`HandlerError`].
-    /// 
+    ///
     /// This assumes that the error is an internal server error. This will
     /// automatically set the error in the [`Self::inner`] field.
     fn from(value: E) -> Self {

@@ -7,6 +7,7 @@ use std::time::Duration;
 use async_openai::Client;
 use axum::Router;
 use bb8_redis::RedisConnectionManager;
+use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
 use secrecy::SecretString;
 use sqlx::postgres::PgPoolOptions;
@@ -40,14 +41,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    let azure_config = Arc::new(AzureConfig::new(
+        CONFIG.ENTRA_ID_TENANT_ID.clone(),
+        CONFIG.ENTRA_ID_CLIENT_ID.clone(),
+    ));
+
     let portkey_config = PortkeyConfig {
         api_base: CONFIG.PORTKEY_BASE_URL.clone(),
         api_key: SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
         api_provider: CONFIG.PORTKEY_PROVIDER.clone(),
     };
-    let openai_client = Arc::new(RwLock::new(Client::with_config(portkey_config)));
+    let openai = Arc::new(RwLock::new(Client::with_config(portkey_config)));
 
-    let database_pool = PgPoolOptions::new()
+    let database = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
         .connect(&CONFIG.DATABASE_URL)
@@ -56,19 +62,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let manager = RedisConnectionManager::new(CONFIG.REDIS_URL.clone())
         .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
-    let redis_pool = bb8::Pool::builder()
+    let redis = bb8::Pool::builder()
         .build(manager)
         .await
         .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
 
     let state = AppState {
-        openai: openai_client,
-        database: database_pool,
-        redis: redis_pool,
+        azure_config,
+        openai,
+        database,
+        redis,
     };
 
     let app = Router::new()
-        .nest("/api", api::router(state.clone()))
+        .nest("/api/v1", api::router(state.clone()))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
