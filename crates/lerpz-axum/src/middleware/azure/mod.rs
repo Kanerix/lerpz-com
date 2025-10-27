@@ -1,4 +1,33 @@
 //! A middleware that enables azure auth.
+//!
+//! ### Example
+//!
+//! ```rust
+//! #[derive(Clone)]
+//! pub struct AppState {
+//!     pub azure_config: Arc<AzureConfig>,
+//! }
+//!
+//! impl FromRef<AppState> for Arc<AzureConfig> {
+//!     fn from_ref(state: &AppState) -> Self {
+//!         state.azure_config.clone()
+//!     }
+//! }
+//!
+//! async fn example_handler(
+//!   token: AzureAccessToken,
+//! ) -> HandlerResult<String> {
+//!     if !token.has_scope("example") {
+//!         Err(HandlerError::unauthorized())
+//!     }
+//!
+//!     Ok("You have the required scope!".to_string())
+//! }
+//! ```
+//!
+//! ### Note:
+//!
+//! This does not support multi-tenant applications (yet).
 
 use std::sync::Arc;
 
@@ -27,7 +56,7 @@ mod validation;
 /// async fn example_handler(
 ///   token: AzureAccessToken,
 /// ) -> HandlerResult<String> {
-///     if !token.has_scope("example/scope") {
+///     if !token.has_scope("example") {
 ///         Err(HandlerError::unauthorized())
 ///     }
 ///
