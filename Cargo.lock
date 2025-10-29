@@ -1869,6 +1869,7 @@ dependencies = [
  "sqlx",
  "strum",
  "tokio",
+ "tower-http",
  "tracing",
  "tracing-subscriber",
  "uuid",

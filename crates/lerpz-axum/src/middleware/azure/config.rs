@@ -60,12 +60,22 @@ impl AzureConfig {
 
     /// Get a JWK (JSON Web Key) by its key ID.
     pub async fn get_jwk(&self, kid: String) -> Result<Option<DecodingKey>, HandlerError> {
+        let needs_refresh = {
+            let cache = self.jwks_cache.read().await;
+            match cache.as_ref() {
+                None => true,
+                Some(cached) => cached.expires_at < Instant::now(),
+            }
+        };
+
+        if needs_refresh {
+            let mut cache_lock = self.jwks_cache.write().await;
+            let new_cache = self.fetch_jwks().await?;
+            *cache_lock = Some(new_cache);
+        }
+
         let cache = self.jwks_cache.read().await;
         if let Some(cached) = cache.as_ref() {
-            if cached.expires_at > Instant::now() {
-                self.fetch_jwks().await?;
-            }
-
             if let Some(key) = cached.keys.get(&kid) {
                 return Ok(Some(key.clone()));
             } else {
@@ -79,9 +89,9 @@ impl AzureConfig {
     /// Fetch the JWKs (JSON Web Keys) from the Azure endpoint.
     ///
     /// This will read the cache-control header to determine how long the
-    /// fetched keys are valid for. If this header is invalid it will defualt to
-    /// 24 hours (86400 sec).
-    async fn fetch_jwks(&self) -> Result<(), HandlerError> {
+    /// fetched keys are valid for. If this header is invalid or missing it will
+    /// defualt to 24 hours (86400 sec).
+    async fn fetch_jwks(&self) -> Result<JwksCache, HandlerError> {
         let response = self
             .http_client
             .get(&self.get_jwks_url())
@@ -111,15 +121,12 @@ impl AzureConfig {
             map.insert(key_id, decoding_key);
         }
 
-        let cached = JwksCache {
+        let cache = JwksCache {
             keys: map,
             expires_at: Instant::now() + Duration::from_secs(expires_at),
         };
 
-        let mut cache = self.jwks_cache.write().await;
-        *cache = Some(cached);
-
-        Ok(())
+        Ok(cache)
     }
 }
 

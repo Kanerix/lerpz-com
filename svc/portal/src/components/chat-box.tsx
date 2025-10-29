@@ -3,9 +3,9 @@
 import { useChat } from "@/hooks/useChat";
 
 export default function ChatBox() {
-  const { data } = useChat();
+  const { data, error, isLoading } = useChat();
 
-  return <div>
-    {JSON.stringify(data)}
-  </div>;
+  if (error) return <div>failed to load</div>;
+  if (isLoading) return <div>loading...</div>;
+  return <div>{JSON.stringify(data)}</div>;
 }

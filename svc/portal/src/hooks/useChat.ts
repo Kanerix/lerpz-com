@@ -7,11 +7,18 @@ export const apiKeys = {
 };
 
 async function fetcher<T>(url: string): Promise<T> {
-  const response = await authenticatedFetch(url);
+  const response = await authenticatedFetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: "Tell me a joke!",
+    }),
+  });
 
   if (!response.ok) {
     const error = new Error("An error occurred while fetching the data.");
-    (error as any).status = response.status;
     throw error;
   }
 
@@ -19,10 +26,7 @@ async function fetcher<T>(url: string): Promise<T> {
 }
 
 export function useChat() {
-  const { data, error, isLoading, mutate } = useSWR<any>(
-    apiKeys.chat(),
-    fetcher,
-  );
+  const { data, error, isLoading, mutate } = useSWR(apiKeys.chat(), fetcher);
 
   return {
     data,

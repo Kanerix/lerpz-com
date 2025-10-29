@@ -6,12 +6,14 @@ use std::time::Duration;
 
 use async_openai::Client;
 use axum::Router;
+use axum::http::Method;
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
 use secrecy::SecretString;
 use sqlx::postgres::PgPoolOptions;
 use tokio::sync::RwLock;
+use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -74,9 +76,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         redis,
     };
 
+    let cors = CorsLayer::new()
+        .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers(Any);
+
     let app = Router::new()
         .nest("/api/v1", api::router(state.clone()))
-        .with_state(state);
+        .with_state(state)
+        .layer(cors);
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
     tracing::info!("server started listening on {}", CONFIG.ADDR);

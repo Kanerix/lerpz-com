@@ -1,9 +1,7 @@
 "use client";
 
 import { useMsal } from "@azure/msal-react";
-import { Button } from "@lerpz/ui/components/button";
 import Image from "next/image";
-import { toast } from "sonner";
 import ChatBox from "@/components/chat-box";
 import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
@@ -40,10 +38,6 @@ export default function HomePage() {
         <div>{accounts[0]?.username}</div>
         <LoginButton />
         <LogoutButton />
-
-        <Button onClick={() => toast.success("Event has been created.")}>
-          toast
-        </Button>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <a

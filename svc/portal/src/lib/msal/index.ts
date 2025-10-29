@@ -4,6 +4,8 @@ import { loginRequest, msalConfig } from "./config";
 export { initializeMsal, msalInstance, loginRequest, msalConfig };
 
 export async function getAccessToken(): Promise<string | null> {
+  const msalInstance = await initializeMsal();
+
   if (!msalInstance) {
     console.error("MSAL instance not initialized");
     return null;
@@ -27,26 +29,4 @@ export async function getAccessToken(): Promise<string | null> {
     console.error("Failed to acquire token silently:", error);
     return null;
   }
-}
-
-export function getCurrentUser() {
-  if (!msalInstance) {
-    return null;
-  }
-
-  const accounts = msalInstance.getAllAccounts();
-  if (accounts.length === 0) {
-    return null;
-  }
-
-  const account = accounts[0];
-  if (account === undefined) {
-    return null;
-  }
-
-  return {
-    email: account.username,
-    name: account.name,
-    id: account.homeAccountId,
-  };
 }
