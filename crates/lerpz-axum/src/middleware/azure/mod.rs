@@ -84,8 +84,8 @@ pub struct AzureAccessToken {
 
     /// Version of the Microsoft JWT scheme.
     ///
-    /// The versions and their JSON scheme can be found in [Microsoft
-    /// Documentation](https://learn.microsoft.com/en-us/entra/identity-platform/security-tokens).
+    /// The versions and respective JSON scheme can be found in [Microsoft Documentation]
+    /// (https://learn.microsoft.com/en-us/entra/identity-platform/security-tokens).
     ///
     /// ### Note:
     ///
@@ -215,7 +215,7 @@ where
             .and_then(|h| h.strip_prefix("Bearer "))
             .ok_or_else(|| HandlerError::unauthorized())?;
 
-        let header = decode_header(token).map_err(HandlerError::unauthorized_with_error)?;
+        let header = decode_header(token).map_err(|_| HandlerError::unauthorized())?;
         let kid = header.kid.ok_or(HandlerError::unauthorized())?;
 
         let config = Arc::<AzureConfig>::from_ref(state);
@@ -226,9 +226,9 @@ where
 
         let validation = get_token_validation(&config);
         let token_data = decode::<AzureAccessToken>(token, &decoding_key, &validation)
-            .map_err(HandlerError::unauthorized_with_error)?;
+            .map_err(|_| HandlerError::unauthorized())?;
 
-        if !azure_claims_validation(&config, &token_data.claims) {
+        if config.validate_token_claims(&token_data.claims) {
             return Err(HandlerError::unauthorized());
         }
 

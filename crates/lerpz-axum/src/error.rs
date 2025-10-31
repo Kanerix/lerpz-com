@@ -135,20 +135,6 @@ where
         )
     }
 
-    /// A generic unauthorized response with an error.
-    ///
-    /// This is a generic response for someone that tries to access an
-    /// authorized resource without proper authorization.
-    ///
-    /// The error is logged and a [`Self::log_id`] is generated so that the
-    /// error can be tracked.
-    pub fn unauthorized_with_error<E>(e: E) -> Self
-    where
-        E: Into<anyhow::Error>,
-    {
-        Self::unauthorized().with_error(e)
-    }
-
     /// A generic forbidden response.
     ///
     /// This is a generic response for someone that tries to access a forbidden

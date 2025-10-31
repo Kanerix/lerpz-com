@@ -34,7 +34,7 @@ pub async fn handler(
             .into()])
         .build()?;
 
-    let response = client.chat().create(request).await.map_err(|e| e)?;
+    let response = client.chat().create(request).await?;
     let usage = response.usage.map(|a| a.into());
 
     let choice = response

@@ -17,6 +17,8 @@ use crate::error::HandlerError;
 pub struct AzureConfig {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,
+    pub issuer_url: String,
+    pub jwks_url: String,
     http_client: reqwest::Client,
     jwks_cache: Arc<RwLock<Option<JwksCache>>>,
 }
@@ -37,25 +39,25 @@ impl AzureConfig {
         tenant_id: impl Into<Cow<'static, str>>,
         client_id: impl Into<Cow<'static, str>>,
     ) -> Self {
-        Self {
-            tenant_id: tenant_id.into(),
-            client_id: client_id.into(),
+        let tenant_id = tenant_id.into();
+        let client_id = client_id.into();
+
+        let jwks_url = format!(
+            "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
+            &tenant_id
+        );
+        let issuer_url = format!("https://login.microsoftonline.com/{}/v2.0", &tenant_id);
+
+        let s = Self {
+            tenant_id: tenant_id,
+            client_id: client_id,
+            jwks_url: jwks_url,
+            issuer_url: issuer_url,
             http_client: reqwest::Client::new(),
             jwks_cache: Arc::new(RwLock::new(None)),
-        }
-    }
+        };
 
-    /// Get the URL for the JWKs (JSON Web Keys) endpoint.
-    pub fn get_jwks_url(&self) -> String {
-        format!(
-            "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
-            &self.tenant_id
-        )
-    }
-
-    /// Get the URL for the issuer endpoint.
-    pub fn get_issuer_url(&self) -> String {
-        format!("https://login.microsoftonline.com/{}/v2.0", &self.tenant_id)
+        s
     }
 
     /// Get a JWK (JSON Web Key) by its key ID.
@@ -94,7 +96,7 @@ impl AzureConfig {
     async fn fetch_jwks(&self) -> Result<JwksCache, HandlerError> {
         let response = self
             .http_client
-            .get(&self.get_jwks_url())
+            .get(&self.jwks_url)
             .timeout(Duration::from_secs(10))
             .send()
             .await?;
@@ -127,6 +129,29 @@ impl AzureConfig {
         };
 
         Ok(cache)
+    }
+
+    /// Validate claims in an Azure access token.
+    pub fn validate_token_claims(&self, claims: &super::AzureAccessToken) -> bool {
+        if claims.ver.as_deref() != Some("2.0") {
+            return false;
+        }
+
+        if let Some(tid) = &claims.tid {
+            if tid.as_str() != self.tenant_id {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        if let Some(sub) = &claims.sub {
+            if sub.is_empty() {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
