@@ -44,9 +44,13 @@ pub use config::*;
 pub use validation::*;
 
 mod config;
+mod error;
 mod validation;
 
 /// A token representing a user in the Azure Entra system.
+///
+/// This is implemented using the [Micrsoft Documentation]
+/// (https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
 ///
 /// This can be extracted in any handler by adding it as a parameter.
 ///
@@ -76,11 +80,11 @@ pub struct AzureAccessToken {
     /// Expiration time of the token (as a Unix timestamp).
     pub exp: usize,
     /// "not before" time of the token (as a Unix timestamp).
-    pub nbf: Option<usize>,
+    pub nbf: usize,
     /// Issued at time of the token (as a Unix timestamp).
-    pub iat: Option<usize>,
-    /// Subject of the JWT (Often the user).
-    pub sub: Option<String>,
+    pub iat: usize,
+    /// Subject of the JWT (most often the user object ID).
+    pub sub: String,
 
     /// Version of the Microsoft JWT scheme.
     ///
@@ -95,7 +99,8 @@ pub struct AzureAccessToken {
     #[serde(default, deserialize_with = "deserialize_space_separated_scopes")]
     pub scp: Vec<String>,
     /// Roles assigned to the token.
-    pub roles: Option<Vec<String>>,
+    #[serde(default)]
+    pub roles: Vec<String>,
     /// Tenant ID of the user.
     pub tid: Option<String>,
     /// App ID of the application.
@@ -142,7 +147,7 @@ where
 impl AzureAccessToken {
     /// Check if the token has scope.
     pub fn has_scope(&self, scope: &str) -> bool {
-        self.scp.iter().any(|s| s == scope)
+        self.scp.contains(&scope.to_string())
     }
 
     /// Check if the token has any of scopes.
@@ -170,10 +175,7 @@ impl AzureAccessToken {
 
     /// Check if the token has role.
     pub fn has_role(&self, role: &str) -> bool {
-        self.roles
-            .as_ref()
-            .map(|roles| roles.contains(&role.to_string()))
-            .unwrap_or(false)
+        self.roles.contains(&role.to_string())
     }
 
     /// Check if the token has any of roles.
@@ -220,7 +222,7 @@ where
 
         let config = Arc::<AzureConfig>::from_ref(state);
         let decoding_key = config
-            .get_jwk(kid)
+            .find_jwk(kid)
             .await?
             .ok_or(HandlerError::unauthorized())?;
 

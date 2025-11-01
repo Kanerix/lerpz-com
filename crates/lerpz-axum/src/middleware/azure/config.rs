@@ -1,134 +1,112 @@
 use axum::http::HeaderMap;
 use regex::Regex;
-use reqwest::StatusCode;
 use std::{
     borrow::Cow,
-    collections::HashMap,
     sync::{Arc, LazyLock},
     time::{Duration, Instant},
 };
 use tokio::sync::RwLock;
 
-use jsonwebtoken::{DecodingKey, jwk::JwkSet};
+use jsonwebtoken::{
+    DecodingKey,
+    jwk::{Jwk, JwkSet},
+};
 
-use crate::error::HandlerError;
+use super::error::Result;
 
 /// Azure configuration.
 pub struct AzureConfig {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,
-    pub issuer_url: String,
-    pub jwks_url: String,
-    http_client: reqwest::Client,
-    jwks_cache: Arc<RwLock<Option<JwksCache>>>,
+    pub(crate) metadata_url: String,
+    jwks_cache: JwksCache,
 }
 
 /// A cache for JWKs (JSON Web Keys).
 ///
 /// This cache is used to store the JWKs fetched from the Azure keys discovery
-/// endpoint.
+/// endpoint. This is wrapped in an [`std::sync::Arc`] so it can be safely used
+/// in multithreaded environments.
 #[derive(Clone)]
 struct JwksCache {
-    keys: HashMap<String, DecodingKey>,
-    expires_at: Instant,
+    inner: Arc<RwLock<JwksCacheInner>>,
 }
 
-impl AzureConfig {
-    /// Create a new [`AzureConfig`].
-    pub fn new(
-        tenant_id: impl Into<Cow<'static, str>>,
-        client_id: impl Into<Cow<'static, str>>,
-    ) -> Self {
-        let tenant_id = tenant_id.into();
-        let client_id = client_id.into();
+struct JwksCacheInner {
+    jwks: JwkSet,
+    expires_at: Instant,
+    jwks_url: String,
+    http_client: reqwest::Client,
+}
 
-        let jwks_url = format!(
-            "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
-            &tenant_id
-        );
-        let issuer_url = format!("https://login.microsoftonline.com/{}/v2.0", &tenant_id);
+impl JwksCache {
+    async fn new(jwks_url: String) -> Result<JwksCache> {
+        let http_client = reqwest::Client::new();
+        let (jwks, cache_control) = fetch_jwks(&http_client, &jwks_url).await?;
 
-        let s = Self {
-            tenant_id: tenant_id,
-            client_id: client_id,
-            jwks_url: jwks_url,
-            issuer_url: issuer_url,
-            http_client: reqwest::Client::new(),
-            jwks_cache: Arc::new(RwLock::new(None)),
+        let expires_at = Instant::now() + Duration::from_secs(cache_control);
+        let cache = JwksCacheInner {
+            jwks,
+            expires_at,
+            jwks_url,
+            http_client,
         };
 
-        s
+        Ok(Self {
+            inner: Arc::new(RwLock::new(cache)),
+        })
     }
 
     /// Get a JWK (JSON Web Key) by its key ID.
-    pub async fn get_jwk(&self, kid: String) -> Result<Option<DecodingKey>, HandlerError> {
+    pub async fn get_jwk(&self, kid: String) -> Result<Option<Jwk>> {
         let needs_refresh = {
-            let cache = self.jwks_cache.read().await;
-            match cache.as_ref() {
-                None => true,
-                Some(cached) => cached.expires_at < Instant::now(),
-            }
+            let cache = self.inner.read().await;
+            cache.expires_at < Instant::now()
         };
 
         if needs_refresh {
-            let mut cache_lock = self.jwks_cache.write().await;
-            let new_cache = self.fetch_jwks().await?;
-            *cache_lock = Some(new_cache);
+            let mut cache = self.inner.write().await;
+            let (jwks, cache_control) = fetch_jwks(&cache.http_client, &cache.jwks_url).await?;
+            let expires_at = Instant::now() + Duration::from_secs(cache_control);
+            cache.jwks = jwks;
+            cache.expires_at = expires_at
         }
 
-        let cache = self.jwks_cache.read().await;
-        if let Some(cached) = cache.as_ref() {
-            if let Some(key) = cached.keys.get(&kid) {
-                return Ok(Some(key.clone()));
-            } else {
-                return Ok(None);
-            }
+        let cache = self.inner.read().await;
+        if let Some(key) = cache.jwks.find(&kid) {
+            Ok(Some(key.clone()))
         } else {
             Ok(None)
         }
     }
+}
 
-    /// Fetch the JWKs (JSON Web Keys) from the Azure endpoint.
-    ///
-    /// This will read the cache-control header to determine how long the
-    /// fetched keys are valid for. If this header is invalid or missing it will
-    /// defualt to 24 hours (86400 sec).
-    async fn fetch_jwks(&self) -> Result<JwksCache, HandlerError> {
-        let response = self
-            .http_client
-            .get(&self.jwks_url)
-            .timeout(Duration::from_secs(10))
-            .send()
-            .await?;
+impl AzureConfig {
+    /// Create a new [`AzureConfig`].
+    pub async fn new(
+        tenant_id: impl Into<Cow<'static, str>>,
+        client_id: impl Into<Cow<'static, str>>,
+    ) -> Result<Self> {
+        let tenant_id = tenant_id.into();
+        let client_id = client_id.into();
 
-        let expires_at = expires_at(response.headers()).unwrap_or(86400);
+        let metadata_url = format!(
+            "https://login.microsoftonline.com/{}/v2.0/.well-known/openid-configuration",
+            &tenant_id
+        );
 
-        let jwk_set: JwkSet = if response.status().is_success() {
-            response.json().await?
-        } else {
-            return Err(HandlerError::new(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "JWK not found",
-                "Unable to fetch JWK set from Microsoft",
-            ));
-        };
+        let jwks_cache = JwksCache::new(format!(
+            "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
+            &tenant_id
+        ))
+        .await?;
 
-        let mut map = HashMap::new();
-        for key in jwk_set.keys {
-            let decoding_key = DecodingKey::from_jwk(&key)?;
-            let key_id = match key.common.key_id {
-                Some(kid) => kid,
-                None => continue,
-            };
-            map.insert(key_id, decoding_key);
-        }
-
-        let cache = JwksCache {
-            keys: map,
-            expires_at: Instant::now() + Duration::from_secs(expires_at),
-        };
-
-        Ok(cache)
+        Ok(Self {
+            tenant_id,
+            client_id,
+            metadata_url,
+            jwks_cache,
+        })
     }
 
     /// Validate claims in an Azure access token.
@@ -145,25 +123,50 @@ impl AzureConfig {
             return false;
         }
 
-        if let Some(sub) = &claims.sub {
-            if sub.is_empty() {
-                return false;
-            }
+        if claims.sub.is_empty() {
+            return false;
         }
 
         true
     }
+
+    pub async fn find_jwk(&self, kid: String) -> Result<Option<DecodingKey>> {
+        let jwk = self.jwks_cache.get_jwk(kid).await?;
+        if let Some(k) = jwk {
+            Ok(Some(DecodingKey::from_jwk(&k)?))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
-static EXPIRES_AT_REGEX: LazyLock<Regex> =
+/// Fetch the JWKs (JSON Web Keys) from the Azure endpoint.
+///
+/// This will read the Cache-Control header to determine how long the fetched
+/// keys are valid for. If this header is invalid or missing it will defualt to
+/// 24 hours (86400 sec).
+pub async fn fetch_jwks(http_client: &reqwest::Client, jwks_url: &String) -> Result<(JwkSet, u64)> {
+    let response = http_client
+        .get(jwks_url)
+        .timeout(Duration::from_secs(60))
+        .send()
+        .await?;
+    let cache_control = get_cache_control(response.headers()).unwrap_or(86400);
+    Ok((response.json().await?, cache_control))
+}
+
+static CACHE_CONTROL_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?:^|,\s*)max-age=(\d+)").unwrap());
 
-fn expires_at(headers: &HeaderMap) -> Option<u64> {
+/// Read the Cache-Control header and return its value.
+///
+/// This will return [`None`] when the header is not present or invalid.
+fn get_cache_control(headers: &HeaderMap) -> Option<u64> {
     headers
         .get("cache-control")
         .and_then(|v| v.to_str().ok())
         .and_then(|header_value| {
-            EXPIRES_AT_REGEX
+            CACHE_CONTROL_REGEX
                 .captures(header_value)
                 .and_then(|caps| caps.get(1))
                 .and_then(|m| m.as_str().parse().ok())
