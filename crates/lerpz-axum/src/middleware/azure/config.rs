@@ -18,8 +18,10 @@ use super::error::Result;
 pub struct AzureConfig {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,
-    pub(crate) metadata_url: String,
+    _metadata_url: String,
+    jwks_url: String,
     jwks_cache: JwksCache,
+    http_client: reqwest::Client,
 }
 
 /// A cache for JWKs (JSON Web Keys).
@@ -35,43 +37,44 @@ struct JwksCache {
 struct JwksCacheInner {
     jwks: JwkSet,
     expires_at: Instant,
-    jwks_url: String,
-    http_client: reqwest::Client,
 }
 
 impl JwksCache {
-    async fn new(jwks_url: String) -> Result<JwksCache> {
-        let http_client = reqwest::Client::new();
-        let (jwks, cache_control) = fetch_jwks(&http_client, &jwks_url).await?;
-
+    fn new(jwks: JwkSet, cache_control: u64) -> JwksCache {
         let expires_at = Instant::now() + Duration::from_secs(cache_control);
-        let cache = JwksCacheInner {
-            jwks,
-            expires_at,
-            jwks_url,
-            http_client,
-        };
+        let cache = JwksCacheInner { jwks, expires_at };
 
-        Ok(Self {
+        Self {
             inner: Arc::new(RwLock::new(cache)),
-        })
+        }
     }
 
-    /// Get a JWK (JSON Web Key) by its key ID.
-    pub async fn get_jwk(&self, kid: String) -> Result<Option<Jwk>> {
-        let needs_refresh = {
-            let cache = self.inner.read().await;
-            cache.expires_at < Instant::now()
-        };
+    /// Check if the cache needs to be refreshed.
+    pub async fn is_valid(&self) -> bool {
+        let cache = self.inner.read().await;
+        cache.expires_at < Instant::now()
+    }
 
-        if needs_refresh {
-            let mut cache = self.inner.write().await;
-            let (jwks, cache_control) = fetch_jwks(&cache.http_client, &cache.jwks_url).await?;
-            let expires_at = Instant::now() + Duration::from_secs(cache_control);
-            cache.jwks = jwks;
-            cache.expires_at = expires_at
+    /// Refresh the JWK cache.
+    pub async fn refresh(&self, http_client: &reqwest::Client, jwks_url: &String) -> Result<()> {
+        let mut cache = self.inner.write().await;
+        let (jwks, cache_control) = fetch_jwks(http_client, jwks_url).await?;
+        let expires_at = Instant::now() + Duration::from_secs(cache_control);
+        cache.jwks = jwks;
+        cache.expires_at = expires_at;
+        Ok(())
+    }
+
+    /// Get a JWK by its key ID.
+    pub async fn find_jwk(
+        &self,
+        kid: String,
+        http_client: &reqwest::Client,
+        jwks_url: &String,
+    ) -> Result<Option<Jwk>> {
+        if self.is_valid().await {
+            self.refresh(http_client, jwks_url).await;
         }
-
         let cache = self.inner.read().await;
         if let Some(key) = cache.jwks.find(&kid) {
             Ok(Some(key.clone()))
@@ -94,18 +97,22 @@ impl AzureConfig {
             "https://login.microsoftonline.com/{}/v2.0/.well-known/openid-configuration",
             &tenant_id
         );
-
-        let jwks_cache = JwksCache::new(format!(
+        let jwks_url = format!(
             "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
             &tenant_id
-        ))
-        .await?;
+        );
+
+        let http_client = reqwest::Client::new();
+        let (jwks, cache_control) = fetch_jwks(&http_client, &jwks_url).await?;
+        let jwks_cache = JwksCache::new(jwks, cache_control);
 
         Ok(Self {
             tenant_id,
             client_id,
             metadata_url,
+            jwks_url,
             jwks_cache,
+            http_client,
         })
     }
 
@@ -131,7 +138,10 @@ impl AzureConfig {
     }
 
     pub async fn find_jwk(&self, kid: String) -> Result<Option<DecodingKey>> {
-        let jwk = self.jwks_cache.get_jwk(kid).await?;
+        let jwk = self
+            .jwks_cache
+            .find_jwk(kid, &self.http_client, &self.jwks_url)
+            .await?;
         if let Some(k) = jwk {
             Ok(Some(DecodingKey::from_jwk(&k)?))
         } else {
