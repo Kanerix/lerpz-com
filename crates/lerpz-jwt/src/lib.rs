@@ -20,7 +20,7 @@ pub use error::{Error, Result};
 
 /// Create a new JWT token with the given claims and key.
 ///
-/// This uses [`encode_jwt_with_headers`] and uses [`Header::default()`] as
+/// This uses [`encode_jwt_with_header`] and uses [`Header::default()`] as
 /// header value.
 pub fn encode_jwt(claims: impl Into<Claims>, key: &EncodingKey) -> Result<String> {
     let header = Header::default();

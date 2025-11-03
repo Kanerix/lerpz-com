@@ -50,7 +50,7 @@ mod validation;
 /// A token representing a user in the Azure Entra system.
 ///
 /// This is implemented using the [Micrsoft Documentation]
-/// (https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
+/// (<https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens>)
 ///
 /// This can be extracted in any handler by adding it as a parameter.
 ///
@@ -89,7 +89,7 @@ pub struct AzureAccessToken {
     /// Version of the Microsoft JWT scheme.
     ///
     /// The versions and respective JSON scheme can be found in [Microsoft Documentation]
-    /// (https://learn.microsoft.com/en-us/entra/identity-platform/security-tokens).
+    /// (<https://learn.microsoft.com/en-us/entra/identity-platform/security-tokens>).
     ///
     /// ### Note:
     ///
