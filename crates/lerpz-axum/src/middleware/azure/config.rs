@@ -18,7 +18,7 @@ use super::error::Result;
 pub struct AzureConfig {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,
-    _metadata_url: String,
+    pub issuer: String,
     jwks_url: String,
     jwks_cache: JwksCache,
     http_client: reqwest::Client,
@@ -52,11 +52,11 @@ impl JwksCache {
     /// Check if the cache needs to be refreshed.
     pub async fn is_valid(&self) -> bool {
         let cache = self.inner.read().await;
-        cache.expires_at < Instant::now()
+        cache.expires_at > Instant::now()
     }
 
     /// Refresh the JWK cache.
-    pub async fn refresh(&self, http_client: &reqwest::Client, jwks_url: &String) -> Result<()> {
+    pub async fn refresh(&self, http_client: &reqwest::Client, jwks_url: &str) -> Result<()> {
         let mut cache = self.inner.write().await;
         let (jwks, cache_control) = fetch_jwks(http_client, jwks_url).await?;
         let expires_at = Instant::now() + Duration::from_secs(cache_control);
@@ -70,10 +70,10 @@ impl JwksCache {
         &self,
         kid: String,
         http_client: &reqwest::Client,
-        jwks_url: &String,
+        jwks_url: &str,
     ) -> Result<Option<Jwk>> {
-        if self.is_valid().await {
-            self.refresh(http_client, jwks_url).await;
+        if !self.is_valid().await {
+            self.refresh(http_client, jwks_url).await?;
         }
         let cache = self.inner.read().await;
         if let Some(key) = cache.jwks.find(&kid) {
@@ -92,24 +92,24 @@ impl AzureConfig {
     ) -> Result<Self> {
         let tenant_id = tenant_id.into();
         let client_id = client_id.into();
+        let issuer = format!("https://login.microsoftonline.com/{}/v2.0", &tenant_id);
 
-        let metadata_url = format!(
-            "https://login.microsoftonline.com/{}/v2.0/.well-known/openid-configuration",
-            &tenant_id
-        );
+        let http_client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()?;
+
         let jwks_url = format!(
             "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
             &tenant_id
         );
 
-        let http_client = reqwest::Client::new();
         let (jwks, cache_control) = fetch_jwks(&http_client, &jwks_url).await?;
         let jwks_cache = JwksCache::new(jwks, cache_control);
 
         Ok(Self {
             tenant_id,
             client_id,
-            metadata_url,
+            issuer,
             jwks_url,
             jwks_cache,
             http_client,
@@ -130,11 +130,7 @@ impl AzureConfig {
             return false;
         }
 
-        if claims.sub.is_empty() {
-            return false;
-        }
-
-        true
+        !claims.sub.is_empty()
     }
 
     pub async fn find_jwk(&self, kid: String) -> Result<Option<DecodingKey>> {
@@ -155,12 +151,8 @@ impl AzureConfig {
 /// This will read the Cache-Control header to determine how long the fetched
 /// keys are valid for. If this header is invalid or missing it will defualt to
 /// 24 hours (86400 sec).
-pub async fn fetch_jwks(http_client: &reqwest::Client, jwks_url: &String) -> Result<(JwkSet, u64)> {
-    let response = http_client
-        .get(jwks_url)
-        .timeout(Duration::from_secs(60))
-        .send()
-        .await?;
+pub async fn fetch_jwks(http_client: &reqwest::Client, jwks_url: &str) -> Result<(JwkSet, u64)> {
+    let response = http_client.get(jwks_url).send().await?;
     let cache_control = get_cache_control(response.headers()).unwrap_or(86400);
     Ok((response.json().await?, cache_control))
 }
