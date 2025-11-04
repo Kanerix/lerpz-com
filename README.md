@@ -1,5 +1,18 @@
 # Lerpz AI
 
+## Project structure
+
+```
+lerpz-ai/
+| - certs/                       /* Certificates  */
+| - docs/                        /* Documentation */
+| - crates/                      /* Rust crates   */
+| - pacakges/                    /* Node packages */
+| - svc/                         /* Services      */
+|   | - portal                   /* NextJS app    */
+|   | - portal-api               /* Axum Rest API */
+```
+
 ## Docker compose guide
 
 - Select `ID tokens (used for implicit and hybrid flows)`.
