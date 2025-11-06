@@ -15,10 +15,15 @@ use jsonwebtoken::{
 use super::error::Result;
 
 /// Azure configuration.
+#[derive(Clone)]
 pub struct AzureConfig {
+    inner: Arc<AzureConfigInner>,
+}
+
+pub struct AzureConfigInner {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,
-    pub issuer: String,
+    pub issuer: Cow<'static, str>,
     jwks_url: String,
     jwks_cache: JwksCache,
     http_client: reqwest::Client,
@@ -39,60 +44,64 @@ struct JwksCacheInner {
     expires_at: Instant,
 }
 
-impl JwksCache {
-    fn new(jwks: JwkSet, cache_control: u64) -> JwksCache {
-        let expires_at = Instant::now() + Duration::from_secs(cache_control);
-        let cache = JwksCacheInner { jwks, expires_at };
-
-        Self {
-            inner: Arc::new(RwLock::new(cache)),
-        }
-    }
-
-    /// Check if the cache needs to be refreshed.
-    pub async fn is_valid(&self) -> bool {
-        let cache = self.inner.read().await;
-        cache.expires_at > Instant::now()
-    }
-
-    /// Refresh the JWK cache.
-    pub async fn refresh(&self, http_client: &reqwest::Client, jwks_url: &str) -> Result<()> {
-        let mut cache = self.inner.write().await;
-        let (jwks, cache_control) = fetch_jwks(http_client, jwks_url).await?;
-        let expires_at = Instant::now() + Duration::from_secs(cache_control);
-        cache.jwks = jwks;
-        cache.expires_at = expires_at;
-        Ok(())
-    }
-
-    /// Get a JWK by its key ID.
-    pub async fn find_jwk(
-        &self,
-        kid: String,
-        http_client: &reqwest::Client,
-        jwks_url: &str,
-    ) -> Result<Option<Jwk>> {
-        if !self.is_valid().await {
-            self.refresh(http_client, jwks_url).await?;
-        }
-        let cache = self.inner.read().await;
-        if let Some(key) = cache.jwks.find(&kid) {
-            Ok(Some(key.clone()))
-        } else {
-            Ok(None)
-        }
-    }
-}
-
 impl AzureConfig {
     /// Create a new [`AzureConfig`].
     pub async fn new(
         tenant_id: impl Into<Cow<'static, str>>,
         client_id: impl Into<Cow<'static, str>>,
     ) -> Result<Self> {
+        Ok(Self {
+            inner: Arc::new(AzureConfigInner::new(tenant_id, client_id).await?),
+        })
+    }
+
+    /// Returns a reference to the audience string.
+    pub fn aud(&self) -> &str {
+        &self.inner.client_id
+    }
+
+    /// Returns a reference to the audience string.
+    pub fn iss(&self) -> &str {
+        &self.inner.issuer
+    }
+
+    /// Validate claims in an Azure access token.
+    pub fn validate_azure_claims(&self, claims: &super::AzureAccessToken) -> bool {
+        (claims.ver == "2.0") && (claims.tid == self.inner.tenant_id) && (!claims.sub.is_empty())
+    }
+
+    pub async fn find_jwk(&self, kid: &str) -> Result<Option<DecodingKey>> {
+        let jwk = self
+            .inner
+            .jwks_cache
+            .find_jwk(kid, &self.inner.http_client, &self.inner.jwks_url)
+            .await?;
+        if let Some(k) = jwk {
+            Ok(Some(DecodingKey::from_jwk(&k)?))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl AzureConfigInner {
+    /// Create a new [`AzureConfigInner`].
+    pub async fn new(
+        tenant_id: impl Into<Cow<'static, str>>,
+        client_id: impl Into<Cow<'static, str>>,
+    ) -> Result<Self> {
         let tenant_id = tenant_id.into();
         let client_id = client_id.into();
-        let issuer = format!("https://login.microsoftonline.com/{}/v2.0", &tenant_id);
+
+        use Cow::*;
+        let issuer: Cow<'static, str> = match tenant_id {
+            Borrowed(tid) => match tid {
+                "common" => Borrowed("https://login.microsoftonline.com/common/v2.0"),
+                "organizations" => Borrowed("https://login.microsoftonline.com/organizations/v2.0"),
+                _ => Owned(format!("https://login.microsoftonline.com/{}/v2.0", tid)),
+            },
+            Owned(ref tid) => Owned(format!("https://login.microsoftonline.com/{}/v2.0", tid)),
+        };
 
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
@@ -115,31 +124,47 @@ impl AzureConfig {
             http_client,
         })
     }
+}
 
-    /// Validate claims in an Azure access token.
-    pub fn validate_token_claims(&self, claims: &super::AzureAccessToken) -> bool {
-        if claims.ver.as_deref() != Some("2.0") {
-            return false;
+impl JwksCache {
+    fn new(jwks: JwkSet, cache_control: u64) -> JwksCache {
+        let expires_at = Instant::now() + Duration::from_secs(cache_control);
+        let cache = JwksCacheInner { jwks, expires_at };
+        JwksCache {
+            inner: Arc::new(RwLock::new(cache)),
         }
-
-        if let Some(tid) = &claims.tid {
-            if tid.as_str() != self.tenant_id {
-                return false;
-            }
-        } else {
-            return false;
-        }
-
-        !claims.sub.is_empty()
     }
 
-    pub async fn find_jwk(&self, kid: String) -> Result<Option<DecodingKey>> {
-        let jwk = self
-            .jwks_cache
-            .find_jwk(kid, &self.http_client, &self.jwks_url)
-            .await?;
-        if let Some(k) = jwk {
-            Ok(Some(DecodingKey::from_jwk(&k)?))
+    /// Check if the cache needs to be refreshed.
+    pub async fn is_valid(&self) -> bool {
+        let cache = self.inner.read().await;
+        cache.expires_at > Instant::now()
+    }
+
+    /// Refresh the JWK cache.
+    pub async fn refresh(&self, http_client: &reqwest::Client, jwks_url: &str) -> Result<()> {
+        let (jwks, cache_control) = fetch_jwks(http_client, jwks_url).await?;
+        let expires_at = Instant::now() + Duration::from_secs(cache_control);
+        let mut cache = self.inner.write().await;
+        cache.jwks = jwks;
+        cache.expires_at = expires_at;
+        Ok(())
+    }
+
+    /// Get a JWK by its key ID.
+    pub async fn find_jwk(
+        &self,
+        kid: &str,
+        http_client: &reqwest::Client,
+        jwks_url: &str,
+    ) -> Result<Option<Jwk>> {
+        if !self.is_valid().await {
+            self.refresh(http_client, jwks_url).await?;
+        }
+
+        let cache = self.inner.read().await;
+        if let Some(key) = cache.jwks.find(&kid) {
+            Ok(Some(key.clone()))
         } else {
             Ok(None)
         }

@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub azure_config: Arc<AzureConfig>,
+    pub azure_config: AzureConfig,
     pub openai: Arc<RwLock<Client<PortkeyConfig>>>,
     pub database: sqlx::PgPool,
     pub redis: bb8::Pool<RedisConnectionManager>,
@@ -66,7 +66,7 @@ impl Config for PortkeyConfig {
     }
 }
 
-impl FromRef<AppState> for Arc<AzureConfig> {
+impl FromRef<AppState> for AzureConfig {
     fn from_ref(state: &AppState) -> Self {
         state.azure_config.clone()
     }

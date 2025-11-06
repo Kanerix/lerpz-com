@@ -3,7 +3,7 @@ import { apiService } from "@/services/chat";
 import { authenticatedFetch } from "@/utils/fetch";
 
 export const apiKeys = {
-  chat: () => apiService.getUrl("/chat"),
+  chat: () => apiService.getUrl("/chat/create"),
 };
 
 async function fetcher<T>(url: string): Promise<T> {
@@ -13,7 +13,7 @@ async function fetcher<T>(url: string): Promise<T> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      message: "Tell me a joke!",
+      message: "Tell me a joke about programming!",
     }),
   });
 

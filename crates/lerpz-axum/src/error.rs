@@ -1,7 +1,8 @@
 //! Error module for endpoint handlers.
 //!
-//! This module follows the [Problem Details for HTTP APIs]
-//! (<https://datatracker.ietf.org/doc/html/rfc9457>) specification.
+//! This module follows the
+//! [Problem Details for HTTP APIs](https://datatracker.ietf.org/doc/html/rfc9457)
+//! specification.
 
 use std::borrow::Cow;
 

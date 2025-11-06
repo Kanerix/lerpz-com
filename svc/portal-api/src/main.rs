@@ -43,13 +43,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let azure_config = Arc::new(
-        AzureConfig::new(
-            CONFIG.ENTRA_ID_TENANT_ID.clone(),
-            CONFIG.ENTRA_ID_CLIENT_ID.clone(),
-        )
-        .await?,
-    );
+    let azure_config = AzureConfig::new(
+        CONFIG.ENTRA_ID_TENANT_ID.clone(),
+        CONFIG.ENTRA_ID_CLIENT_ID.clone(),
+    )
+    .await?;
 
     let portkey_config = PortkeyConfig {
         api_base: CONFIG.PORTKEY_BASE_URL.clone(),

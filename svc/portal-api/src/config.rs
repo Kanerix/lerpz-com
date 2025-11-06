@@ -21,8 +21,8 @@ enum Env {
 
 /// The main configuration struct for the server.
 ///
-/// Lazy loaded using `LazyLock` to ensure that the configuration is only loaded
-/// once.
+/// Lazy loaded using [`LazyLock`] to ensure that the configuration is only
+/// loaded once.
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::from_env().unwrap());
 
 generate_config!(
