@@ -1,6 +1,9 @@
 //! Configuration module for the server.
 
-use std::{net::SocketAddr, sync::LazyLock};
+use std::{
+    net::SocketAddr,
+    sync::{Arc, LazyLock},
+};
 
 use axum::http::HeaderValue;
 use lerpz_utils::{
@@ -34,6 +37,8 @@ generate_config!(
     PORTKEY_BASE_URL: String = get_env,
     PORTKEY_PROVIDER: String = get_env,
     PORTKEY_API_KEY: String = get_env,
+    DEFAULT_IMAGE_MODEL: Arc<str> = get_env,
+    DEFAULT_TEXT_MODEL: Arc<str> = get_env,
     DATABASE_URL: String = get_env,
     REDIS_URL: String = get_env
 );
