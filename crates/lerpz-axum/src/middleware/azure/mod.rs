@@ -3,12 +3,18 @@
 //! ### Example
 //!
 //! ```rust
+//! use axum::extract::FromRef;
+//! use lerpz_axum::{
+//!     error::{HandlerResult, HandlerError},
+//!     middleware::azure::{AzureAccessToken, AzureConfig}
+//! };
+//!
 //! #[derive(Clone)]
 //! pub struct AppState {
-//!     pub azure_config: Arc<AzureConfig>,
+//!     pub azure_config: AzureConfig,
 //! }
 //!
-//! impl FromRef<AppState> for Arc<AzureConfig> {
+//! impl FromRef<AppState> for AzureConfig {
 //!     fn from_ref(state: &AppState) -> Self {
 //!         state.azure_config.clone()
 //!     }
@@ -18,7 +24,7 @@
 //!   token: AzureAccessToken,
 //! ) -> HandlerResult<String> {
 //!     if !token.has_scope("example") {
-//!         Err(HandlerError::unauthorized())
+//!         return Err(HandlerError::unauthorized());
 //!     }
 //!
 //!     Ok("You have the required scope!".to_string())
@@ -55,11 +61,16 @@ mod validation;
 /// ### Example
 ///
 /// ```rust
+/// use lerpz_axum::{
+///     error::{HandlerResult, HandlerError},
+///     middleware::azure::{AzureAccessToken, AzureConfig}
+/// };
+///
 /// async fn example_handler(
 ///   token: AzureAccessToken,
 /// ) -> HandlerResult<String> {
 ///     if !token.has_scope("example") {
-///         Err(HandlerError::unauthorized())
+///         return Err(HandlerError::unauthorized());
 ///     }
 ///
 ///     Ok("You have the required scope!".to_string())

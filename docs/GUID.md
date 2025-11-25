@@ -1,6 +1,10 @@
 # Globally unique identifier (GUID)
 
-Format: \<x>\<y>.\<z>\<w>@\<domain>.\<tld>
+The format of a 
+
+Allowed characters are the english alphabet and digits.
+
+Format: `<x><y>.<z<w>@<domain>.<tld>`
 
 Where:
 
@@ -14,5 +18,4 @@ Where:
 Examples:
 
 Kasper Jønsson, Security - 15/11/2022
-
 - [kasjon.sec22@lerpz.com]

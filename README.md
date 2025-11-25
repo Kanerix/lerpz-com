@@ -1,4 +1,11 @@
-# Lerpz AI
+# Lerpz Core
+
+A general-purpose library containing shared utilities, helpers, and reusable
+components used across Lerpz projects. This repository serves as a central hub
+for common functionality, reducing code duplication and ensuring consistency
+across services and applications. Includes data models, validation utilities,
+formatting functions, and other tools that are frequently needed throughout the
+organization.
 
 ## Project structure
 

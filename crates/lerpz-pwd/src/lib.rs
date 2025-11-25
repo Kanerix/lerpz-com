@@ -107,8 +107,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_password_hashing_and_validate() {
-        dotenvy::from_filename(".env.test").unwrap();
-
         let salt = uuid::Uuid::new_v4().to_string();
         let hash = hash_pwd("password", &salt).await.unwrap();
 

@@ -9,3 +9,4 @@ thiserror = { workspace = true }
 
 [features]
 upn = ["dep:chrono"]
+unit = []

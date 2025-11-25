@@ -7,7 +7,7 @@ use std::{
 
 use axum::http::HeaderValue;
 use lerpz_utils::{
-    env::{get_env, get_env_parse},
+    env::{get_env, get_env_from, get_env_parse},
     generate_config,
 };
 
@@ -37,8 +37,8 @@ generate_config!(
     PORTKEY_BASE_URL: String = get_env,
     PORTKEY_PROVIDER: String = get_env,
     PORTKEY_API_KEY: String = get_env,
-    DEFAULT_IMAGE_MODEL: Arc<str> = get_env,
-    DEFAULT_TEXT_MODEL: Arc<str> = get_env,
+    DEFAULT_IMAGE_MODEL: Arc<str> = get_env_from,
+    DEFAULT_TEXT_MODEL: Arc<str> = get_env_from,
     DATABASE_URL: String = get_env,
     REDIS_URL: String = get_env
 );

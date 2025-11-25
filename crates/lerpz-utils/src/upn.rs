@@ -19,6 +19,8 @@
 //! Examples:
 //! - Kasper Jønsson, Engineer - 15/11/2020 @ lerpz.com -> kasjon.eng20@lerpz.com
 
+use std::sync::Arc;
+
 /// Errors that can occur when generating a UPN.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
@@ -27,18 +29,36 @@ pub enum Error {
     DepartmentError,
     #[error("Hire date is in the future")]
     FutureHireDateError,
-    #[error("Formatting error: {0}")]
+    #[error(transparent)]
     FmtError(#[from] std::fmt::Error),
 }
 
-/// Information about the user to generate a UPN for.
+/// User information to generate a UPN for.
 #[derive(Debug, Clone)]
 pub struct UserInfo {
-    forename: String,
-    surnames: Vec<String>,
-    department: String,
+    forename: Arc<str>,
+    surnames: Arc<[Arc<str>]>,
+    department: Arc<str>,
     hire_date: chrono::NaiveDate,
-    domain: String,
+    domain: Arc<str>,
+}
+
+impl UserInfo {
+    pub fn new(
+        forename: impl Into<Arc<str>>,
+        surnames: impl Into<Arc<[Arc<str>]>>,
+        department: impl Into<Arc<str>>,
+        hire_date: impl Into<chrono::NaiveDate>,
+        domain: impl Into<Arc<str>>,
+    ) -> UserInfo {
+        Self {
+            forename: forename.into(),
+            surnames: surnames.into(),
+            department: department.into(),
+            hire_date: hire_date.into(),
+            domain: domain.into(),
+        }
+    }
 }
 
 /// Generate a UPN based on the provided user information.
@@ -50,13 +70,13 @@ pub fn generate_upn(upn: impl Into<UserInfo>) -> Result<String, Error> {
 
 /// Generate a UPN based on the provided user information and iteration number.
 ///
-/// The iteration number is used to select which surname to use when the user has
-/// multiple surnames. The iteration will start with the rightmost surname and
-/// move leftwards as the iteration number increases. If the iteration number
-/// exceeds the number of surnames, it will wrap around to the rightmost surname
-/// 
+/// The iteration number is used to select which surname to use when the user
+/// has multiple surnames. The iterator will start with the rightmost surname
+/// and move leftwards as the iterations increas. If the iteration number
+/// exceeds the number of surnames, it will wrap around to the rightmost surname.
+///
 /// ### Example:
-/// 
+///
 /// ```rust
 /// let user_info = UserInfo {
 ///     forename: "Kasper".to_owned(),
@@ -65,7 +85,7 @@ pub fn generate_upn(upn: impl Into<UserInfo>) -> Result<String, Error> {
 ///     hire_date: chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
 ///     domain: "lerpz.com".to_owned(),
 /// };
-/// 
+///
 /// let upn = generate_upn_with_iteration(user_info, 0).unwrap();
 /// assert_eq!(upn, "kasjon.eng20@lerpz.com");
 /// ```
@@ -74,17 +94,14 @@ pub fn generate_upn_with_iteration(upn: impl Into<UserInfo>, i: usize) -> Result
     let cap = 13 + upn.domain.len();
     let mut buf = String::with_capacity(cap);
 
-    let forename = validate_characters(upn.forename);
-    buf.push_str(shortname(&forename));
+    buf.push_str(&shortname(upn.forename.as_ref()));
 
-    let surname_index = get_surname_index(&upn.surnames, i);
-    let surname = validate_characters(upn.surnames[surname_index].to_owned());
-    buf.push_str(shortname(&surname));
+    let surname = get_surname(&upn.surnames, i);
+    buf.push_str(&shortname(surname));
 
     buf.push('.');
 
-    let department = validate_characters(upn.department.clone());
-    buf.push_str(shortname(&department));
+    buf.push_str(&shortname(&upn.department));
 
     upn.hire_date.format("%y").write_to(&mut buf)?;
 
@@ -96,44 +113,43 @@ pub fn generate_upn_with_iteration(upn: impl Into<UserInfo>, i: usize) -> Result
     Ok(buf)
 }
 
-/// Will replace some characters with a short version (e.g. æ,ø,å) equivalent.
-///
-/// This will also remove any non-alphabetic characters. This also assmumes that
-/// all characters are in lowercase. Uppsercase characters will be removed.
-pub fn validate_characters(upn: String) -> String {
-    upn.to_lowercase()
-        .chars()
-        .filter_map(|c| match c {
-            'å' | 'æ' | 'ä' => Some('a'),
-            'ø' | 'ö' => Some('o'),
-            _ if ('a'..='z').contains(&c) || c.is_numeric() => Some(c),
-            _ => None,
-        })
-        .collect()
+/// Replace non-allowed characters with an allowed equivalent.
+#[inline]
+pub fn replace_char(c: char) -> Option<char> {
+    match c {
+        _ if ('a'..='z').contains(&c) || c.is_numeric() => Some(c),
+        'å' | 'æ' | 'ä' => Some('a'),
+        'ø' | 'ö' => Some('o'),
+        _ => None,
+    }
 }
 
-/// Gets the lastname index based on the iteration number.
+/// Gets the the surnames based on the iteration.
 ///
 /// This will start with the most right surname and move leftwards as the
 /// iteration number increases. Then it resets to the rightmost surname and
 /// continues.
-///
-/// ### Note
-///
-/// The implementation will change in the future to support more usecases.
-fn get_surname_index(surnames: &[String], i: usize) -> usize {
-    if i == 0 {
-        return surnames.len() - 1;
-    } else {
-        return surnames.len() - 1 - (i % surnames.len());
+#[inline]
+fn get_surname<T>(surnames: &[T], iteration: usize) -> &T {
+    match iteration {
+        0 => &surnames[surnames.len() - 1],
+        i => &surnames[surnames.len() - 1 - (i % surnames.len())],
     }
 }
 
-/// Returns the first three characters.
-///
-/// If the 3 first characters are not available, returns the whole string.
-fn shortname<'a>(s: &str) -> &str {
-    &s[..if s.len() > 3 { 3 } else { s.len() }]
+/// Returns the first three characters (shortname) of the name.
+#[inline]
+fn shortname(name: &str) -> String {
+    let mut shortname = String::with_capacity(3);
+    for c in name.chars() {
+        if let Some(c) = replace_char(c) {
+            shortname.push(c);
+        }
+        if shortname.len() == 3 {
+            break;
+        }
+    }
+    shortname
 }
 
 #[cfg(test)]
@@ -142,51 +158,56 @@ mod tests {
 
     #[test]
     fn basic() {
-        let user_info = UserInfo {
-            forename: "Kasper".to_owned(),
-            surnames: vec!["Jønsson".to_owned()],
-            department: "Engineering".to_owned(),
-            hire_date: chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-            domain: "lerpz.com".to_owned(),
-        };
+        let user_info = UserInfo::new(
+            "Kasper",
+            vec!["Jønsson".into()],
+            "Engineering",
+            chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
+            "lerpz.com",
+        );
 
         let upn = generate_upn(user_info).unwrap();
         assert_eq!(upn, "kasjon.eng20@lerpz.com");
     }
 
     #[test]
-    fn basic_iteration() {
-        let user_info = UserInfo {
-            forename: "Kasper".to_owned(),
-            surnames: vec![
-                "George".to_owned(),
-                "Henriksen".to_owned(),
-                "Jønsson".to_owned(),
-            ],
-            department: "Engineering".to_owned(),
-            hire_date: chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-            domain: "lerpz.com".to_owned(),
-        };
+    fn surname_iterations() {
+        let user_info = UserInfo::new(
+            "Kasper",
+            vec!["Sørensen".into(), "Tørkilsen".into(), "Jønsson".into()],
+            "Engineering",
+            chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
+            "lerpz.com",
+        );
 
         let upn = generate_upn_with_iteration(user_info.clone(), 0).unwrap();
         assert_eq!(upn, "kasjon.eng20@lerpz.com");
 
         let upn = generate_upn_with_iteration(user_info.clone(), 1).unwrap();
-        assert_eq!(upn, "kashen.eng20@lerpz.com");
+        assert_eq!(upn, "kastok.eng20@lerpz.com");
 
-        let upn = generate_upn_with_iteration(user_info, 2).unwrap();
-        assert_eq!(upn, "kasgeo.eng20@lerpz.com");
+        let upn = generate_upn_with_iteration(user_info.clone(), 2).unwrap();
+        assert_eq!(upn, "kassor.eng20@lerpz.com");
+
+        let upn = generate_upn_with_iteration(user_info.clone(), 3).unwrap();
+        assert_eq!(upn, "kasjon.eng20@lerpz.com");
+
+        let upn = generate_upn_with_iteration(user_info.clone(), 4).unwrap();
+        assert_eq!(upn, "kastok.eng20@lerpz.com");
+
+        let upn = generate_upn_with_iteration(user_info.clone(), 5).unwrap();
+        assert_eq!(upn, "kasson.eng20@lerpz.com");
     }
 
     #[test]
-    fn basic_shortname() {
-        let user_info = UserInfo {
-            forename: "Bo".to_owned(),
-            surnames: vec!["Bi".to_owned()],
-            department: "IT".to_owned(),
-            hire_date: chrono::NaiveDate::from_ymd_opt(1995, 10, 15).unwrap(),
-            domain: "lerpz.com".to_owned(),
-        };
+    fn two_letter_names() {
+        let user_info = UserInfo::new(
+            "Bo",
+            vec!["Bi".into()],
+            "IT",
+            chrono::NaiveDate::from_ymd_opt(1995, 10, 15).unwrap(),
+            "lerpz.com",
+        );
 
         let upn = generate_upn(user_info).unwrap();
         assert_eq!(upn, "bobi.it95@lerpz.com");
