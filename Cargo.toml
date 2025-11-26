@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "svc/portal-api"]
+members = ["crates/*", "benchmarks", "svc/portal-api"]
 
 [workspace.package]
 version = "0.1.0"

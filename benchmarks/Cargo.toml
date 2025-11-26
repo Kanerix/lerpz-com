@@ -1,0 +1,16 @@
+[package]
+name = "benchmarks"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+lerpz-utils = { workspace = true, features = ["upn"] }
+chrono = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "upn"
+harness = false

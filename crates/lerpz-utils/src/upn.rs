@@ -94,18 +94,16 @@ pub fn generate_upn_with_iteration(upn: impl Into<UserInfo>, i: usize) -> Result
     let cap = 13 + upn.domain.len();
     let mut buf = String::with_capacity(cap);
 
-    buf.push_str(&shortname(upn.forename.as_ref()));
+    shortname(&upn.forename, &mut buf);
 
     let surname = get_surname(&upn.surnames, i);
-    buf.push_str(&shortname(surname));
+    shortname(&surname, &mut buf);
 
     buf.push('.');
 
-    buf.push_str(&shortname(&upn.department));
+    shortname(&upn.department, &mut buf);
 
     upn.hire_date.format("%y").write_to(&mut buf)?;
-
-    buf = buf.to_lowercase();
 
     buf.push('@');
     buf.push_str(&upn.domain);
@@ -116,7 +114,7 @@ pub fn generate_upn_with_iteration(upn: impl Into<UserInfo>, i: usize) -> Result
 /// Replace non-allowed characters with an allowed equivalent.
 #[inline]
 pub fn replace_char(c: char) -> Option<char> {
-    match c {
+    match c.to_ascii_lowercase() {
         _ if ('a'..='z').contains(&c) || c.is_numeric() => Some(c),
         'å' | 'æ' | 'ä' => Some('a'),
         'ø' | 'ö' => Some('o'),
@@ -131,25 +129,16 @@ pub fn replace_char(c: char) -> Option<char> {
 /// continues.
 #[inline]
 fn get_surname<T>(surnames: &[T], iteration: usize) -> &T {
-    match iteration {
-        0 => &surnames[surnames.len() - 1],
-        i => &surnames[surnames.len() - 1 - (i % surnames.len())],
-    }
+    let idx = surnames.len() - 1 - (iteration % surnames.len());
+    &surnames[idx]
 }
 
-/// Returns the first three characters (shortname) of the name.
+/// Pushes the three first legal characters to buf.
 #[inline]
-fn shortname(name: &str) -> String {
-    let mut shortname = String::with_capacity(3);
-    for c in name.chars() {
-        if let Some(c) = replace_char(c) {
-            shortname.push(c);
-        }
-        if shortname.len() == 3 {
-            break;
-        }
+fn shortname(name: &str, buf: &mut String) {
+    for c in name.chars().filter_map(replace_char).take(3) {
+        buf.push(c)
     }
-    shortname
 }
 
 #[cfg(test)]
