@@ -1,9 +1,6 @@
 use crate::state::AppState;
 
-use axum::{
-    Router,
-    routing::{get, post},
-};
+use axum::{Router, routing::get};
 
 mod create;
 mod delete;
@@ -13,7 +10,7 @@ mod update;
 
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
-        .route("/", post(create::handler).get(list::handler))
+        .route("/", get(list::handler).post(create::handler))
         .route(
             "/{id}",
             get(read::handler)

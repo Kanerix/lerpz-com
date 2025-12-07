@@ -10,7 +10,7 @@ use axum::http::Method;
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
-use secrecy::SecretString;
+use secrecy::{ExposeSecret, SecretString};
 use sqlx::postgres::PgPoolOptions;
 use tokio::sync::RwLock;
 use tower_http::cors::{Any, CorsLayer};
@@ -59,11 +59,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
-        .connect(&CONFIG.DATABASE_URL)
+        .connect(&CONFIG.DATABASE_URL.expose_secret())
         .await
         .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 
-    let manager = RedisConnectionManager::new(CONFIG.REDIS_URL.clone())
+    let manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
         .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
     let redis = bb8::Pool::builder()
         .build(manager)

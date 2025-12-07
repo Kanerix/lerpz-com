@@ -17,9 +17,9 @@ pub struct AppState {
 
 #[derive(Clone, Debug)]
 pub struct PortkeyConfig {
-    pub api_base: String,
+    pub api_base: Arc<str>,
     pub api_key: SecretString,
-    pub api_provider: String,
+    pub api_provider: Arc<str>,
 }
 
 impl Config for PortkeyConfig {
