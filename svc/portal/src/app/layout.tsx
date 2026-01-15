@@ -1,11 +1,10 @@
 import { Toaster } from "@lerpz/ui/components/sonner";
-import { MsalProvider } from "@/components/msal-provider";
 import { SWRProvider } from "@/components/swr-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@lerpz/ui/globals.css";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -24,11 +23,11 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html suppressHydrationWarning lang="en">
       <head />
       <body className={`${poppins.variable} antialiased`}>
-        <SWRProvider>
-          <MsalProvider>
+        <Suspense fallback="Loading...">
+          <SWRProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="system"
@@ -38,8 +37,8 @@ export default function RootLayout({
               {children}
             </ThemeProvider>
             <Toaster />
-          </MsalProvider>
-        </SWRProvider>
+          </SWRProvider>
+        </Suspense>
       </body>
     </html>
   );

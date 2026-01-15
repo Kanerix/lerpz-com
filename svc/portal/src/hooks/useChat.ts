@@ -26,12 +26,5 @@ async function fetcher<T>(url: string): Promise<T> {
 }
 
 export function useChat() {
-  const { data, error, isLoading, mutate } = useSWR(apiKeys.chat(), fetcher);
-
-  return {
-    data,
-    isLoading,
-    error,
-    mutate,
-  };
+  return useSWR(apiKeys.chat(), fetcher);
 }

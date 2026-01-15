@@ -1,22 +1,12 @@
-"use client";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 
-import { InteractionStatus } from "@azure/msal-browser";
-import { useMsal } from "@azure/msal-react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+export async function AuthGuard({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { inProgress, accounts } = useMsal();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (inProgress === InteractionStatus.None && accounts.length === 0) {
-      router.push("/login");
-    }
-  }, [inProgress, accounts, router]);
-
-  if (inProgress !== InteractionStatus.None || accounts.length === 0) {
-    return null;
+  if (!session?.user) {
+    redirect("/login");
   }
 
   return children;

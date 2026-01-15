@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint": "pnpm --filter !lerpz-ai lint",
     "dev:portal": "pnpm --filter portal dev",
     "build:portal": "pnpm --filter portal build",
     "start:portal": "pnpm --filter portal start",
@@ -13,7 +12,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@10.18.2",
+  "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
     "@lerpz/typescript-config": "workspace:*"

@@ -1,13 +1,13 @@
 "use client";
 
-import { useMsal } from "@azure/msal-react";
 import Image from "next/image";
 import ChatBox from "@/components/chat-box";
 import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
+import { useSession } from "@/lib/auth-client";
 
 export default function HomePage() {
-  const { accounts } = useMsal();
+  const { data } = useSession();
 
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
@@ -35,7 +35,7 @@ export default function HomePage() {
 
         <ChatBox />
 
-        <div>{accounts[0]?.username}</div>
+        <div>{data?.user.name}</div>
         <LoginButton />
         <LogoutButton />
 

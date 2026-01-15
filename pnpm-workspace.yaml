@@ -1,3 +1,6 @@
 packages:
   - "packages/*"
+  - "svc/lerpz-ai"
   - "svc/portal"
+
+catalog:

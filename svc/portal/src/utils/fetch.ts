@@ -1,9 +1,11 @@
-import { getAccessToken } from "@/lib/msal";
+import { authClient } from "@/lib/auth-client";
 
 export async function createAuthHeaders(
   additionalHeaders: Record<string, string> = {},
 ): Promise<Record<string, string>> {
-  const accessToken = await getAccessToken();
+  const accessToken = await authClient.getAccessToken({
+    providerId: "microsoft",
+  });
 
   if (!accessToken) {
     throw new Error("No access token found - user not authenticated");
