@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@lerpz/ui/components/button";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 
@@ -18,8 +17,8 @@ export default function LogoutButton() {
   };
 
   return (
-    <Button variant="destructive" onClick={handleLogout}>
+    <button type="button" onClick={handleLogout}>
       logout
-    </Button>
+    </button>
   );
 }

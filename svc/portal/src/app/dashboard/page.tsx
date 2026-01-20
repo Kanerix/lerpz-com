@@ -2,11 +2,10 @@
 
 import Image from "next/image";
 import ChatBox from "@/components/chat-box";
-import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
 import { useSession } from "@/lib/auth-client";
 
-export default function HomePage() {
+export default function Dashboard() {
   const { data } = useSession();
 
   return (
@@ -36,7 +35,7 @@ export default function HomePage() {
         <ChatBox />
 
         <div>{data?.user.name}</div>
-        <LoginButton />
+
         <LogoutButton />
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">

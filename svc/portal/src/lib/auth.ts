@@ -5,7 +5,8 @@ export const auth = betterAuth({
   socialProviders: {
     microsoft: {
       clientId: env.ENTRA_ID_CLIENT_ID,
-      clientSecret: process.env.ENTRA_ID_CLIENT_SECRET,
+      clientSecret: env.ENTRA_ID_CLIENT_SECRET,
+      redirectURI: env.ENTRA_ID_REDIRECT_URI,
       tenantId: "common",
       authority: "https://login.microsoftonline.com",
       prompt: "select_account",
