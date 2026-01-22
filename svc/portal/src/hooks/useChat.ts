@@ -1,6 +1,6 @@
 import useSWR from "swr";
+import { authenticatedFetch } from "@/lib/fetch";
 import { apiService } from "@/services/chat";
-import { authenticatedFetch } from "@/utils/fetch";
 
 export const apiKeys = {
   chat: () => apiService.getUrl("/chat/create"),

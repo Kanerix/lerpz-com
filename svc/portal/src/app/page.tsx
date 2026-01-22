@@ -1,5 +1,4 @@
-import Footer from "@/components/footer";
-import Header from "@/components/header";
+import { Footer, Header } from "@/components/landing-page";
 
 export default function HomePage() {
   return (

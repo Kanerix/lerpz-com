@@ -3,11 +3,11 @@ import { SWRProvider } from "@/components/swr-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@lerpz/ui/globals.css";
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 import { type ReactNode, Suspense } from "react";
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+const inter = Inter({
+  variable: "--font-inter",
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
 });
@@ -23,9 +23,9 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${poppins.variable} antialiased`}>
+      <body className={`${inter.variable} antialiased`}>
         <Suspense fallback="Loading...">
           <SWRProvider>
             <ThemeProvider
