@@ -9,22 +9,16 @@ import {
   TooltipTrigger,
 } from "@lerpz/ui/components/tooltip";
 import { cn } from "@lerpz/ui/lib/utils";
-import { Send, Settings, WandSparkles } from "lucide-react";
+import { LoaderPinwheel, Send, Settings, WandSparkles } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
-import ChatboxSettingsImage from "./settings-image";
+import type { ChangeEventHandler } from "react";
+import { useChatboxStore } from "@/store/chatbox.store";
+import { useChatbox } from "./provider";
+import ChatboxSettings from "./settings";
 
 type ChatboxVariant = "chat" | "image" | "video";
 
-interface ChatboxProps {
-  variant: ChatboxVariant;
-}
-
-interface ChatToolbarProps extends Pick<ChatboxProps, "variant"> {
-  onSettingsToggle: () => void;
-}
-
-interface ChatareaProps extends Pick<ChatboxProps, "variant"> {
+interface ChatareaProps {
   isMobile: boolean;
 }
 
@@ -53,12 +47,8 @@ const chatareaPlaceholder: Record<ChatboxVariant, string> = {
   video: "Describe your video!",
 };
 
-export default function Chatbox({ variant }: ChatboxProps) {
-  const [showSettings, setShowSettings] = useState(true);
-
-  const handleSettingsChange = () => {
-    setShowSettings((o) => !o);
-  };
+export default function Chatbox() {
+  const { showSettings } = useChatbox();
 
   return (
     <motion.div
@@ -69,17 +59,14 @@ export default function Chatbox({ variant }: ChatboxProps) {
       <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[800px] p-4">
         <Card className="rounded-4xl">
           <CardContent className="flex flex-col">
-            <Chatarea variant={variant} isMobile={true} />
-            <ChatToolbar
-              variant={variant}
-              onSettingsToggle={handleSettingsChange}
-            />
+            <Chatarea isMobile={true} />
+            <ChatToolbar />
             <motion.div
               variants={settingsVariants}
               animate={showSettings ? "visible" : "hidden"}
               transition={{ duration: 0.67, ease: "easeOut" }}
             >
-              {variant === "image" && <ChatboxSettingsImage />}
+              <ChatboxSettings />
             </motion.div>
           </CardContent>
         </Card>
@@ -88,7 +75,20 @@ export default function Chatbox({ variant }: ChatboxProps) {
   );
 }
 
-function ChatToolbar({ onSettingsToggle, variant }: ChatToolbarProps) {
+function ChatToolbar() {
+  const { variant, setShowSettings, enhance, isEnhanceLoading } = useChatbox();
+  const { prompt, setPrompt } = useChatboxStore();
+
+  const toggleSettings = () => {
+    setShowSettings((old) => !old);
+  };
+
+  const handleEnhance = async () => {
+    if (!prompt) return; // THROW ERROR
+    const newPrompt = await enhance(prompt);
+    setPrompt(newPrompt);
+  };
+
   return (
     <div className="flex gap-x-4">
       <Tooltip>
@@ -99,7 +99,7 @@ function ChatToolbar({ onSettingsToggle, variant }: ChatToolbarProps) {
               variant="outline"
               size="icon"
               aria-label="Show/hide settings"
-              onClick={onSettingsToggle}
+              onClick={toggleSettings}
             >
               <Settings />
             </Button>
@@ -109,12 +109,22 @@ function ChatToolbar({ onSettingsToggle, variant }: ChatToolbarProps) {
           <p>Show/hide chat settings</p>
         </TooltipContent>
       </Tooltip>
-      <Chatarea isMobile={false} variant={variant} />
+      <Chatarea isMobile={false} />
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button variant="outline" size="icon" aria-label="Enhance prompt">
-              <WandSparkles />
+            <Button
+              onClick={handleEnhance}
+              disabled={isEnhanceLoading}
+              variant="outline"
+              size="icon"
+              aria-label="Enhance prompt"
+            >
+              {isEnhanceLoading ? (
+                <LoaderPinwheel className="animate-spin" />
+              ) : (
+                <WandSparkles />
+              )}
             </Button>
           }
         />
@@ -139,11 +149,24 @@ function ChatToolbar({ onSettingsToggle, variant }: ChatToolbarProps) {
   );
 }
 
-function Chatarea({ isMobile, variant }: ChatareaProps) {
+function Chatarea({ isMobile }: ChatareaProps) {
+  const { variant, isEnhanceLoading } = useChatbox();
+  const { prompt, setPrompt } = useChatboxStore();
+
+  const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
+    setPrompt(e.target.value);
+  };
+
   return (
     <Textarea
+      disabled={isEnhanceLoading}
       placeholder={chatareaPlaceholder[variant]}
-      className={cn("grow", isMobile ? "block sm:hidden" : "hidden sm:block")}
+      value={prompt || undefined}
+      onChange={handleChange}
+      className={cn(
+        "grow",
+        isMobile ? "block sm:hidden mb-4" : "hidden sm:block",
+      )}
     />
   );
 }

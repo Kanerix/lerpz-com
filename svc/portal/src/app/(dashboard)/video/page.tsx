@@ -1,3 +1,3 @@
 export default function Video() {
-  return <div>test</div>;
+  return <div>video</div>;
 }

@@ -8,12 +8,13 @@ import {
   SidebarRail,
 } from "@lerpz/ui/components/sidebar";
 import { Image, MessageCircle, Video } from "lucide-react";
+import type { ComponentProps } from "react";
 // import { NavMain } from "@/components/sidebar/nav-main";
 // import { NavProjects } from "@/components/sidebar/nav-projects";
-import { ModeSwitcher } from "@/components/sidebar/mode-switcher";
-import { NavUser } from "./user-info";
+import ModeSwitcher from "./mode-switcher";
+import NavSecondary from "./nav-secondary";
+import SidebarUserInfo from "./user-info";
 
-// This is sample data.
 const data = {
   user: {
     name: "shadcn",
@@ -41,18 +42,19 @@ const data = {
 
 export default function AppSidebar({
   ...props
-}: React.ComponentProps<typeof Sidebar>) {
+}: ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <ModeSwitcher modes={data.modes} />
       </SidebarHeader>
       <SidebarContent>
-        {/*<NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />*/}
+        {/*<NavMain items={data.navMain} />*/}
+        {/*<NavProjects projects={data.projects} />*/}
+        <NavSecondary className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <SidebarUserInfo />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

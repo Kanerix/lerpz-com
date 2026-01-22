@@ -1,6 +1,11 @@
 "use client";
 
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@lerpz/ui/components/avatar";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -15,19 +20,51 @@ import {
   useSidebar,
 } from "@lerpz/ui/components/sidebar";
 import { ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useChatbox } from "../chatbox/provider";
 
-export function ModeSwitcher({
-  modes,
-}: {
-  modes: {
-    name: string;
-    logo: React.ElementType;
-    plan: string;
-  }[];
-}) {
+interface Mode {
+  name: string;
+  logo: React.ElementType;
+  plan: string;
+}
+
+interface ModeSwitcherProps {
+  modes: Mode[];
+}
+
+const fallbackAvatar = {
+  chat: "cht",
+  image: "img",
+  video: "vid",
+};
+
+export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
+  const router = useRouter();
   const { isMobile } = useSidebar();
   const [activeMode, setActiveMode] = useState(modes[0]);
+
+  const { variant, setVariant } = useChatbox();
+
+  useEffect(() => {
+    if (!activeMode) return;
+
+    switch (activeMode.name) {
+      case "Video":
+        setVariant("video");
+        router.push("/video");
+        break;
+      case "Image":
+        setVariant("image");
+        router.push("/image");
+        break;
+      case "Chat":
+        setVariant("chat");
+        router.push("/chat");
+        break;
+    }
+  }, [activeMode]);
 
   if (!activeMode) {
     return null;
@@ -43,21 +80,23 @@ export function ModeSwitcher({
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <activeMode.logo className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">
+                <Avatar size="lg">
+                  <AvatarImage alt="@shadcn" />
+                  <AvatarFallback className="rounded-md">
+                    {fallbackAvatar[variant]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight ml-1">
+                  <span className="truncate font-semibold text-lg">
                     {activeMode.name}
                   </span>
-                  <span className="truncate text-xs">{activeMode.plan}</span>
+                  <span className="truncate text-md">{activeMode.plan}</span>
                 </div>
                 <ChevronsUpDown className="ml-auto" />
               </SidebarMenuButton>
             }
           />
           <DropdownMenuContent
-            className="w-fit rounded-lg"
             align="start"
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
