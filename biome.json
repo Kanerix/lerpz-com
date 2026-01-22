@@ -17,9 +17,15 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "info"
+      },
       "suspicious": {
         "noUnknownAtRules": "off"
       }
+    },
+    "domains": {
+      "next": "recommended"
     }
   },
   "assist": {

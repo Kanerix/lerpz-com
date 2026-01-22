@@ -13,6 +13,9 @@ const nextConfig = {
   cacheComponents: true,
   transpilePackages: ["@t3-oss/env-nextjs", "@t3-oss/env-core"],
   outputFileTracingRoot: path.join(__dirname, "../../"),
+  devIndicators: {
+    position: "bottom-right",
+  },
 };
 
 export default nextConfig;

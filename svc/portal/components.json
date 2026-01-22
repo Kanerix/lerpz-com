@@ -14,8 +14,8 @@
     "components": "@/components",
     "utils": "@lerpz/ui/lib/utils",
     "ui": "@lerpz/ui/components",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "lib": "@lerpz/ui/lib",
+    "hooks": "@lerpz/ui/hooks"
   },
   "iconLibrary": "lucide",
   "menuColor": "default",

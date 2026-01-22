@@ -10,17 +10,50 @@ import {
 } from "@lerpz/ui/components/tooltip";
 import { cn } from "@lerpz/ui/lib/utils";
 import { Send, Settings, WandSparkles } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useState } from "react";
 import ChatboxSettingsImage from "./settings-image";
 
-type ChatBoxVariant = "chat" | "image" | "video";
-interface ImageChatBoxProps {
-  kind: ChatBoxVariant;
-  onSubmit: () => void;
+type ChatboxVariant = "chat" | "image" | "video";
+
+interface ChatboxProps {
+  variant: ChatboxVariant;
 }
 
-export default function ImageChatbox({ kind, onSubmit }: ImageChatBoxProps) {
+interface ChatToolbarProps extends Pick<ChatboxProps, "variant"> {
+  onSettingsToggle: () => void;
+}
+
+interface ChatareaProps extends Pick<ChatboxProps, "variant"> {
+  isMobile: boolean;
+}
+
+const settingsVariants = {
+  visible: {
+    opacity: 1,
+    height: "auto",
+    transition: { duration: 0.2, ease: "easeOut" },
+  },
+  hidden: {
+    opacity: 0,
+    height: 0,
+    transition: { duration: 0.2, ease: "easeIn" },
+  },
+} as const;
+
+const submitButtonPlaceholder: Record<ChatboxVariant, string> = {
+  chat: "Send",
+  image: "Generate",
+  video: "Generate",
+};
+
+const chatareaPlaceholder: Record<ChatboxVariant, string> = {
+  chat: "Send a message!",
+  image: "Describe your image!",
+  video: "Describe your video!",
+};
+
+export default function Chatbox({ variant }: ChatboxProps) {
   const [showSettings, setShowSettings] = useState(true);
 
   const handleSettingsChange = () => {
@@ -31,30 +64,23 @@ export default function ImageChatbox({ kind, onSubmit }: ImageChatBoxProps) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.67, ease: "easeOut" }}
+      transition={{ duration: 0.25, ease: "easeIn" }}
     >
       <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[800px] p-4">
         <Card className="rounded-4xl">
-          <CardContent className="flex flex-col gap-y-5">
-            <ChatArea isForMobile={true} />
-            <TopSection
+          <CardContent className="flex flex-col">
+            <Chatarea variant={variant} isMobile={true} />
+            <ChatToolbar
+              variant={variant}
               onSettingsToggle={handleSettingsChange}
-              onSubmit={onSubmit}
             />
-            <AnimatePresence initial={false}>
-              {kind === "image" && showSettings && (
-                <motion.div
-                  key="settings-panel"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.67, ease: "easeInOut" }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <ChatboxSettingsImage />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <motion.div
+              variants={settingsVariants}
+              animate={showSettings ? "visible" : "hidden"}
+              transition={{ duration: 0.67, ease: "easeOut" }}
+            >
+              {variant === "image" && <ChatboxSettingsImage />}
+            </motion.div>
           </CardContent>
         </Card>
       </aside>
@@ -62,14 +88,7 @@ export default function ImageChatbox({ kind, onSubmit }: ImageChatBoxProps) {
   );
 }
 
-interface ChatAreaProps {
-  onSettingsToggle: () => void;
-}
-
-function TopSection({
-  onSettingsToggle,
-  onSubmit,
-}: ChatAreaProps & Pick<ImageChatBoxProps, "onSubmit">) {
+function ChatToolbar({ onSettingsToggle, variant }: ChatToolbarProps) {
   return (
     <div className="flex gap-x-4">
       <Tooltip>
@@ -90,7 +109,7 @@ function TopSection({
           <p>Show/hide chat settings</p>
         </TooltipContent>
       </Tooltip>
-      <ChatArea isForMobile={false} />
+      <Chatarea isMobile={false} variant={variant} />
       <Tooltip>
         <TooltipTrigger
           render={
@@ -106,13 +125,9 @@ function TopSection({
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button
-              className="ml-auto"
-              aria-label="Generate image"
-              onClick={onSubmit}
-            >
+            <Button className="ml-auto sm:ml-0" aria-label="Generate image">
               <Send />
-              Generate
+              {submitButtonPlaceholder[variant]}
             </Button>
           }
         />
@@ -124,11 +139,11 @@ function TopSection({
   );
 }
 
-function ChatArea({ isForMobile: isMobile }: { isForMobile: boolean }) {
+function Chatarea({ isMobile, variant }: ChatareaProps) {
   return (
     <Textarea
-      placeholder="Describe your image..."
-      className={cn("grow", isMobile ? "sm:block hidden" : "sm:hidden block")}
+      placeholder={chatareaPlaceholder[variant]}
+      className={cn("grow", isMobile ? "block sm:hidden" : "hidden sm:block")}
     />
   );
 }

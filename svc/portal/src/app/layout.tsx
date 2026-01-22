@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Lerpz AI",
-  description: "An AI chat and image application",
+  description: "An AI portal application for your organization",
 };
 
 export default function RootLayout({
