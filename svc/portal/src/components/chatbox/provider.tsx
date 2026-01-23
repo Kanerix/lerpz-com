@@ -34,6 +34,10 @@ export interface ChatboxContextValue {
 
   showSettings: boolean;
   setShowSettings: Dispatch<SetStateAction<boolean>>;
+
+  // NEW: setting to allow image uploads
+  allowImageUploads: boolean;
+  setAllowImageUploads: Dispatch<SetStateAction<boolean>>;
 }
 
 const ChatboxContext = createContext<ChatboxContextValue | undefined>(
@@ -51,14 +55,14 @@ export function ChatboxProvider({
 }: ChatboxProviderProps) {
   const [variant, setVariant] = useState<ChatboxVariant>(defaultVariant);
   const [showSettings, setShowSettings] = useState<boolean>(true);
+  const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
   const { enhance, isLoading: isEnhanceLoading } = useEnhance();
 
   useEffect(() => {
-    console.log(variant);
     loadModels(variant);
-  }, [variant]);
+  }, [variant, loadModels]);
 
   const value = useMemo<ChatboxContextValue>(
     () => ({
@@ -74,15 +78,19 @@ export function ChatboxProvider({
 
       showSettings,
       setShowSettings,
+
+      allowImageUploads,
+      setAllowImageUploads,
     }),
     [
       variant,
-      showSettings,
       models,
       isModelsLoading,
       loadModels,
       enhance,
       isEnhanceLoading,
+      showSettings,
+      allowImageUploads,
     ],
   );
 

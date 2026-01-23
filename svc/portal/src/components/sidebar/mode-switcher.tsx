@@ -43,7 +43,7 @@ const fallbackAvatar = {
 export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const [activeMode, setActiveMode] = useState(modes[0]);
+  const [activeMode, setActiveMode] = useState(modes[1]);
 
   const { variant, setVariant } = useChatbox();
 

@@ -20,7 +20,6 @@ export function useEnhance() {
   }, []);
 
   return {
-    prompt,
     isLoading,
     enhance,
   };

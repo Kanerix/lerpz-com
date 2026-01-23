@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export type ChatboxVariant = "chat" | "image" | "video";
-
-export interface ModelsFromAPI {
-  label: string;
-  value: string | null;
-  variant: string;
-}
 
 const fakeDelay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export function useModels() {
-  const [models, setModels] = useState<ModelsFromAPI[]>([]);
+  const [models, setModels] = useState<
+    {
+      label: string;
+      value: string | null;
+      variant: string;
+    }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadModels = useCallback(async (variant?: string) => {
