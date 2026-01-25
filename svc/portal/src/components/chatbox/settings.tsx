@@ -7,18 +7,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@lerpz/ui/components/select";
+import { Toggle } from "@lerpz/ui/components/toggle";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@lerpz/ui/components/tooltip";
-import { Brain, LoaderPinwheel } from "lucide-react";
+import { Brain, LoaderPinwheel, ScanEye } from "lucide-react";
 import { useEffect } from "react";
-import { useModels } from "@/hooks/useModels";
+import { type ModelSetting, useModels } from "@/hooks/useModels";
+import { useChatboxStore } from "@/store/chatbox.store";
 import { useChatbox } from "./provider";
-import ChatboxSettingsChat from "./settings-chat";
-import ChatboxSettingsImage from "./settings-image";
-import ChatboxSettingsVideo from "./settings-video";
 
 type ModelSelectValue = string | null;
 
@@ -29,6 +28,7 @@ interface ModelSelectItem {
 
 export default function ChatboxSettings() {
   const { variant } = useChatbox();
+  const { model, setModel } = useChatboxStore();
   const { models, isLoading: isLoadingModels, loadModels } = useModels();
 
   const modelItems: ModelSelectItem[] =
@@ -48,7 +48,11 @@ export default function ChatboxSettings() {
 
   return (
     <div className="flex gap-x-4 justify-between mt-4">
-      <Select items={modelsWithNone}>
+      <Select
+        items={modelsWithNone}
+        value={model ?? null}
+        onValueChange={(model) => setModel(model || undefined)}
+      >
         <Tooltip>
           <TooltipTrigger
             render={
@@ -79,9 +83,82 @@ export default function ChatboxSettings() {
           </SelectGroup>
         </SelectContent>
       </Select>
-      {variant === "chat" && <ChatboxSettingsChat />}
-      {variant === "image" && <ChatboxSettingsImage />}
-      {variant === "video" && <ChatboxSettingsVideo />}
+      {(() => {
+        if (!model) return null;
+        const found = models.find((m) => m.value === model);
+        if (!found) return null;
+
+        return <ChatboxSettingsImage settings={found.settings} />;
+      })()}
+    </div>
+  );
+}
+
+interface ChatboxSettingsImageProps {
+  settings: ModelSetting[];
+}
+
+function ChatboxSettingsImage({ settings }: ChatboxSettingsImageProps) {
+  const { autoAnalyze, setAutoAnalyze } = useChatboxStore();
+
+  const toggleAutoAnalyze = () => {
+    setAutoAnalyze(!autoAnalyze);
+  };
+
+  return (
+    <div className="flex gap-x-4 justify-between">
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Toggle
+              pressed={autoAnalyze}
+              onPressedChange={toggleAutoAnalyze}
+              variant="outline"
+              aria-label="Auto analyze image(s) generated"
+            >
+              <ScanEye />
+            </Toggle>
+          }
+        />
+        <TooltipContent>
+          <p>Analyze created image(s)</p>
+        </TooltipContent>
+      </Tooltip>
+
+      {settings.map((setting) => (
+        <Select
+          key={setting.name}
+          items={setting.values}
+          value={setting.values[0]}
+          // onValueChange={setter as (v: string | null) => void}
+        >
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <SelectTrigger className="relative">
+                  <div className="flex items-center">
+                    <setting.icon className="mr-2" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+              }
+            />
+            <TooltipContent>
+              <p>{setting.tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+          <SelectContent className="w-fit" alignItemWithTrigger={false}>
+            <SelectGroup>
+              <SelectLabel>{setting.name}</SelectLabel>
+              {setting.values.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      ))}
     </div>
   );
 }

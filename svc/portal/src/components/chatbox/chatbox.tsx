@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import type { ChangeEventHandler } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useChatboxStore } from "@/store/chatbox.store";
 import ImageShelf from "./image-shelf";
 import { useChatbox } from "./provider";
@@ -85,24 +85,30 @@ export default function Chatbox() {
 }
 
 function ChatToolbar() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const {
     variant,
     setShowSettings,
-    enhance,
-    isEnhanceLoading,
+    enhancePrompt,
+    isEnhancePending,
     allowImageUploads,
+    generateImage,
+    isGeneratePending,
+    editImage,
+    isEditPending,
   } = useChatbox();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { prompt, setPrompt, addUploadedImages } = useChatboxStore();
+  const { prompt, setPrompt, uploadedImages, addUploadedImages } =
+    useChatboxStore();
 
   const toggleSettings = () => {
     setShowSettings((old) => !old);
   };
 
   const handleEnhance = async () => {
-    if (!prompt) return; // THROW ERROR
-    const newPrompt = await enhance(prompt);
+    if (!prompt) return;
+    const newPrompt = await enhancePrompt(prompt);
     setPrompt(newPrompt);
   };
 
@@ -130,6 +136,15 @@ function ChatToolbar() {
   const handleAddImages = () => {
     if (!allowImageUploads) return;
     triggerFilePicker();
+  };
+
+  const handleSubmit = async () => {
+    if (uploadedImages.length > 0) {
+      await editImage();
+    } else {
+      await generateImage();
+    }
+    setPrompt("");
   };
 
   return (
@@ -160,7 +175,9 @@ function ChatToolbar() {
               variant="outline"
               size="icon"
               aria-label="Add images"
-              disabled={!allowImageUploads}
+              disabled={
+                !allowImageUploads || isGeneratePending || isEditPending
+              }
               onClick={handleAddImages}
             >
               <input
@@ -189,12 +206,12 @@ function ChatToolbar() {
           render={
             <Button
               onClick={handleEnhance}
-              disabled={isEnhanceLoading}
+              disabled={isEnhancePending || isGeneratePending || isEditPending}
               variant="outline"
               size="icon"
               aria-label="Enhance prompt"
             >
-              {isEnhanceLoading ? (
+              {isEnhancePending ? (
                 <LoaderPinwheel className="animate-spin" />
               ) : (
                 <WandSparkles />
@@ -206,8 +223,22 @@ function ChatToolbar() {
           <p>Enhance the image prompt!</p>
         </TooltipContent>
       </Tooltip>
-      <Button className="ml-auto sm:ml-0" aria-label="Generate image">
-        <Send />
+      <Button
+        onClick={handleSubmit}
+        disabled={
+          !prompt?.trim() ||
+          isEnhancePending ||
+          isGeneratePending ||
+          isEditPending
+        }
+        className="ml-auto sm:ml-0"
+        aria-label="Generate image"
+      >
+        {isGeneratePending || isEditPending ? (
+          <LoaderPinwheel className="animate-spin" />
+        ) : (
+          <Send />
+        )}
         {submitButtonPlaceholder[variant]}
       </Button>
     </div>
@@ -215,18 +246,26 @@ function ChatToolbar() {
 }
 
 function Chatarea({ isMobile }: ChatareaProps) {
-  const { variant, isEnhanceLoading } = useChatbox();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { variant, isEnhancePending, isGeneratePending, isEditPending } =
+    useChatbox();
   const { prompt, setPrompt } = useChatboxStore();
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
     setPrompt(e.target.value);
   };
 
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   return (
     <Textarea
-      disabled={isEnhanceLoading}
+      ref={textareaRef}
+      disabled={isEnhancePending || isGeneratePending || isEditPending}
       placeholder={chatareaPlaceholder[variant]}
-      value={prompt || undefined}
+      value={prompt}
       onChange={handleChange}
       className={cn(
         "grow",

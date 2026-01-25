@@ -1,7 +1,5 @@
 import { create } from "zustand";
 
-export type ChatboxSettingsMap = Record<string, unknown>;
-
 export interface ChatboxUploadedImage {
   id: string;
   file: File;
@@ -10,8 +8,14 @@ export interface ChatboxUploadedImage {
 }
 
 export interface ChatboxState {
-  prompt: string | null;
-  setPrompt: (prompt: string | null) => void;
+  prompt: string;
+  setPrompt: (prompt: string) => void;
+
+  model?: string;
+  setModel: (model?: string) => void;
+
+  autoAnalyze: boolean;
+  setAutoAnalyze: (autoAnalyze: boolean) => void;
 
   uploadedImages: ChatboxUploadedImage[];
   addUploadedImages: (images: File[]) => void;
@@ -24,8 +28,20 @@ function generateImageId(prefix: string = "img"): string {
 }
 
 export const useChatboxStore = create<ChatboxState>((set) => ({
-  prompt: null,
-  setPrompt: (prompt) => set({ prompt }),
+  prompt: "",
+  setPrompt: (prompt) => {
+    return set({ prompt });
+  },
+
+  model: undefined,
+  setModel: (model) => {
+    return set({ model });
+  },
+
+  autoAnalyze: true,
+  setAutoAnalyze: (autoAnalyze) => {
+    return set({ autoAnalyze });
+  },
 
   uploadedImages: [],
 
@@ -68,13 +84,15 @@ export const useChatboxStore = create<ChatboxState>((set) => ({
     }),
 }));
 
-export type ImageQuality = "1K" | "2K" | "4K";
+export type ImageQuality = "auto" | "low" | "medium" | "high";
 export type ImageAmount = "1" | "2" | "3" | "4" | "5" | "6";
-export type ImageFiletype = "png" | "webp" | "jpg";
+export type ImageFiletype = "png" | "webp" | "jpeg";
 export type ImageBackground = "auto" | "transparent" | "opaque";
 
 export interface ChatboxImageSettingsState {
-  // Whether to auto-analyze generated images (ScanEye toggle)
+  model: string | null;
+  setModel: (value: string | null) => void;
+
   autoAnalyze: boolean;
   setAutoAnalyze: (value: boolean) => void;
   toggleAutoAnalyze: () => void;
@@ -96,6 +114,7 @@ export interface ChatboxImageSettingsState {
 
 const defaultImageSettings: Omit<
   ChatboxImageSettingsState,
+  | "setModel"
   | "setAutoAnalyze"
   | "toggleAutoAnalyze"
   | "setQuality"
@@ -104,8 +123,9 @@ const defaultImageSettings: Omit<
   | "setBackground"
   | "reset"
 > = {
+  model: null,
   autoAnalyze: true,
-  quality: "1K",
+  quality: "auto",
   amount: "1",
   filetype: "png",
   background: "auto",
@@ -114,7 +134,9 @@ const defaultImageSettings: Omit<
 const CHATBOX_IMAGE_SETTINGS_STORAGE_KEY = "chatbox_image_settings";
 
 function isBrowserEnv(): boolean {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return (
+    typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+  );
 }
 
 function loadImageSettingsFromStorage(): Partial<ChatboxImageSettingsState> | null {
@@ -128,20 +150,24 @@ function loadImageSettingsFromStorage(): Partial<ChatboxImageSettingsState> | nu
 
     const merged: ChatboxImageSettingsState = {
       ...defaultImageSettings,
+      model: parsed.model || null,
       autoAnalyze:
         typeof parsed.autoAnalyze === "boolean"
           ? parsed.autoAnalyze
           : defaultImageSettings.autoAnalyze,
       quality:
-        parsed.quality && ["1K", "2K", "4K"].includes(parsed.quality as string)
+        parsed.quality &&
+        ["auto", "low", "high"].includes(parsed.quality as string)
           ? (parsed.quality as ImageQuality)
           : defaultImageSettings.quality,
       amount:
-        parsed.amount && ["1", "2", "3", "4", "5", "6"].includes(parsed.amount as string)
+        parsed.amount &&
+        ["1", "2", "3", "4", "5", "6"].includes(parsed.amount as string)
           ? (parsed.amount as ImageAmount)
           : defaultImageSettings.amount,
       filetype:
-        parsed.filetype && ["png", "webp", "jpg"].includes(parsed.filetype as string)
+        parsed.filetype &&
+        ["png", "webp", "jpeg"].includes(parsed.filetype as string)
           ? (parsed.filetype as ImageFiletype)
           : defaultImageSettings.filetype,
       background:
@@ -149,6 +175,7 @@ function loadImageSettingsFromStorage(): Partial<ChatboxImageSettingsState> | nu
         ["auto", "transparent", "opaque"].includes(parsed.background as string)
           ? (parsed.background as ImageBackground)
           : defaultImageSettings.background,
+      setModel: () => {},
       setAutoAnalyze: () => {},
       toggleAutoAnalyze: () => {},
       setQuality: () => {},
@@ -167,9 +194,10 @@ function loadImageSettingsFromStorage(): Partial<ChatboxImageSettingsState> | nu
 function persistImageSettingsToStorage(state: ChatboxImageSettingsState): void {
   if (!isBrowserEnv()) return;
 
-  const { autoAnalyze, quality, amount, filetype, background } = state;
+  const { model, autoAnalyze, quality, amount, filetype, background } = state;
   try {
     const payload = JSON.stringify({
+      model,
       autoAnalyze,
       quality,
       amount,
@@ -195,6 +223,11 @@ export const useChatboxImageStore = create<ChatboxImageSettingsState>((set) => {
 
   return {
     ...(initial as ChatboxImageSettingsState),
+
+    setModel: (value) =>
+      withPersistence({
+        model: value,
+      }),
 
     setAutoAnalyze: (value) =>
       withPersistence({

@@ -5,39 +5,39 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { useEnhance } from "@/hooks/useEnhance";
-import { useModels } from "@/hooks/useModels";
+import { type Model, useModels } from "@/hooks/useModels";
+import { useChatboxImageStore, useChatboxStore } from "@/store/chatbox.store";
 
 export type ChatboxVariant = "chat" | "image" | "video";
-
-export interface ChatboxModels {
-  label: string;
-  value: string | null;
-  variant: string;
-}
 
 export interface ChatboxContextValue {
   variant: ChatboxVariant;
   setVariant: Dispatch<SetStateAction<ChatboxVariant>>;
 
-  models: ChatboxModels[];
-  isModelsLoading: boolean;
-  loadModels: (variant?: string | undefined) => Promise<void>;
-
-  enhance: (prompt: string) => Promise<string>;
-  isEnhanceLoading: boolean;
-
   showSettings: boolean;
   setShowSettings: Dispatch<SetStateAction<boolean>>;
 
-  // NEW: setting to allow image uploads
   allowImageUploads: boolean;
   setAllowImageUploads: Dispatch<SetStateAction<boolean>>;
+
+  models: Model[];
+  isModelsLoading: boolean;
+  loadModels: (variant?: string | undefined) => Promise<void>;
+
+  enhancePrompt: (prompt: string) => Promise<string>;
+  isEnhancePending: boolean;
+
+  generateImage: () => Promise<void>;
+  isGeneratePending: boolean;
+
+  editImage: () => Promise<void>;
+  isEditPending: boolean;
 }
 
 const ChatboxContext = createContext<ChatboxContextValue | undefined>(
@@ -49,19 +49,64 @@ export interface ChatboxProviderProps {
   children: ReactNode;
 }
 
+const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image" as const;
+const DEFAULT_ENHANCE_MODEL = "gemini-2.5-flash" as const;
+
+const fakeDelay = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export function ChatboxProvider({
-  defaultVariant = "chat",
+  defaultVariant = "image",
   children,
 }: ChatboxProviderProps) {
   const [variant, setVariant] = useState<ChatboxVariant>(defaultVariant);
   const [showSettings, setShowSettings] = useState<boolean>(true);
   const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
+  const [isEnhancePending, setIsEnhancePending] = useState<boolean>(false);
+  const [isGeneratePending, setIsGeneratePending] = useState<boolean>(false);
+  const [isEditPending, setIsEditPending] = useState<boolean>(false);
+
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
-  const { enhance, isLoading: isEnhanceLoading } = useEnhance();
+
+  const handleEnhancePrompt = async (prompt: string, model?: string) => {
+    // const res = await enhancePrompt({
+    //   body: { original_prompt: promptText, model: DEFAULT_ENHANCE_MODEL },
+    // });
+    const _ = model || DEFAULT_ENHANCE_MODEL;
+
+    setIsEnhancePending(true);
+    await fakeDelay(2000);
+    setIsEnhancePending(false);
+    return `Enhanced prompt: ${prompt}`;
+  };
+
+  const handleGenerateImage = useCallback(async () => {
+    const { prompt } = useChatboxStore.getState();
+    const { model } = useChatboxImageStore.getState();
+
+    if (!prompt) return;
+
+    const _ = model || DEFAULT_IMAGE_MODEL;
+
+    setIsGeneratePending(true);
+    await fakeDelay(2000);
+    setIsGeneratePending(false);
+  }, []);
+
+  const handleEditImage = useCallback(async () => {
+    const { prompt, uploadedImages } = useChatboxStore.getState();
+    useChatboxImageStore.getState();
+
+    if (!prompt || uploadedImages.length === 0) return;
+
+    setIsEditPending(true);
+    await fakeDelay(2000);
+    setIsEditPending(false);
+  }, []);
 
   useEffect(() => {
-    loadModels(variant);
+    void loadModels(variant);
   }, [variant, loadModels]);
 
   const value = useMemo<ChatboxContextValue>(
@@ -69,28 +114,35 @@ export function ChatboxProvider({
       variant,
       setVariant,
 
-      models,
-      isModelsLoading,
-      loadModels,
-
-      enhance,
-      isEnhanceLoading,
-
       showSettings,
       setShowSettings,
 
       allowImageUploads,
       setAllowImageUploads,
-    }),
-    [
-      variant,
+
       models,
       isModelsLoading,
       loadModels,
-      enhance,
-      isEnhanceLoading,
+
+      enhancePrompt: handleEnhancePrompt,
+      isEnhancePending,
+
+      generateImage: handleGenerateImage,
+      isGeneratePending,
+
+      editImage: handleEditImage,
+      isEditPending,
+    }),
+    [
+      variant,
       showSettings,
       allowImageUploads,
+      models,
+      isModelsLoading,
+      loadModels,
+      isEnhancePending,
+      isGeneratePending,
+      isEditPending,
     ],
   );
 

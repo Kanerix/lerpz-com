@@ -1,79 +1,293 @@
-import { useCallback, useState } from "react";
+import { FileType, Images, ImageUpscale, type LucideIcon } from "lucide-react";
+import { type ReactNode, useCallback, useState } from "react";
+
+export type Model = {
+  label: string;
+  value: string | null;
+  modalities: string[];
+  settings: ModelSetting[];
+};
+
+export type ModelSetting = {
+  key: string;
+  name: string;
+  icon: LucideIcon;
+  tooltip: string;
+  values: {
+    value: string;
+    label: string;
+  }[];
+};
 
 export type ChatboxVariant = "chat" | "image" | "video";
 
 const fakeDelay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+const currentModels: Model[] = [
+  {
+    label: "GPT Image 1",
+    value: "gpt-image-1",
+    modalities: ["image"],
+    settings: [
+      {
+        name: "Quality",
+        key: "quality" as const,
+        icon: ImageUpscale,
+        tooltip: "Quality of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "low", label: "Low" },
+          { value: "medium", label: "Medium" },
+          { value: "high", label: "High" },
+        ],
+      },
+      {
+        name: "Amount",
+        key: "amount" as const,
+        icon: Images,
+        tooltip: "Amount of image(s)",
+        values: [
+          { value: "1", label: "1" },
+          { value: "2", label: "2" },
+          { value: "3", label: "3" },
+          { value: "4", label: "4" },
+          { value: "5", label: "5" },
+          { value: "6", label: "6" },
+        ],
+      },
+      {
+        name: "Filetype",
+        key: "filetype" as const,
+        icon: FileType,
+        tooltip: "Type of image(s)",
+        values: [
+          { value: "png", label: "PNG" },
+          { value: "webp", label: "WebP" },
+          { value: "jpg", label: "JPG" },
+        ],
+      },
+      {
+        name: "Background",
+        key: "background" as const,
+        icon: FileType,
+        tooltip: "Background of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "transparent", label: "Transparent" },
+          { value: "opaque", label: "Opaque" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "GPT Image 1.5",
+    value: "gpt-image-1.5",
+    modalities: ["image"],
+    settings: [
+      {
+        name: "Quality",
+        key: "quality" as const,
+        icon: ImageUpscale,
+        tooltip: "Quality of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "low", label: "Low" },
+          { value: "medium", label: "Medium" },
+          { value: "high", label: "High" },
+        ],
+      },
+      {
+        name: "Amount",
+        key: "amount" as const,
+        icon: Images,
+        tooltip: "Amount of image(s)",
+        values: [
+          { value: "1", label: "1" },
+          { value: "2", label: "2" },
+          { value: "3", label: "3" },
+          { value: "4", label: "4" },
+          { value: "5", label: "5" },
+          { value: "6", label: "6" },
+        ],
+      },
+      {
+        name: "Filetype",
+        key: "filetype" as const,
+        icon: FileType,
+        tooltip: "Type of image(s)",
+        values: [
+          { value: "png", label: "PNG" },
+          { value: "webp", label: "WebP" },
+          { value: "jpg", label: "JPG" },
+        ],
+      },
+      {
+        name: "Background",
+        key: "background" as const,
+        icon: FileType,
+        tooltip: "Background of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "transparent", label: "Transparent" },
+          { value: "opaque", label: "Opaque" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "GPT Image 1 mini",
+    value: "gpt-image-1-mini",
+    modalities: ["image"],
+    settings: [
+      {
+        name: "Quality",
+        key: "quality" as const,
+        icon: ImageUpscale,
+        tooltip: "Quality of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "low", label: "Low" },
+          { value: "medium", label: "Medium" },
+          { value: "high", label: "High" },
+        ],
+      },
+      {
+        name: "Amount",
+        key: "amount" as const,
+        icon: Images,
+        tooltip: "Amount of image(s)",
+        values: [
+          { value: "1", label: "1" },
+          { value: "2", label: "2" },
+          { value: "3", label: "3" },
+          { value: "4", label: "4" },
+          { value: "5", label: "5" },
+          { value: "6", label: "6" },
+        ],
+      },
+      {
+        name: "Filetype",
+        key: "filetype" as const,
+        icon: FileType,
+        tooltip: "Type of image(s)",
+        values: [
+          { value: "png", label: "PNG" },
+          { value: "webp", label: "WebP" },
+          { value: "jpg", label: "JPG" },
+        ],
+      },
+      {
+        name: "Background",
+        key: "background" as const,
+        icon: FileType,
+        tooltip: "Background of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "transparent", label: "Transparent" },
+          { value: "opaque", label: "Opaque" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Gemini 2.5 Flash image",
+    value: "gemini-2.5-flash-image",
+    modalities: ["image"],
+    settings: [
+      {
+        name: "Resolution",
+        key: "resolution" as const,
+        icon: ImageUpscale,
+        tooltip: "Quality of the image(s)",
+        values: [
+          { value: "1K", label: "1K" },
+          { value: "2K", label: "2K" },
+          { value: "4K", label: "4K" },
+        ],
+      },
+      {
+        name: "Filetype",
+        key: "filetype" as const,
+        icon: FileType,
+        tooltip: "Type of image(s)",
+        values: [{ value: "png", label: "PNG" }],
+      },
+      {
+        name: "Background",
+        key: "background" as const,
+        icon: FileType,
+        tooltip: "Background of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "transparent", label: "Transparent" },
+          { value: "opaque", label: "Opaque" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Gemini 3 Pro image",
+    value: "gemini-3-pro-image",
+    modalities: ["image"],
+    settings: [
+      {
+        name: "Resolution",
+        key: "resolution" as const,
+        icon: ImageUpscale,
+        tooltip: "Quality of the image(s)",
+        values: [
+          { value: "1K", label: "1K" },
+          { value: "2K", label: "2K" },
+          { value: "4K", label: "4K" },
+        ],
+      },
+      {
+        name: "Filetype",
+        key: "filetype" as const,
+        icon: FileType,
+        tooltip: "Type of image(s)",
+        values: [{ value: "png", label: "PNG" }],
+      },
+      {
+        name: "Background",
+        key: "background" as const,
+        icon: FileType,
+        tooltip: "Background of the image(s)",
+        values: [
+          { value: "auto", label: "Auto" },
+          { value: "transparent", label: "Transparent" },
+          { value: "opaque", label: "Opaque" },
+        ],
+      },
+    ],
+  },
+] as const;
+
 export function useModels() {
-  const [models, setModels] = useState<
-    {
-      label: string;
-      value: string | null;
-      variant: string;
-    }[]
-  >([]);
+  const [models, setModels] = useState<Model[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadModels = useCallback(async (variant?: string) => {
-    setIsLoading(true);
-    try {
-      await fakeDelay(2000);
+  const loadModels = useCallback(
+    async (modality?: string) => {
+      setIsLoading(true);
+      try {
+        await fakeDelay(2000);
 
-      const fakeModels = [
-        {
-          label: "GPT 5.2",
-          value: "gpt-5.2",
-          variant: "chat",
-        },
-        {
-          label: "Opus 4.5",
-          value: "claude-opus-4.5",
-          variant: "chat",
-        },
-        {
-          label: "GPT Image 1",
-          value: "gpt-image-1",
-          variant: "image",
-        },
-        { label: "GPT Image 1.5", value: "gpt-image-1.5", variant: "image" },
-        {
-          label: "GPT Image 1 mini",
-          value: "gpt-image-1-mini",
-          variant: "image",
-        },
-        {
-          label: "Gemini 2.5 Flash image",
-          value: "gemini-2.5-flash-image",
-          variant: "image",
-        },
-        {
-          label: "Gemini 3 Pro image",
-          value: "gemini-3-pro-image",
-          variant: "image",
-        },
-        {
-          label: "Veo 3",
-          value: "google-veo-pro",
-          variant: "video",
-        },
-        {
-          label: "Sora 2",
-          value: "sora-2",
-          variant: "video",
-        },
-      ];
-
-      if (variant) {
-        const filtered = fakeModels.filter((m) => m.variant === variant);
-        setModels(filtered);
-      } else {
-        setModels(fakeModels);
+        if (modality) {
+          const filtered = currentModels.filter((m) =>
+            m.modalities.some((mod) => mod === modality),
+          );
+          setModels(filtered);
+        } else {
+          setModels(currentModels);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [models],
+  );
 
   return {
     models,
