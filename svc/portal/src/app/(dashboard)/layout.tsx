@@ -1,4 +1,8 @@
-import { SidebarInset, SidebarProvider } from "@lerpz/ui/components/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@lerpz/ui/components/sidebar";
 import { Toaster } from "@lerpz/ui/components/sonner";
 import type { ReactNode } from "react";
 import { AuthGuard } from "@/components/auth-guard";
@@ -16,8 +20,13 @@ export default function ProtectedLayout({ children }: LayoutProps) {
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
-            <main className="w-full h-screen p-4">{children}</main>
-            <Chatbox />
+            <header className="flex items-center shrink-0 gap-2 border-b px-4 h-12">
+              <SidebarTrigger className="ml-1" />
+            </header>
+            <main className="w-full h-full p-4">
+              {children}
+              <Chatbox />
+            </main>
             <Toaster />
           </SidebarInset>
         </SidebarProvider>

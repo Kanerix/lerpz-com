@@ -19,12 +19,11 @@ import {
 import { motion } from "motion/react";
 import type { ChangeEventHandler } from "react";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { useChatboxStore } from "@/store/chatbox.store";
 import ImageShelf from "./image-shelf";
-import { useChatbox } from "./provider";
+import { type ChatboxVariant, useChatbox } from "./provider";
 import ChatboxSettings from "./settings";
-
-type ChatboxVariant = "chat" | "image" | "video";
 
 interface ChatareaProps {
   isMobile: boolean;
@@ -139,12 +138,28 @@ function ChatToolbar() {
   };
 
   const handleSubmit = async () => {
-    if (uploadedImages.length > 0) {
-      await editImage();
-    } else {
-      await generateImage();
+    const trimmed = prompt.trim();
+    if (!trimmed) return;
+
+    if (variant === "image") {
+      if (uploadedImages.length > 0) {
+        await editImage();
+      } else {
+        await generateImage();
+      }
+      setPrompt("");
+      return;
     }
-    setPrompt("");
+
+    if (variant === "video") {
+      toast.error("Video feature is available.");
+      return;
+    }
+
+    if (variant === "chat") {
+      toast.error("Chat feature is available.");
+      return;
+    }
   };
 
   return (
@@ -164,7 +179,7 @@ function ChatToolbar() {
           }
         />
         <TooltipContent>
-          <p>Show/hide chat settings</p>
+          <p>Show/hide settings</p>
         </TooltipContent>
       </Tooltip>
       <Tooltip>
@@ -206,7 +221,12 @@ function ChatToolbar() {
           render={
             <Button
               onClick={handleEnhance}
-              disabled={isEnhancePending || isGeneratePending || isEditPending}
+              disabled={
+                isEnhancePending ||
+                isGeneratePending ||
+                isEditPending ||
+                !prompt.trim()
+              }
               variant="outline"
               size="icon"
               aria-label="Enhance prompt"

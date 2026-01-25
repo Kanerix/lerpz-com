@@ -1,11 +1,6 @@
 "use client";
 
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@lerpz/ui/components/avatar";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -22,7 +17,7 @@ import {
 import { ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useChatbox } from "../chatbox/provider";
+import { useChatbox } from "@/components/chatbox/provider";
 
 interface Mode {
   name: string;
@@ -33,19 +28,12 @@ interface Mode {
 interface ModeSwitcherProps {
   modes: Mode[];
 }
-
-const fallbackAvatar = {
-  chat: "cht",
-  image: "img",
-  video: "vid",
-};
-
 export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const [activeMode, setActiveMode] = useState(modes[1]);
+  const [activeMode, setActiveMode] = useState<Mode | undefined>(modes[1]);
 
-  const { variant, setVariant } = useChatbox();
+  const { setVariant } = useChatbox();
 
   useEffect(() => {
     if (!activeMode) return;
@@ -76,18 +64,12 @@ export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              >
-                <Avatar size="lg">
-                  <AvatarImage alt="@shadcn" />
-                  <AvatarFallback className="rounded-md">
-                    {fallbackAvatar[variant]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight ml-1">
-                  <span className="truncate font-semibold text-lg">
+              <SidebarMenuButton size="lg">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <activeMode.logo className="size-4" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="truncate font-medium">
                     {activeMode.name}
                   </span>
                   <span className="truncate text-md">{activeMode.plan}</span>

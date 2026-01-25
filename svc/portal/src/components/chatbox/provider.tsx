@@ -11,8 +11,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { toast } from "sonner";
 import { type Model, useModels } from "@/hooks/useModels";
-import { useChatboxImageStore, useChatboxStore } from "@/store/chatbox.store";
+import { useChatboxStore } from "@/store/chatbox.store";
 
 export type ChatboxVariant = "chat" | "image" | "video";
 
@@ -49,8 +50,8 @@ export interface ChatboxProviderProps {
   children: ReactNode;
 }
 
-const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image" as const;
-const DEFAULT_ENHANCE_MODEL = "gemini-2.5-flash" as const;
+export const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image" as const;
+export const DEFAULT_ENHANCE_MODEL = "gemini-2.5-flash" as const;
 
 const fakeDelay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -69,21 +70,37 @@ export function ChatboxProvider({
 
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
 
-  const handleEnhancePrompt = async (prompt: string, model?: string) => {
-    // const res = await enhancePrompt({
-    //   body: { original_prompt: promptText, model: DEFAULT_ENHANCE_MODEL },
-    // });
-    const _ = model || DEFAULT_ENHANCE_MODEL;
+  const handleEnhancePrompt = useCallback(
+    async (prompt: string, model?: string) => {
+      const { setPrompt } = useChatboxStore.getState();
 
-    setIsEnhancePending(true);
-    await fakeDelay(2000);
-    setIsEnhancePending(false);
-    return `Enhanced prompt: ${prompt}`;
-  };
+      const _ = model || DEFAULT_ENHANCE_MODEL;
+      // const res = await enhancePrompt({
+      //   body: { original_prompt: promptText, model: selectedModel },
+      // });
+
+      setIsEnhancePending(true);
+      await fakeDelay(2000);
+      setIsEnhancePending(false);
+
+      toast("Prompt has been enhanced", {
+        description: "Your prompt has been enhanced.",
+        position: "top-center",
+        action: {
+          label: "Undo",
+          onClick: () => setPrompt(prompt),
+        },
+      });
+
+      return `Enhanced prompt: ${prompt}`;
+    },
+    [],
+  );
 
   const handleGenerateImage = useCallback(async () => {
-    const { prompt } = useChatboxStore.getState();
-    const { model } = useChatboxImageStore.getState();
+    const { prompt, model, modelSettings } = useChatboxStore.getState();
+
+    console.log("SETTINGS:", modelSettings);
 
     if (!prompt) return;
 
@@ -96,7 +113,7 @@ export function ChatboxProvider({
 
   const handleEditImage = useCallback(async () => {
     const { prompt, uploadedImages } = useChatboxStore.getState();
-    useChatboxImageStore.getState();
+    useChatboxStore.getState();
 
     if (!prompt || uploadedImages.length === 0) return;
 

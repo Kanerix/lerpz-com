@@ -1,4 +1,3 @@
-import { Toaster } from "@lerpz/ui/components/sonner";
 import { SWRProvider } from "@/components/swr-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@lerpz/ui/globals.css";
@@ -36,7 +35,6 @@ export default function RootLayout({
             >
               {children}
             </ThemeProvider>
-            <Toaster />
           </SWRProvider>
         </Suspense>
       </body>

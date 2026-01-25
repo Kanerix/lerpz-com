@@ -17,7 +17,7 @@ import { Brain, LoaderPinwheel, ScanEye } from "lucide-react";
 import { useEffect } from "react";
 import { type ModelSetting, useModels } from "@/hooks/useModels";
 import { useChatboxStore } from "@/store/chatbox.store";
-import { useChatbox } from "./provider";
+import { DEFAULT_IMAGE_MODEL, useChatbox } from "./provider";
 
 type ModelSelectValue = string | null;
 
@@ -84,22 +84,23 @@ export default function ChatboxSettings() {
         </SelectContent>
       </Select>
       {(() => {
-        if (!model) return null;
-        const found = models.find((m) => m.value === model);
+        const selectedModel = model || DEFAULT_IMAGE_MODEL;
+        const found = models.find((m) => m.value === selectedModel);
         if (!found) return null;
 
-        return <ChatboxSettingsImage settings={found.settings} />;
+        return <ChatboxSettingsDynamic settings={found.settings} />;
       })()}
     </div>
   );
 }
 
-interface ChatboxSettingsImageProps {
+interface ChatboxSettingsDynamicProps {
   settings: ModelSetting[];
 }
 
-function ChatboxSettingsImage({ settings }: ChatboxSettingsImageProps) {
-  const { autoAnalyze, setAutoAnalyze } = useChatboxStore();
+function ChatboxSettingsDynamic({ settings }: ChatboxSettingsDynamicProps) {
+  const { autoAnalyze, setAutoAnalyze, modelSettings, setModelSetting } =
+    useChatboxStore();
 
   const toggleAutoAnalyze = () => {
     setAutoAnalyze(!autoAnalyze);
@@ -114,7 +115,7 @@ function ChatboxSettingsImage({ settings }: ChatboxSettingsImageProps) {
               pressed={autoAnalyze}
               onPressedChange={toggleAutoAnalyze}
               variant="outline"
-              aria-label="Auto analyze image(s) generated"
+              aria-label="Auto analyze image(s)"
             >
               <ScanEye />
             </Toggle>
@@ -129,8 +130,8 @@ function ChatboxSettingsImage({ settings }: ChatboxSettingsImageProps) {
         <Select
           key={setting.name}
           items={setting.values}
-          value={setting.values[0]}
-          // onValueChange={setter as (v: string | null) => void}
+          value={modelSettings[setting.name] ?? setting.values[0]?.label}
+          onValueChange={(value) => setModelSetting(setting.name, value)}
         >
           <Tooltip>
             <TooltipTrigger

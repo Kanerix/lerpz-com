@@ -1,5 +1,5 @@
 import { FileType, Images, ImageUpscale, type LucideIcon } from "lucide-react";
-import { type ReactNode, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 
 export type Model = {
   label: string;
