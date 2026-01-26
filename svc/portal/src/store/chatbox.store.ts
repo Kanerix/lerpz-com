@@ -7,20 +7,31 @@ export interface ChatboxUploadedImage {
   addedAt: number;
 }
 
-export type ChatboxModelSettings = Record<string, string | null>;
+export type ChatboxModelSettingsForModel = Record<string, string | null>;
+
+export type ChatboxModelSettings = Record<string, ChatboxModelSettingsForModel>;
 
 export interface ChatboxState {
   prompt: string;
   setPrompt: (prompt: string) => void;
 
-  model?: string;
-  setModel: (model?: string) => void;
+  model: string | null;
+  setModel: (model: string | null) => void;
 
   autoAnalyze: boolean;
   setAutoAnalyze: (autoAnalyze: boolean) => void;
 
   modelSettings: ChatboxModelSettings;
-  setModelSetting: (modelKey: string, value: string | null) => void;
+  setModelSetting: (
+    modelId: string,
+    modelKey: string,
+    value: string | null,
+  ) => void;
+  getModelSettings: (modelId?: string) => ChatboxModelSettingsForModel;
+  getModelSetting: (
+    modelId: string | undefined,
+    modelKey: string,
+  ) => string | null;
 
   uploadedImages: ChatboxUploadedImage[];
   addUploadedImages: (images: File[]) => void;
@@ -32,13 +43,13 @@ function generateImageId(prefix: string = "img"): string {
   return `${prefix}_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 }
 
-export const useChatboxStore = create<ChatboxState>((set) => ({
+export const useChatboxStore = create<ChatboxState>((set, get) => ({
   prompt: "",
   setPrompt: (prompt) => {
     return set({ prompt });
   },
 
-  model: undefined,
+  model: null,
   setModel: (model) => {
     return set({ model });
   },
@@ -48,14 +59,31 @@ export const useChatboxStore = create<ChatboxState>((set) => ({
     return set({ autoAnalyze });
   },
 
+  // modelId -> { key: value }
   modelSettings: {},
-  setModelSetting: (modelKey, value) =>
+
+  setModelSetting: (modelId, modelKey, value) =>
     set((state) => ({
       modelSettings: {
         ...state.modelSettings,
-        [modelKey]: value,
+        [modelId]: {
+          ...(state.modelSettings[modelId] ?? {}),
+          [modelKey]: value,
+        },
       },
     })),
+
+  getModelSettings: (modelId) => {
+    const { modelSettings } = get();
+    if (!modelId) return {};
+    return modelSettings[modelId] ?? {};
+  },
+
+  getModelSetting: (modelId, modelKey) => {
+    const { modelSettings } = get();
+    if (!modelId) return null;
+    return modelSettings[modelId]?.[modelKey] ?? null;
+  },
 
   uploadedImages: [],
 
@@ -80,10 +108,13 @@ export const useChatboxStore = create<ChatboxState>((set) => ({
   removeUploadedImage: (id) =>
     set((state) => {
       const filtered = state.uploadedImages.filter((img) => {
-        const isEqual = img.id !== id;
-        if (isEqual) URL.revokeObjectURL(img.previewUrl);
-        return isEqual;
+        const keep = img.id !== id;
+        if (!keep) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+        return keep;
       });
+
       return {
         uploadedImages: filtered,
       };

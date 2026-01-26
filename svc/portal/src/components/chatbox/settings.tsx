@@ -48,11 +48,7 @@ export default function ChatboxSettings() {
 
   return (
     <div className="flex gap-x-4 justify-between mt-4">
-      <Select
-        items={modelsWithNone}
-        value={model ?? null}
-        onValueChange={(model) => setModel(model || undefined)}
-      >
+      <Select items={modelsWithNone} value={model} onValueChange={setModel}>
         <Tooltip>
           <TooltipTrigger
             render={
@@ -75,20 +71,26 @@ export default function ChatboxSettings() {
         <SelectContent className="w-fit" alignItemWithTrigger={false}>
           <SelectGroup>
             <SelectLabel>Model</SelectLabel>
-            {modelsWithNone.map((model) => (
-              <SelectItem key={model.value} value={model.value}>
-                {model.label}
+            {modelsWithNone.map((m) => (
+              <SelectItem key={m.value ?? "default"} value={m.value}>
+                {m.label}
               </SelectItem>
             ))}
           </SelectGroup>
         </SelectContent>
       </Select>
+
       {(() => {
         const selectedModel = model || DEFAULT_IMAGE_MODEL;
         const found = models.find((m) => m.value === selectedModel);
         if (!found) return null;
 
-        return <ChatboxSettingsDynamic settings={found.settings} />;
+        return (
+          <ChatboxSettingsDynamic
+            settings={found.settings}
+            modelId={selectedModel}
+          />
+        );
       })()}
     </div>
   );
@@ -96,10 +98,14 @@ export default function ChatboxSettings() {
 
 interface ChatboxSettingsDynamicProps {
   settings: ModelSetting[];
+  modelId: string;
 }
 
-function ChatboxSettingsDynamic({ settings }: ChatboxSettingsDynamicProps) {
-  const { autoAnalyze, setAutoAnalyze, modelSettings, setModelSetting } =
+function ChatboxSettingsDynamic({
+  settings,
+  modelId,
+}: ChatboxSettingsDynamicProps) {
+  const { autoAnalyze, setAutoAnalyze, getModelSetting, setModelSetting } =
     useChatboxStore();
 
   const toggleAutoAnalyze = () => {
@@ -126,40 +132,47 @@ function ChatboxSettingsDynamic({ settings }: ChatboxSettingsDynamicProps) {
         </TooltipContent>
       </Tooltip>
 
-      {settings.map((setting) => (
-        <Select
-          key={setting.name}
-          items={setting.values}
-          value={modelSettings[setting.name] ?? setting.values[0]?.label}
-          onValueChange={(value) => setModelSetting(setting.name, value)}
-        >
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <SelectTrigger className="relative">
-                  <div className="flex items-center">
-                    <setting.icon className="mr-2" />
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-              }
-            />
-            <TooltipContent>
-              <p>{setting.tooltip}</p>
-            </TooltipContent>
-          </Tooltip>
-          <SelectContent className="w-fit" alignItemWithTrigger={false}>
-            <SelectGroup>
-              <SelectLabel>{setting.name}</SelectLabel>
-              {setting.values.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      ))}
+      {settings.map((setting) => {
+        const currentValue =
+          getModelSetting(modelId, setting.name) ?? setting.values[0]?.value;
+
+        return (
+          <Select
+            key={setting.name}
+            items={setting.values}
+            value={currentValue}
+            onValueChange={(value) =>
+              setModelSetting(modelId, setting.name, value)
+            }
+          >
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <SelectTrigger className="relative">
+                    <div className="flex items-center">
+                      <setting.icon className="mr-2" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                }
+              />
+              <TooltipContent>
+                <p>{setting.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+            <SelectContent className="w-fit" alignItemWithTrigger={false}>
+              <SelectGroup>
+                <SelectLabel>{setting.name}</SelectLabel>
+                {setting.values.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        );
+      })}
     </div>
   );
 }

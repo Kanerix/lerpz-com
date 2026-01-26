@@ -55,7 +55,22 @@ const chatareaPlaceholder: Record<ChatboxVariant, string> = {
 };
 
 export default function Chatbox() {
-  const { variant, showSettings } = useChatbox();
+  const { variant, showSettings, hasPendingWork } = useChatbox();
+
+  useEffect(() => {
+    if (!hasPendingWork) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      return "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasPendingWork]);
 
   return (
     <motion.div
@@ -96,6 +111,7 @@ function ChatToolbar() {
     isGeneratePending,
     editImage,
     isEditPending,
+    hasPendingWork,
   } = useChatbox();
 
   const { prompt, setPrompt, uploadedImages, addUploadedImages } =
@@ -221,12 +237,7 @@ function ChatToolbar() {
           render={
             <Button
               onClick={handleEnhance}
-              disabled={
-                isEnhancePending ||
-                isGeneratePending ||
-                isEditPending ||
-                !prompt.trim()
-              }
+              disabled={hasPendingWork || !prompt.trim()}
               variant="outline"
               size="icon"
               aria-label="Enhance prompt"
@@ -245,12 +256,7 @@ function ChatToolbar() {
       </Tooltip>
       <Button
         onClick={handleSubmit}
-        disabled={
-          !prompt?.trim() ||
-          isEnhancePending ||
-          isGeneratePending ||
-          isEditPending
-        }
+        disabled={hasPendingWork || !prompt?.trim()}
         className="ml-auto sm:ml-0"
         aria-label="Generate image"
       >
@@ -268,8 +274,7 @@ function ChatToolbar() {
 function Chatarea({ isMobile }: ChatareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { variant, isEnhancePending, isGeneratePending, isEditPending } =
-    useChatbox();
+  const { variant, hasPendingWork } = useChatbox();
   const { prompt, setPrompt } = useChatboxStore();
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
@@ -283,7 +288,7 @@ function Chatarea({ isMobile }: ChatareaProps) {
   return (
     <Textarea
       ref={textareaRef}
-      disabled={isEnhancePending || isGeneratePending || isEditPending}
+      disabled={hasPendingWork}
       placeholder={chatareaPlaceholder[variant]}
       value={prompt}
       onChange={handleChange}
