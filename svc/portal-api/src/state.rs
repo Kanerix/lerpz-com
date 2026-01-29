@@ -7,10 +7,12 @@ use lerpz_axum::middleware::azure::AzureConfig;
 use secrecy::{ExposeSecret, SecretString};
 use tokio::sync::RwLock;
 
+type OpenAI = Arc<RwLock<Client<PortkeyConfig>>>;
+
 #[derive(Clone)]
 pub struct AppState {
     pub azure_config: AzureConfig,
-    pub openai: Arc<RwLock<Client<PortkeyConfig>>>,
+    pub openai: OpenAI,
     pub database: sqlx::PgPool,
     pub redis: bb8::Pool<RedisConnectionManager>,
 }
