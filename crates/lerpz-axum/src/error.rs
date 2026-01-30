@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 /// A type alias for [`Result<T, HandlerError>`].
 ///
-/// Used by handlers to return a response or an structured error.
+/// Used by handlers to return a response or a structured error.
 pub type HandlerResult<T, D = ()> = std::result::Result<T, HandlerError<D>>;
 
 /// Represents an error returned by a handler.
@@ -42,19 +42,19 @@ where
     title: Cow<'static, str>,
     /// A human-readable detailed error explanation.
     ///
-    /// A more detailed description of what wen't wrong. This is unlike `title`,
-    /// allowed to change between occurrances.
+    /// A more detailed description of what went wrong. This is unlike `title`,
+    /// allowed to change between occurrences.
     detail: Cow<'static, str>,
     /// A URI reference that is specific to the problem type.
     ///
-    /// Does not get send to the client if it's [`None`]. This is a unique
+    /// Does not get sent to the client if it's [`None`]. This is a unique
     /// identifier for the error. This will usually be the endpoint that the
     /// error occurred in.
     #[serde(skip_serializing_if = "Option::is_none")]
     instance: Option<Cow<'static, str>>,
     /// Additional information about the error.
     ///
-    /// Does not get send to the client if it's [`None`]. The [`Some`] variant
+    /// Does not get sent to the client if it's [`None`]. The [`Some`] variant
     /// should implement [`Serialize`] so that an OpenAPI schema can be
     /// generated for the type.
     #[serde(skip_serializing_if = "Option::is_none", flatten)]
@@ -162,7 +162,7 @@ where
         self.with_instance(Cow::Owned(p.uri.path().into()))
     }
 
-    /// Add a instance to the [`HandlerError`].
+    /// Add an instance to the [`HandlerError`].
     pub fn with_instance(mut self, instance: impl Into<Cow<'static, str>>) -> Self {
         self.instance = Some(instance.into());
         self
@@ -193,7 +193,7 @@ where
     /// ### Note
     ///
     /// Make sure you use a globally unique identifier for the [`Self::log_id`].
-    /// This will default to a UUID if it's missing when turned into request.
+    /// This will default to a UUID if it's missing when turned into a response.
     pub fn with_log_id<U>(mut self, log_id: U) -> Self
     where
         U: Into<String>,
@@ -226,9 +226,9 @@ where
             };
 
             if self.status.is_server_error() {
-                tracing::error!(log_id = %log_id, server_error = %error, "An server error occurred");
+                tracing::error!(log_id = %log_id, server_error = %error, "A server error occurred");
             } else {
-                tracing::info!(log_id = %log_id, client_error = %title, message = %detail, "An client error occurred");
+                tracing::info!(log_id = %log_id, client_error = %title, message = %detail, "A client error occurred");
             }
         }
 
