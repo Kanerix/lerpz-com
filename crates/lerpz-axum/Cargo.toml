@@ -9,7 +9,7 @@ axum = { workspace = true }
 jsonwebtoken = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true, features = ["json"] }
 thiserror = { workspace = true }
-ts-rs = { workspace = true, features = ["serde-compat", "serde-json-impl"] }
+ts-rs = { workspace = true, optional = true, features = ["serde-compat", "serde-json-impl"] }
 tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
 regex = { workspace = true, optional = true }
@@ -21,3 +21,4 @@ validator = { workspace = true, features = ["derive"] }
 
 [features]
 azure = ["dep:jsonwebtoken", "dep:reqwest", "dep:regex"]
+ts-rs = ["dep:ts-rs"]
