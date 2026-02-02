@@ -7,7 +7,6 @@ import {
   type SetStateAction,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -15,11 +14,11 @@ import { toast } from "sonner";
 import { type Model, useModels } from "@/hooks/useModels";
 import { useChatboxStore } from "@/store/chatbox.store";
 
-export type ChatboxVariant = "chat" | "image" | "video";
+export type ChatboxMode = "chat" | "image" | "video";
 
 export interface ChatboxContextValue {
-  variant: ChatboxVariant;
-  setVariant: Dispatch<SetStateAction<ChatboxVariant>>;
+  mode: ChatboxMode;
+  setMode: Dispatch<SetStateAction<ChatboxMode>>;
 
   showSettings: boolean;
   setShowSettings: Dispatch<SetStateAction<boolean>>;
@@ -29,7 +28,7 @@ export interface ChatboxContextValue {
 
   models: Model[];
   isModelsLoading: boolean;
-  loadModels: (variant?: string | undefined) => Promise<void>;
+  loadModels: (mode?: string | undefined) => Promise<void>;
 
   enhancePrompt: (prompt: string) => Promise<string>;
   isEnhancePending: boolean;
@@ -48,7 +47,7 @@ const ChatboxContext = createContext<ChatboxContextValue | undefined>(
 );
 
 export interface ChatboxProviderProps {
-  defaultVariant?: ChatboxVariant;
+  defaultMode?: ChatboxMode;
   children: ReactNode;
 }
 
@@ -68,10 +67,10 @@ const fakeDelay = (ms: number) =>
   });
 
 export function ChatboxProvider({
-  defaultVariant = "image",
+  defaultMode = "image",
   children,
 }: ChatboxProviderProps) {
-  const [variant, setVariant] = useState<ChatboxVariant>(defaultVariant);
+  const [mode, setMode] = useState<ChatboxMode>(defaultMode);
   const [showSettings, setShowSettings] = useState<boolean>(true);
   const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
@@ -95,7 +94,7 @@ export function ChatboxProvider({
           loading: "Enhancing prompt...",
           duration: 15000,
           success: {
-            message: "Prompt has been enhanced",
+            message: `Prompt enhanced using ${selectedModel}`,
             description: "Your prompt has been enhanced.",
             action: {
               label: "Undo",
@@ -118,7 +117,8 @@ export function ChatboxProvider({
   );
 
   const handleGenerateImage = useCallback(async () => {
-    const { prompt, model, modelSettings } = useChatboxStore.getState();
+    const { prompt, setPrompt, model, modelSettings } =
+      useChatboxStore.getState();
 
     if (!prompt) return;
 
@@ -141,13 +141,14 @@ export function ChatboxProvider({
         }),
       });
       await res;
+      setPrompt("");
     } finally {
       setIsGeneratePending(false);
     }
   }, []);
 
   const handleEditImage = useCallback(async () => {
-    const { prompt, model, uploadedImages, modelSettings } =
+    const { prompt, setPrompt, model, uploadedImages, modelSettings } =
       useChatboxStore.getState();
 
     if (!prompt || uploadedImages.length === 0) return;
@@ -171,19 +172,16 @@ export function ChatboxProvider({
         }),
       });
       await res;
+      setPrompt("");
     } finally {
       setIsEditPending(false);
     }
   }, []);
 
-  useEffect(() => {
-    void loadModels(variant);
-  }, [variant]);
-
   const value = useMemo<ChatboxContextValue>(
     () => ({
-      variant,
-      setVariant,
+      mode,
+      setMode,
 
       showSettings,
       setShowSettings,
@@ -207,7 +205,7 @@ export function ChatboxProvider({
       hasPendingWork: isEnhancePending || isGeneratePending || isEditPending,
     }),
     [
-      variant,
+      mode,
       showSettings,
       allowImageUploads,
       models,

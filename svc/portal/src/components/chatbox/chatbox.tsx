@@ -22,7 +22,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useChatboxStore } from "@/store/chatbox.store";
 import ImageShelf from "./image-shelf";
-import { type ChatboxVariant, useChatbox } from "./provider";
+import { type ChatboxMode, useChatbox } from "./provider";
 import ChatboxSettings from "./settings";
 
 interface ChatareaProps {
@@ -42,20 +42,20 @@ const settingsVariants = {
   },
 } as const;
 
-const submitButtonPlaceholder: Record<ChatboxVariant, string> = {
+const submitButtonPlaceholder: Record<ChatboxMode, string> = {
   chat: "Send",
   image: "Generate",
   video: "Generate",
 };
 
-const chatareaPlaceholder: Record<ChatboxVariant, string> = {
+const chatareaPlaceholder: Record<ChatboxMode, string> = {
   chat: "Send a message!",
   image: "Describe your image!",
   video: "Describe your video!",
 };
 
 export default function Chatbox() {
-  const { variant, showSettings, hasPendingWork } = useChatbox();
+  const { showSettings, hasPendingWork } = useChatbox();
 
   useEffect(() => {
     if (!hasPendingWork) return;
@@ -79,11 +79,11 @@ export default function Chatbox() {
       transition={{ duration: 0.25, ease: "easeIn" }}
     >
       <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[850px] p-4">
-        {(variant === "image" || variant === "chat") && <ImageShelf />}
+        <ImageShelf />
         <Card className="rounded-4xl">
           <CardContent className="flex flex-col">
-            <Chatarea isMobile={true} />
-            <ChatToolbar />
+            <PromptInput isMobile={true} />
+            <ChatboxToolbar />
             <motion.div
               variants={settingsVariants}
               animate={showSettings ? "visible" : "hidden"}
@@ -98,11 +98,11 @@ export default function Chatbox() {
   );
 }
 
-function ChatToolbar() {
+function ChatboxToolbar() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const {
-    variant,
+    mode,
     setShowSettings,
     enhancePrompt,
     isEnhancePending,
@@ -157,24 +157,22 @@ function ChatToolbar() {
     const trimmed = prompt.trim();
     if (!trimmed) return;
 
-    if (variant === "image") {
-      if (uploadedImages.length > 0) {
-        await editImage();
-      } else {
-        await generateImage();
-      }
-      setPrompt("");
-      return;
-    }
-
-    if (variant === "video") {
-      toast.error("Video feature is available.");
-      return;
-    }
-
-    if (variant === "chat") {
-      toast.error("Chat feature is available.");
-      return;
+    switch (mode) {
+      case "image":
+        if (uploadedImages.length > 0) {
+          await editImage();
+        } else {
+          await generateImage();
+        }
+        return;
+      case "video":
+        // TODO: implement when ready
+        toast.error("Video feature is available.");
+        return;
+      case "chat":
+        // TODO: implement when ready
+        toast.error("Chat feature is available.");
+        return;
     }
   };
 
@@ -226,12 +224,12 @@ function ChatToolbar() {
         <TooltipContent>
           <p>
             {allowImageUploads
-              ? "Add images to prompt"
+              ? "Add images to your prompt"
               : "Image uploads are disabled"}
           </p>
         </TooltipContent>
       </Tooltip>
-      <Chatarea isMobile={false} />
+      <PromptInput isMobile={false} />
       <Tooltip>
         <TooltipTrigger
           render={
@@ -265,16 +263,16 @@ function ChatToolbar() {
         ) : (
           <Send />
         )}
-        {submitButtonPlaceholder[variant]}
+        {submitButtonPlaceholder[mode]}
       </Button>
     </div>
   );
 }
 
-function Chatarea({ isMobile }: ChatareaProps) {
+function PromptInput({ isMobile }: ChatareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { variant, hasPendingWork } = useChatbox();
+  const { mode: variant, hasPendingWork } = useChatbox();
   const { prompt, setPrompt } = useChatboxStore();
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {

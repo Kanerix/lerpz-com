@@ -33,7 +33,7 @@ export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
   const { isMobile } = useSidebar();
   const [activeMode, setActiveMode] = useState<Mode | undefined>(modes[1]);
 
-  const { setVariant } = useChatbox();
+  const { setMode: setVariant } = useChatbox();
 
   useEffect(() => {
     if (!activeMode) return;

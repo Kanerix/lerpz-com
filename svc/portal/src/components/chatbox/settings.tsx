@@ -27,7 +27,7 @@ interface ModelSelectItem {
 }
 
 export default function ChatboxSettings() {
-  const { variant } = useChatbox();
+  const { mode: variant } = useChatbox();
   const { model, setModel } = useChatboxStore();
   const { models, isLoading: isLoadingModels, loadModels } = useModels();
 
@@ -43,8 +43,8 @@ export default function ChatboxSettings() {
   ];
 
   useEffect(() => {
-    loadModels(variant);
-  }, [variant]);
+    void loadModels(variant);
+  }, [variant, loadModels]);
 
   return (
     <div className="flex gap-x-4 justify-between mt-4">
