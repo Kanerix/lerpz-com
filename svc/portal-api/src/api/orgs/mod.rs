@@ -1,6 +1,7 @@
 use crate::state::AppState;
 
-use axum::{Router, routing::get};
+use axum::routing::get;
+use utoipa_axum::router::OpenApiRouter;
 
 mod create;
 mod delete;
@@ -8,8 +9,8 @@ mod list;
 mod read;
 mod update;
 
-pub fn router(state: AppState) -> Router<AppState> {
-    Router::new()
+pub fn router(state: AppState) -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
         .route("/", get(list::handler).post(create::handler))
         .route(
             "/{id}",

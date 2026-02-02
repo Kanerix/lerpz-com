@@ -1,3 +1,4 @@
+use crate::oapi::ApiDoc;
 use crate::state::AppState;
 use crate::{config::CONFIG, state::PortkeyConfig};
 
@@ -5,7 +6,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_openai::Client;
-use axum::Router;
 use axum::http::Method;
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
@@ -15,9 +15,13 @@ use sqlx::postgres::PgPoolOptions;
 use tokio::sync::RwLock;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use utoipa::OpenApi;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_swagger_ui::SwaggerUi;
 
 mod api;
 mod config;
+mod oapi;
 mod state;
 mod utils;
 
@@ -82,10 +86,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers(Any);
 
-    let app = Router::new()
+    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .nest("/api/v1", api::router(state.clone()))
         .with_state(state)
-        .layer(cors);
+        .layer(cors)
+        .split_for_parts();
+
+    let app = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api));
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
     tracing::info!("server started listening on {}", CONFIG.ADDR);

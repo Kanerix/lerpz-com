@@ -1,6 +1,6 @@
 use crate::state::AppState;
 
-use axum::{Router, routing::get};
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod chats;
 mod groups;
@@ -9,13 +9,13 @@ mod images;
 mod orgs;
 mod usage;
 
-pub fn router(state: AppState) -> Router<AppState> {
-    Router::new()
+pub fn router(state: AppState) -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
         .nest("/orgs", orgs::router(state.clone()))
         .nest("/groups", groups::router(state.clone()))
         .nest("/chats", chats::router(state.clone()))
         .nest("/images", images::router(state.clone()))
         .nest("/usage", usage::router(state.clone()))
-        .route("/health", get(health::handler))
+        .routes(routes!(health::handler))
         .with_state(state)
 }

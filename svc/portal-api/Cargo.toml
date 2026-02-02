@@ -31,6 +31,9 @@ axum = { workspace = true, features = [
 ] }
 tokio = { workspace = true, features = ["full"] }
 tower-http = { workspace = true, features = ["cors"] }
+utoipa = { workspace = true, features = ["macros"] }
+utoipa-axum  = { workspace = true }
+utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 # Tracing
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
@@ -47,3 +50,5 @@ secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 uuid = { workspace = true }
 validator = { workspace = true }
+
+[dev-dependencies]
