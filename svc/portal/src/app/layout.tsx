@@ -1,3 +1,4 @@
+import MsalProviderWrapper from "@/components/msal-provider";
 import { SWRProvider } from "@/components/swr-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@lerpz/ui/globals.css";
@@ -26,16 +27,18 @@ export default function RootLayout({
       <head />
       <body className={`${inter.variable} antialiased`}>
         <Suspense fallback="Loading...">
-          <SWRProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
-          </SWRProvider>
+          <MsalProviderWrapper>
+            <SWRProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+            </SWRProvider>
+          </MsalProviderWrapper>
         </Suspense>
       </body>
     </html>

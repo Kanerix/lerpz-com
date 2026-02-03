@@ -3,7 +3,7 @@ use axum::{Json, extract::State};
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::{Deserialize, Serialize};
 
-use crate::{config::CONFIG, state::AppState};
+use crate::{config::CONFIG, oapi::IMAGES_TAG, state::AppState};
 
 #[derive(Debug, Deserialize)]
 pub struct ImageRequest {
@@ -16,6 +16,12 @@ pub struct ImageResponse {
     images: Vec<String>,
 }
 
+#[utoipa::path(
+    method(post),
+    path = "/",
+    tag = IMAGES_TAG,
+    summary = "Create a new image",
+)]
 #[axum::debug_handler]
 pub async fn handler(
     _: AzureAccessToken,

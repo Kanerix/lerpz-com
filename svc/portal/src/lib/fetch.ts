@@ -1,46 +1,37 @@
-import { authClient } from "@/lib/auth-client";
+"use client";
 
-export async function createAuthHeaders(
-  additionalHeaders: Record<string, string> = {},
-): Promise<Record<string, string>> {
-  const accessToken = await authClient.getAccessToken({
-    providerId: "microsoft",
+import type { AccountInfo } from "@azure/msal-browser";
+import { loginRequest, msalInstance } from "@/lib/msal";
+
+async function getAccessToken(account: AccountInfo) {
+  const result = await msalInstance.acquireTokenSilent({
+    ...loginRequest,
+    account,
   });
 
-  if (!accessToken) {
-    throw new Error("No access token found - user not authenticated");
-  }
-
-  const headers: Record<string, string> = {
-    ...additionalHeaders,
-  };
-
-  headers.Authorization = `Bearer ${accessToken}`;
-
-  return headers;
+  return result.accessToken;
 }
 
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {},
+  account: AccountInfo,
 ): Promise<Response> {
-  try {
-    const headers = await createAuthHeaders(
-      (options.headers as Record<string, string>) || {},
-    );
+  const accessToken = await getAccessToken(account);
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+    Authorization: `Bearer ${accessToken}`,
+  };
 
-    if (response.status === 401) {
-      console.warn("Received 401 Unauthorized, user needs to re-authenticate");
-    }
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
 
-    return response;
-  } catch (error) {
-    console.error("Error in authenticated fetch:", error);
-    throw error;
+  if (response.status === 401) {
+    console.warn("Received 401 Unauthorized, user needs to re-authenticate");
   }
+
+  return response;
 }

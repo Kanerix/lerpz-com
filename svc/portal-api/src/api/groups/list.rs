@@ -1,13 +1,14 @@
 use lerpz_axum::error::HandlerResult;
 
-use crate::oapi::ORGS_TAG;
+use crate::oapi::GROUPS_TAG;
 
 #[utoipa::path(
     method(get),
     path = "/",
-    tag = ORGS_TAG,
-    summary = "Get a list of organization"
+    tag = GROUPS_TAG,
+    summary = "Get a list of groups",
 )]
+#[axum::debug_handler]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

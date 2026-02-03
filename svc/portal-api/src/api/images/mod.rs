@@ -1,14 +1,14 @@
 use crate::state::AppState;
 
-use axum::routing::post;
-use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod create;
+mod delete;
 mod edit;
 
 pub fn router(state: AppState) -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .route("/create", post(create::handler))
-        .route("/edit", post(edit::handler))
+        .routes(routes!(create::handler, delete::handler))
+        .routes(routes!(edit::handler))
         .with_state(state)
 }

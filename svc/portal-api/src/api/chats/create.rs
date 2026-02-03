@@ -3,7 +3,7 @@ use axum::{Json, extract::State};
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::{Deserialize, Serialize};
 
-use crate::{config::CONFIG, state::AppState, utils::tokens::TokenUsage};
+use crate::{config::CONFIG, oapi::CHATS_TAG, state::AppState, utils::tokens::TokenUsage};
 
 #[derive(Debug, Deserialize)]
 pub struct ChatRequest {
@@ -17,6 +17,12 @@ pub struct ChatResponse {
     usage: Option<TokenUsage>,
 }
 
+#[utoipa::path(
+    method(post),
+    path = "/create",
+    tag = CHATS_TAG,
+    summary = "Create a new chat",
+)]
 #[axum::debug_handler]
 pub async fn handler(
     _: AzureAccessToken,

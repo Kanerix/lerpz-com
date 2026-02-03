@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use async_openai::Client;
 use axum::http::Method;
+use axum::response::{IntoResponse, Redirect};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
@@ -90,6 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/api/v1", api::router(state.clone()))
         .with_state(state)
         .layer(cors)
+        .fallback(redirect)
         .split_for_parts();
 
     let app = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api));
@@ -103,4 +105,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     Ok(())
+}
+
+#[axum::debug_handler]
+pub async fn redirect() -> impl IntoResponse {
+    Redirect::to("/swagger-ui").into_response()
 }

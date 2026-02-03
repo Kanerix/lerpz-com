@@ -1,14 +1,26 @@
 use utoipa::OpenApi;
 
-const HEALTH_TAG: &str = "image";
-const IMAGE_TAG: &str = "image";
-const CHAT_TAG: &str = "chat";
+pub(crate) const CHATS_TAG: &str = "chat";
+pub(crate) const GROUPS_TAG: &str = "groups";
+pub(crate) const IMAGES_TAG: &str = "image";
+pub(crate) const ORGS_TAG: &str = "orgs";
+pub(crate) const HEALTH_TAG: &str = "health";
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "Lerpz AI",
+        description = "Lerpz AI backend API",
+        contact(
+            name = "Kasper Jønsson",
+            email = "kas@lerpz.com",
+        )
+    ),
     tags(
-        (name = CHAT_TAG, description = "Chat API endpoints"),
-        (name = IMAGE_TAG, description = "Image API endpoints"),
+        (name = CHATS_TAG, description = "Chat API endpoints"),
+        (name = GROUPS_TAG, description = "Groups API endpoints"),
+        (name = ORGS_TAG, description = "Orgs API endpoints"),
+        (name = IMAGES_TAG, description = "Image API endpoints"),
         (name = HEALTH_TAG, description = "Health API endpoints"),
     )
 )]

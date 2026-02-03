@@ -1,24 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { signOut } from "@/lib/auth-client";
+import { useMsal } from "@azure/msal-react";
+import { Button } from "@lerpz/ui/components/button";
 
-export default function LogoutButton() {
-  const router = useRouter();
+export function LogoutButton() {
+  const { instance } = useMsal();
 
-  const handleLogout = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/login");
-        },
-      },
+  const handleLogout = () => {
+    instance.logoutRedirect().catch((error) => {
+      console.error("MSAL logout error:", error);
     });
   };
 
-  return (
-    <button type="button" onClick={handleLogout}>
-      logout
-    </button>
-  );
+  return <Button onClick={handleLogout}>Sign out</Button>;
 }
