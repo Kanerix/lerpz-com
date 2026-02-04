@@ -1,7 +1,7 @@
 "use client";
 
 import { MsalProvider } from "@azure/msal-react";
-import { msalInstance } from "@/lib/msal";
+import { msalInstance } from "@/lib/msal-auth";
 
 export default function MsalProviderWrapper({
   children,

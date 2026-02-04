@@ -2,7 +2,7 @@
 
 import { useAccount, useMsal } from "@azure/msal-react";
 import { useEffect, useState } from "react";
-import { loginRequest } from "@/lib/msal";
+import { loginRequest } from "@/lib/msal-config";
 
 export function useAccessToken() {
   const { instance, accounts } = useMsal();

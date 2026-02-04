@@ -268,26 +268,23 @@ export function useModels() {
   const [models, setModels] = useState<Model[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadModels = useCallback(
-    async (modality?: string) => {
-      setIsLoading(true);
-      try {
-        await fakeDelay(2000);
+  const loadModels = useCallback(async (modality?: string) => {
+    setIsLoading(true);
+    try {
+      await fakeDelay(2000);
 
-        if (modality) {
-          const filtered = currentModels.filter((m) =>
-            m.modalities.some((mod) => mod === modality),
-          );
-          setModels(filtered);
-        } else {
-          setModels(currentModels);
-        }
-      } finally {
-        setIsLoading(false);
+      if (modality) {
+        const filtered = currentModels.filter((m) =>
+          m.modalities.some((mod) => mod === modality),
+        );
+        setModels(filtered);
+      } else {
+        setModels(currentModels);
       }
-    },
-    [models],
-  );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   return {
     models,

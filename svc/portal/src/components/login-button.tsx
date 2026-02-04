@@ -1,18 +1,35 @@
 "use client";
 
-import type { IPublicClientApplication } from "@azure/msal-browser";
+import { InteractionStatus } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { Button } from "@lerpz/ui/components/button";
-import { loginRequest } from "@/lib/msal";
+import type { ComponentProps } from "react";
+import { loginRequest } from "@/lib/msal-config";
 
-export default function LoginButton() {
-  const { instance } = useMsal();
+type LoginButtonProps = Omit<ComponentProps<"button">, "disabled" | "onClick">;
 
-  function handleLogin(instance: IPublicClientApplication) {
-    instance.loginRedirect(loginRequest).catch((e) => {
-      console.error(e);
-    });
-  }
+export default function LoginButton({
+  children,
+  className,
+  ...props
+}: LoginButtonProps) {
+  const { instance, inProgress } = useMsal();
 
-  return <Button onClick={() => handleLogin(instance)}>Login</Button>;
+  const handleLogin = async () => {
+    try {
+      await instance.loginRedirect(loginRequest);
+    } catch {
+      console.error("Was unable to login to your account");
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleLogin}
+      disabled={inProgress !== InteractionStatus.None}
+      {...props}
+    >
+      {children}
+    </Button>
+  );
 }

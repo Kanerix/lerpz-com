@@ -1,7 +1,7 @@
 "use client";
 
 import type { AccountInfo } from "@azure/msal-browser";
-import { loginRequest, msalInstance } from "@/lib/msal";
+import { loginRequest, msalInstance } from "@/lib/msal-config";
 
 async function getAccessToken(account: AccountInfo) {
   const result = await msalInstance.acquireTokenSilent({

@@ -7,12 +7,11 @@ export const env = createEnv({
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_ENTRA_ID_TENANT_ID: process.env.ENTRA_ID_TENANT_ID,
-    NEXT_PUBLIC_ENTRA_ID_CLIENT_ID: process.env.ENTRA_ID_CLIENT_ID,
-    NEXT_PUBLIC_ENTRA_ID_CLIENT_SECRET: process.env.ENTRA_ID_CLIENT_SECRET,
-    NEXT_PUBLIC_ENTRA_ID_SCOPE: process.env.ENTRA_ID_SCOPE,
-    NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI: process.env.ENTRA_ID_REDIRECT_URI,
-    NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI: process.env.ENTRA_ID_LOGOUT_URI,
+    NEXT_PUBLIC_ENTRA_ID_TENANT_ID: process.env.NEXT_PUBLIC_ENTRA_ID_TENANT_ID,
+    NEXT_PUBLIC_ENTRA_ID_CLIENT_ID: process.env.NEXT_PUBLIC_ENTRA_ID_CLIENT_ID,
+    // NEXT_PUBLIC_ENTRA_ID_SCOPE: process.env.NEXT_PUBLIC_ENTRA_ID_SCOPE,
+    NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI: process.env.NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI,
+    NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI: process.env.NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI,
   },
   server: {
     NODE_ENV: z.enum(["production", "development", "test"]),
@@ -20,8 +19,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_ENTRA_ID_TENANT_ID: z.string(),
     NEXT_PUBLIC_ENTRA_ID_CLIENT_ID: z.string(),
-    NEXT_PUBLIC_ENTRA_ID_CLIENT_SECRET: z.string(),
-    NEXT_PUBLIC_ENTRA_ID_SCOPE: z.string(),
+    // NEXT_PUBLIC_ENTRA_ID_SCOPE: z.string(),
     NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI: z.string(),
     NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI: z.string(),
   },

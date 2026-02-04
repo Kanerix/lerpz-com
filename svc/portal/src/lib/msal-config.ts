@@ -1,9 +1,6 @@
-// lib/msal.ts
-import {
-  type Configuration,
-  LogLevel,
-  PublicClientApplication,
-} from "@azure/msal-browser";
+"use client";
+
+import { type Configuration, LogLevel } from "@azure/msal-browser";
 import { env } from "./env";
 
 export const msalConfig: Configuration = {
@@ -34,8 +31,6 @@ export const msalConfig: Configuration = {
   },
 };
 
-export const msalInstance = new PublicClientApplication(msalConfig);
-
 export const loginRequest = {
-  scopes: [env.NEXT_PUBLIC_ENTRA_ID_SCOPE],
+  scopes: [],
 };

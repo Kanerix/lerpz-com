@@ -1,6 +1,12 @@
+"use client";
+
+import { useIsAuthenticated } from "@azure/msal-react";
 import Image from "next/image";
+import LoginButton from "../login-button";
 
 export default function Header() {
+  const isAuthenticated = useIsAuthenticated();
+
   return (
     <header className="flex justify-between mx-auto max-w-[1024px] p-4  border-b">
       <div className="flex items-center">
@@ -8,7 +14,9 @@ export default function Header() {
         <h1 className="ml-4 text-2xl font-bold">Lerpz AI</h1>
       </div>
       <div>SOLUTION</div>
-      <div>Login</div>
+      <div>
+        <LoginButton>{isAuthenticated ? "Switch" : "Login"}</LoginButton>
+      </div>
     </header>
   );
 }
