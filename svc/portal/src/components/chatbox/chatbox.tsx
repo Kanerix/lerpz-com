@@ -10,6 +10,7 @@ import {
 } from "@lerpz/ui/components/tooltip";
 import { cn } from "@lerpz/ui/lib/utils";
 import {
+  Camera,
   ImagePlus,
   LoaderPinwheel,
   Send,
@@ -27,6 +28,7 @@ import ChatboxSettings from "./settings";
 
 interface ChatareaProps {
   isMobile: boolean;
+  className?: string;
 }
 
 const settingsVariants = {
@@ -41,12 +43,6 @@ const settingsVariants = {
     transition: { duration: 0.2, ease: "easeIn" },
   },
 } as const;
-
-const submitButtonPlaceholder: Record<ChatboxMode, string> = {
-  chat: "Send",
-  image: "Generate",
-  video: "Generate",
-};
 
 const chatareaPlaceholder: Record<ChatboxMode, string> = {
   chat: "Send a message!",
@@ -78,7 +74,7 @@ export default function Chatbox() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25, ease: "easeIn" }}
     >
-      <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[850px] p-4">
+      <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[750px] p-4">
         <ImageShelf />
         <Card className="rounded-4xl">
           <CardContent className="flex flex-col">
@@ -176,25 +172,9 @@ function ChatboxToolbar() {
   };
 
   return (
-    <div className="flex gap-x-4">
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              className="hidden sm:flex"
-              variant="outline"
-              size="icon"
-              aria-label="Show/hide settings"
-              onClick={toggleSettings}
-            >
-              <Settings />
-            </Button>
-          }
-        />
-        <TooltipContent>
-          <p>Show/hide settings</p>
-        </TooltipContent>
-      </Tooltip>
+    <div className="grid grid-cols-[max-content_1fr_max-content_max-content] gap-4">
+
+      {/* IMAGES UPLOAD BUTTON */}
       <Tooltip>
         <TooltipTrigger
           render={
@@ -228,7 +208,49 @@ function ChatboxToolbar() {
           </p>
         </TooltipContent>
       </Tooltip>
-      <PromptInput isMobile={false} />
+
+      {/* TEXT AREA */}
+      <PromptInput className="row-span-2" isMobile={false} />
+
+      {/* GENERATE BUTTON */}
+      <Button
+        onClick={handleSubmit}
+        disabled={hasPendingWork || !prompt?.trim()}
+        className="col-span-2 w-full ml-auto sm:ml-0"
+        aria-label="Generate image"
+      >
+        {isGeneratePending || isEditPending ? (
+          <LoaderPinwheel className="animate-spin" />
+        ) : (
+          <Send />
+        )}
+        Send
+      </Button>
+
+      {/* CAMERA BUTTON */}
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              className="hidden sm:flex"
+              variant="outline"
+              size="icon"
+              aria-label="Take photo"
+              disabled={
+                !allowImageUploads || isGeneratePending || isEditPending
+              }
+              onClick={handleAddImages}
+            >
+              <Camera />
+            </Button>
+          }
+        />
+        <TooltipContent>
+          <p>Take a photo using camera</p>
+        </TooltipContent>
+      </Tooltip>
+
+      {/* ENHANCE BUTTON */}
       <Tooltip>
         <TooltipTrigger
           render={
@@ -251,24 +273,31 @@ function ChatboxToolbar() {
           <p>Enhance the image prompt!</p>
         </TooltipContent>
       </Tooltip>
-      <Button
-        onClick={handleSubmit}
-        disabled={hasPendingWork || !prompt?.trim()}
-        className="ml-auto sm:ml-0"
-        aria-label="Generate image"
-      >
-        {isGeneratePending || isEditPending ? (
-          <LoaderPinwheel className="animate-spin" />
-        ) : (
-          <Send />
-        )}
-        {submitButtonPlaceholder[mode]}
-      </Button>
+
+      {/* SETTINGS BUTTON */}
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              className="hidden sm:flex"
+              variant="outline"
+              size="icon"
+              aria-label="Show/hide settings"
+              onClick={toggleSettings}
+            >
+              <Settings />
+            </Button>
+          }
+        />
+        <TooltipContent>
+          <p>Show/hide settings</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }
 
-function PromptInput({ isMobile }: ChatareaProps) {
+function PromptInput({ isMobile, className }: ChatareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { mode: variant, hasPendingWork } = useChatbox();
@@ -291,6 +320,7 @@ function PromptInput({ isMobile }: ChatareaProps) {
       onChange={handleChange}
       className={cn(
         "grow",
+        className,
         isMobile ? "block sm:hidden mb-4" : "hidden sm:block",
       )}
     />

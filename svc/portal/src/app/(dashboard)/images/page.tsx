@@ -5,7 +5,7 @@ import { Button } from "@lerpz/ui/components/button";
 import Image from 'next/image'
 
 export default function Images() {
-  const { image: imageData, start } = useImageSse();
+  const { image: imageData, start, isLoading } = useImageSse();
 
   const handleClick = () => {
     start("Show me a playful Toller dog!");
@@ -23,6 +23,6 @@ export default function Images() {
     ) : (
       <p>Generate an image (data-string)!</p>
     )}
-    <Button onClick={handleClick}>Generate</Button>
+    <Button onClick={handleClick} disabled={isLoading}>Generate</Button>
   </div>;
 }
