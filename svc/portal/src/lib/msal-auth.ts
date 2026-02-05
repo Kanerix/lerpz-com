@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  InteractionRequiredAuthError,
-  PublicClientApplication,
-} from "@azure/msal-browser";
+import { PublicClientApplication } from "@azure/msal-browser";
+import { env } from "./env";
 import { loginRequest, msalConfig } from "./msal-config";
 
 export const msalInstance = new PublicClientApplication(msalConfig);
@@ -20,21 +18,20 @@ export async function getAccessToken(): Promise<string | null> {
     return null;
   }
 
-  try {
-    const response = await msalInstance.acquireTokenSilent(loginRequest);
-    return response.accessToken;
-  } catch (error) {
-    if (error instanceof InteractionRequiredAuthError) {
-      try {
-        const response = await msalInstance.acquireTokenPopup(loginRequest);
-        return response.accessToken;
-      } catch {
-        await msalInstance.loginRedirect(loginRequest);
-        return null;
-      }
-    }
+  const request = {
+    ...loginRequest,
+    account: accounts[0],
+  };
 
-    console.error("Failed to acquire token silently for API:", error);
+  try {
+    const response = await msalInstance.acquireTokenSilent(request);
+    return response.accessToken;
+  } catch (e) {
+    console.error(e)
+    // await msalInstance.loginRedirect({
+    //   ...loginRequest,
+    //   scopes: [env.NEXT_PUBLIC_ENTRA_ID_SCOPE],
+    // });
     return null;
   }
 }

@@ -6,17 +6,18 @@ import { authenticatedFetch } from "@/lib/fetch";
 import { apiService } from "@/services/api/client";
 
 export const apiKeys = {
-  chat: () => apiService.getUrl("/chat/create"),
+  chat: () => apiService.getUrl("/chats"),
+  image: () => apiService.getUrl("/images"),
 };
 
-async function chatFetcher<T>(url: string): Promise<T> {
+async function imageFetcher<T>(url: string): Promise<T> {
   const response = await authenticatedFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      message: "Tell me a joke about programming!",
+      prompt: "Show me a playful Toller dog!",
     }),
   });
 
@@ -27,13 +28,13 @@ async function chatFetcher<T>(url: string): Promise<T> {
   return response.json();
 }
 
-export function useChat() {
+export function useImage() {
   const { accounts } = useMsal();
   const account = useAccount(accounts[0] || undefined);
 
-  const key = account ? apiKeys.chat() : null;
+  const key = account ? apiKeys.image() : null;
 
-  const swr = useSWR(key, account ? (url: string) => chatFetcher(url) : null);
+  const swr = useSWR(key, account ? (url: string) => imageFetcher(url) : null);
 
   return swr;
 }

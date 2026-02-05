@@ -1,23 +1,12 @@
 "use client";
 
-import type { AccountInfo } from "@azure/msal-browser";
-import { loginRequest, msalInstance } from "@/lib/msal-config";
-
-async function getAccessToken(account: AccountInfo) {
-  const result = await msalInstance.acquireTokenSilent({
-    ...loginRequest,
-    account,
-  });
-
-  return result.accessToken;
-}
+import { getAccessToken } from "@/lib/msal-auth";
 
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {},
-  account: AccountInfo,
 ): Promise<Response> {
-  const accessToken = await getAccessToken(account);
+  const accessToken = await getAccessToken();
 
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),

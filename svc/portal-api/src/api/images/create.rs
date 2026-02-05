@@ -1,4 +1,4 @@
-use async_openai::types::{CreateImageRequestArgs, Image, ImageModel};
+use async_openai::types::{CreateImageRequestArgs, Image, ImageModel, ImageQuality, ImageSize};
 use axum::{Json, extract::State};
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::{Deserialize, Serialize};
@@ -7,8 +7,14 @@ use crate::{config::CONFIG, oapi::IMAGES_TAG, state::AppState};
 
 #[derive(Debug, Deserialize)]
 pub struct ImageRequest {
+    /// What model to use.
     model: Option<String>,
+    /// Prompt that is sent to the model.
     prompt: String,
+    /// The amount of images to generate.
+    ///
+    /// This will default to 1 image if not provided.
+    amount: Option<u8>,
 }
 
 #[derive(Debug, Serialize)]
@@ -24,7 +30,7 @@ pub struct ImageResponse {
 )]
 #[axum::debug_handler]
 pub async fn handler(
-    _: AzureAccessToken,
+    token: AzureAccessToken,
     State(state): State<AppState>,
     Json(body): Json<ImageRequest>,
 ) -> HandlerResult<Json<ImageResponse>> {
@@ -35,10 +41,21 @@ pub async fn handler(
             .to_string(),
     );
 
-    let request = CreateImageRequestArgs::default()
+    let mut request_builder = CreateImageRequestArgs::default();
+
+    request_builder
         .model(model)
         .prompt(body.prompt)
-        .build()?;
+        .n(body.amount.unwrap_or(1))
+        .quality(ImageQuality::Low)
+        .size(ImageSize::S1024x1024);
+
+    if let Some(email) = token.email {
+        request_builder.user(email);
+    };
+
+    let request = request_builder.build().unwrap();
+
     let client = state.openai.read().await;
     let response = client.images().create(request).await?;
 
@@ -46,7 +63,10 @@ pub async fn handler(
         .data
         .iter()
         .filter_map(|img| match img.as_ref() {
-            Image::B64Json { b64_json, .. } => Some(b64_json.to_string()),
+            Image::B64Json { b64_json, .. } => {
+                dbg!(&img);
+                Some(b64_json.to_string())
+            }
             _ => None,
         })
         .collect();

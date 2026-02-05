@@ -41,15 +41,15 @@ export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
     switch (activeMode.name) {
       case "Video":
         setVariant("video");
-        router.push("/video");
+        router.push("/videos");
         break;
       case "Image":
         setVariant("image");
-        router.push("/image");
+        router.push("/images");
         break;
       case "Chat":
         setVariant("chat");
-        router.push("/chat");
+        router.push("/chats");
         break;
     }
   }, [activeMode]);

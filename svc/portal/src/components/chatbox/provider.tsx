@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { useImage } from "@/hooks/useImage";
 import { type Model, useModels } from "@/hooks/useModels";
 import { useChatboxStore } from "@/store/chatbox.store";
 
@@ -75,7 +76,7 @@ export function ChatboxProvider({
   const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
   const [isEnhancePending, setIsEnhancePending] = useState<boolean>(false);
-  const [isGeneratePending, setIsGeneratePending] = useState<boolean>(false);
+  const { mutate: generateImage, isLoading: isGeneratePending } = useImage();
   const [isEditPending, setIsEditPending] = useState<boolean>(false);
 
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
@@ -125,9 +126,9 @@ export function ChatboxProvider({
     const selectedModel = model || DEFAULT_IMAGE_MODEL;
     const selectedModelSettings = modelSettings[selectedModel];
 
-    setIsGeneratePending(true);
     try {
-      const res = fakeDelay(2000);
+      const res = generateImage();
+      console.log("Generating image...");
       toast.promise(res, {
         position: "top-center",
         loading: "Generating image(s)...",
@@ -142,10 +143,10 @@ export function ChatboxProvider({
       });
       await res;
       setPrompt("");
-    } finally {
-      setIsGeneratePending(false);
+    } catch (e) {
+      console.error(e);
     }
-  }, []);
+  }, [generateImage]);
 
   const handleEditImage = useCallback(async () => {
     const { prompt, setPrompt, model, uploadedImages, modelSettings } =

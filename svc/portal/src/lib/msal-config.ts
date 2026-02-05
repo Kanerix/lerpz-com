@@ -32,5 +32,5 @@ export const msalConfig: Configuration = {
 };
 
 export const loginRequest = {
-  scopes: [],
+  scopes: [env.NEXT_PUBLIC_ENTRA_ID_SCOPE],
 };

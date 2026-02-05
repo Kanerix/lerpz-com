@@ -140,7 +140,6 @@ function ChatboxToolbar() {
 
     addUploadedImages(imageFiles);
 
-    // clear the input so selecting the same file again will still trigger onChange
     event.target.value = "";
   };
 
