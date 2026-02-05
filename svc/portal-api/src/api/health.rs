@@ -3,7 +3,7 @@ use lerpz_axum::error::HandlerResult;
 use crate::oapi::HEALTH_TAG;
 
 #[utoipa::path(
-    method(get, head),
+    method(get),
     path = "/health",
     tag = HEALTH_TAG,
     summary = "Get API health status",
