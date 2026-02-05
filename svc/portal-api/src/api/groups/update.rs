@@ -1,14 +1,13 @@
 use lerpz_axum::error::HandlerResult;
 
-use crate::oapi::IMAGES_TAG;
+use crate::oapi::GROUPS_TAG;
 
 #[utoipa::path(
-    method(delete),
+    method(patch),
     path = "/{id}",
-    tag = IMAGES_TAG,
-    summary = "Delete a specific image",
+    tag = GROUPS_TAG,
+    summary = "Update a specific group"
 )]
-#[axum::debug_handler]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

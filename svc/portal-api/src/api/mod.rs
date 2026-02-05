@@ -6,6 +6,7 @@ mod chats;
 mod groups;
 mod health;
 mod images;
+mod models;
 mod orgs;
 
 pub fn router(state: AppState) -> OpenApiRouter<AppState> {
@@ -14,6 +15,7 @@ pub fn router(state: AppState) -> OpenApiRouter<AppState> {
         .nest("/groups", groups::router(state.clone()))
         .nest("/chats", chats::router(state.clone()))
         .nest("/images", images::router(state.clone()))
+        .nest("/models", models::router(state.clone()))
         .routes(routes!(health::handler))
         .with_state(state)
 }

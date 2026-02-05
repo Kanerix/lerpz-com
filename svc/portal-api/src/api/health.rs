@@ -12,6 +12,7 @@ use crate::oapi::HEALTH_TAG;
         (status = OK, description = "Success", content_type = "text/plain")
     )
 )]
+#[axum::debug_handler]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

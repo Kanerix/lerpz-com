@@ -1,12 +1,12 @@
 use lerpz_axum::error::HandlerResult;
 
-use crate::oapi::IMAGES_TAG;
+use crate::oapi::CHATS_TAG;
 
 #[utoipa::path(
-    method(delete),
+    method(post),
     path = "/{id}",
-    tag = IMAGES_TAG,
-    summary = "Delete a specific image",
+    tag = CHATS_TAG,
+    summary = "Get a specific chat",
 )]
 #[axum::debug_handler]
 pub async fn handler() -> HandlerResult<()> {

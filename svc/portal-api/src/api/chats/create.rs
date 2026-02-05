@@ -18,7 +18,7 @@ pub struct ChatResponse {
 
 #[utoipa::path(
     method(post),
-    path = "/create",
+    path = "/",
     tag = CHATS_TAG,
     summary = "Create a new chat",
 )]
