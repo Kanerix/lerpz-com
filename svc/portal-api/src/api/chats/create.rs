@@ -3,7 +3,7 @@ use axum::{Json, extract::State};
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::{Deserialize, Serialize};
 
-use crate::{config::CONFIG, oapi::CHATS_TAG, state::AppState, utils::tokens::TokenUsage};
+use crate::{config::CONFIG, oapi::CHATS_TAG, state::AppState};
 
 #[derive(Debug, Deserialize)]
 pub struct ChatRequest {
@@ -14,7 +14,6 @@ pub struct ChatRequest {
 #[derive(Debug, Serialize)]
 pub struct ChatResponse {
     message: String,
-    usage: Option<TokenUsage>,
 }
 
 #[utoipa::path(
@@ -42,7 +41,6 @@ pub async fn handler(
     let client = state.openai.read().await;
     let response = client.chat().create(request).await?;
 
-    let usage = response.usage.map(|a| a.into());
     let choice = response
         .choices
         .iter()
@@ -55,5 +53,5 @@ pub async fn handler(
         .clone()
         .ok_or(anyhow::anyhow!("Model did not generate a message"))?;
 
-    Ok(Json(ChatResponse { message, usage }))
+    Ok(Json(ChatResponse { message }))
 }
