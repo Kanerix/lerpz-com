@@ -11,8 +11,8 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { useImage } from "@/hooks/useImage";
 import { type Model, useModels } from "@/hooks/useModels";
+import { fakeDelay, fakeDelayFailure } from "@/lib/delay";
 import { useChatboxStore } from "@/store/chatbox.store";
 
 export type ChatboxMode = "chat" | "image" | "video";
@@ -55,18 +55,6 @@ export interface ChatboxProviderProps {
 export const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image" as const;
 export const DEFAULT_ENHANCE_MODEL = "gemini-2.5-flash" as const;
 
-const fakeDelay = (ms: number) =>
-  new Promise<void>((resolve, reject) => {
-    setTimeout(() => {
-      // ~33% chance to fail
-      if (Math.random() < 1 / 3) {
-        reject(new Error("fakeDelay failed intentionally (33% chance)"));
-        return;
-      }
-      resolve();
-    }, ms);
-  });
-
 export function ChatboxProvider({
   defaultMode = "image",
   children,
@@ -76,7 +64,7 @@ export function ChatboxProvider({
   const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
   const [isEnhancePending, setIsEnhancePending] = useState<boolean>(false);
-  const { mutate: generateImage, isLoading: isGeneratePending } = useImage();
+  const [isGeneratePending, setIsGeneratePending] = useState<boolean>(false);
   const [isEditPending, setIsEditPending] = useState<boolean>(false);
 
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
@@ -89,7 +77,7 @@ export function ChatboxProvider({
 
       setIsEnhancePending(true);
       try {
-        const request = fakeDelay(2000);
+        const request = fakeDelayFailure(2000);
         toast.promise(request, {
           position: "top-center",
           loading: "Enhancing prompt...",
@@ -127,8 +115,7 @@ export function ChatboxProvider({
     const selectedModelSettings = modelSettings[selectedModel];
 
     try {
-      const res = generateImage();
-      console.log("Generating image...");
+      const res = fakeDelay(2000);
       toast.promise(res, {
         position: "top-center",
         loading: "Generating image(s)...",
@@ -143,10 +130,10 @@ export function ChatboxProvider({
       });
       await res;
       setPrompt("");
-    } catch (e) {
-      console.error(e);
+    } finally {
+      setIsGeneratePending(false);
     }
-  }, [generateImage]);
+  }, []);
 
   const handleEditImage = useCallback(async () => {
     const { prompt, setPrompt, model, uploadedImages, modelSettings } =

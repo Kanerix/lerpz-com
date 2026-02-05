@@ -1,7 +1,17 @@
-use async_openai::types::{CreateImageRequestArgs, Image, ImageModel, ImageQuality, ImageSize};
-use axum::{Json, extract::State};
+use std::convert::Infallible;
+
+use async_openai::types::images::{
+    CreateImageRequestArgs, ImageGenCompletedEvent, ImageGenPartialImageEvent, ImageGenStreamEvent,
+    ImageModel, ImageQuality, ImageSize,
+};
+use axum::{
+    Json,
+    extract::State,
+    response::{Sse, sse::Event},
+};
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use tokio_stream::{Stream, StreamExt as _};
 
 use crate::{config::CONFIG, oapi::IMAGES_TAG, state::AppState};
 
@@ -17,10 +27,17 @@ pub struct ImageRequest {
     amount: Option<u8>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ImageResponse {
-    images: Vec<String>,
-}
+// #[derive(Debug, Serialize)]
+// pub struct PartialImage {
+//     image_index: usize,
+//     image_data: String,
+// }
+
+// #[derive(Debug, Serialize)]
+// pub struct CompletedImage {
+//     index: usize,
+//     data: String,
+// }
 
 #[utoipa::path(
     method(post),
@@ -33,7 +50,7 @@ pub async fn handler(
     token: AzureAccessToken,
     State(state): State<AppState>,
     Json(body): Json<ImageRequest>,
-) -> HandlerResult<Json<ImageResponse>> {
+) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let model = ImageModel::Other(
         body.model
             .as_deref()
@@ -48,28 +65,38 @@ pub async fn handler(
         .prompt(body.prompt)
         .n(body.amount.unwrap_or(1))
         .quality(ImageQuality::Low)
-        .size(ImageSize::S1024x1024);
+        .size(ImageSize::S1024x1024)
+        .partial_images(3)
+        .stream(true);
 
-    if let Some(email) = token.email {
-        request_builder.user(email);
+    if let Some(upn) = token.upn {
+        request_builder.user(upn);
     };
 
-    let request = request_builder.build().unwrap();
+    let request = request_builder.build()?;
 
     let client = state.openai.read().await;
-    let response = client.images().create(request).await?;
+    let stream = client.images().generate_stream(request).await?;
 
-    let images = response
-        .data
-        .iter()
-        .filter_map(|img| match img.as_ref() {
-            Image::B64Json { b64_json, .. } => {
-                dbg!(&img);
-                Some(b64_json.to_string())
+    let sse_stream = stream.map(|chunk_result| {
+        let chunk = match chunk_result {
+            Ok(c) => c,
+            Err(err) => {
+                return Ok(Event::default().event("error").data(err.to_string()));
             }
-            _ => None,
-        })
-        .collect();
+        };
 
-    Ok(Json(ImageResponse { images }))
+        let event = match chunk {
+            ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, .. }) => {
+                Event::default().event("partial_image").data(b64_json)
+            }
+            ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, .. }) => {
+                Event::default().event("completed_image").data(b64_json)
+            }
+        };
+
+        Ok(event)
+    });
+
+    Ok(Sse::new(sse_stream))
 }

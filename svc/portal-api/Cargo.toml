@@ -30,6 +30,7 @@ axum = { workspace = true, features = [
     "tracing",
 ] }
 tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true }
 tower-http = { workspace = true, features = ["cors"] }
 utoipa = { workspace = true, features = ["macros"] }
 utoipa-axum  = { workspace = true }
@@ -42,7 +43,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 # Utilities
 anyhow = { workspace = true }
-async-openai = { workspace = true }
+async-openai = { workspace = true, features = ["chat-completion", "image", "audio", "video"] }
+base64 = { workspace = true }
 chrono = { workspace = true }
 cookie = { workspace = true }
 dotenvy = { workspace = true }

@@ -1,40 +1,121 @@
 "use client";
 
-import { useAccount, useMsal } from "@azure/msal-react";
-import useSWR from "swr";
-import { authenticatedFetch } from "@/lib/fetch";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiService } from "@/services/api/client";
+import { createSseConnection } from "@/lib/sse";
 
 export const apiKeys = {
-  chat: () => apiService.getUrl("/chats"),
-  image: () => apiService.getUrl("/images"),
+  imageStream: () => apiService.getUrl("/images"),
 };
 
-async function imageFetcher<T>(url: string): Promise<T> {
-  const response = await authenticatedFetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      prompt: "Show me a playful Toller dog!",
-    }),
+type ImageStreamState = {
+  image: string | null;
+  isLoading: boolean;
+  isDone: boolean;
+  error: string | null;
+};
+
+export function useImageSse() {
+  const [state, setState] = useState<ImageStreamState>({
+    image: null,
+    isLoading: false,
+    isDone: false,
+    error: null,
   });
 
-  if (!response.ok) {
-    throw new Error("An error occurred while fetching the data.");
-  }
+  const closeRef = useRef<null | (() => void)>(null);
 
-  return response.json();
-}
+  useEffect(() => {
+    return () => {
+      if (closeRef.current) {
+        closeRef.current();
+      }
+    };
+  }, []);
 
-export function useImage() {
-  const { accounts } = useMsal();
-  const account = useAccount(accounts[0] || undefined);
+  const start = useCallback((prompt: string) => {
+    if (closeRef.current) {
+      closeRef.current();
+      closeRef.current = null;
+    }
 
-  const key = account ? apiKeys.image() : null;
+    const url = apiKeys.imageStream();
 
-  const swr = useSWR(key, account ? (url: string) => imageFetcher(url) : null);
+    setState({
+      image: null,
+      isLoading: true,
+      isDone: false,
+      error: null,
+    });
 
-  return swr;
+    const { close } = createSseConnection(
+      url.toString(),
+      {
+        onOpen: () => {
+          console.log("Image stream connection opened");
+        },
+        onMessage: (data) => {
+          if (data.startsWith("data:")) {
+             data = data.slice("data:".length).trimStart();
+           }
+
+          setState((prev) => ({
+            ...prev,
+            image: `data:image/png;base64,${data}`,
+          }));
+        },
+        onError: (error) => {
+          console.error("Image stream error:", error);
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            isDone: true,
+            error: "An error occurred while streaming the image.",
+          }));
+          closeRef.current = null;
+        },
+      },
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      }
+    );
+
+    closeRef.current = close;
+  }, []);
+
+  const stop = useCallback(() => {
+    if (closeRef.current) {
+      closeRef.current();
+      closeRef.current = null;
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        isDone: true,
+      }));
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    if (closeRef.current) {
+      closeRef.current();
+      closeRef.current = null;
+    }
+    setState({
+      image: null,
+      isLoading: false,
+      isDone: false,
+      error: null,
+    });
+  }, []);
+
+  return {
+    ...state,
+    start,
+    stop,
+    reset,
+  };
 }

@@ -1,7 +1,16 @@
-use async_openai::types::{ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs};
-use axum::{Json, extract::State};
+use std::convert::Infallible;
+
+use async_openai::types::chat::{
+    ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs,
+};
+use axum::{
+    Json,
+    extract::State,
+    response::{Sse, sse::Event},
+};
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use tokio_stream::{Stream, StreamExt as _};
 
 use crate::{config::CONFIG, oapi::CHATS_TAG, state::AppState};
 
@@ -9,11 +18,6 @@ use crate::{config::CONFIG, oapi::CHATS_TAG, state::AppState};
 pub struct ChatRequest {
     model: Option<String>,
     prompt: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ChatResponse {
-    message: String,
 }
 
 #[utoipa::path(
@@ -24,34 +28,60 @@ pub struct ChatResponse {
 )]
 #[axum::debug_handler]
 pub async fn handler(
-    _: AzureAccessToken,
+    token: AzureAccessToken,
     State(state): State<AppState>,
     Json(body): Json<ChatRequest>,
-) -> HandlerResult<Json<ChatResponse>> {
+) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let model = body.model.as_deref().unwrap_or(&CONFIG.DEFAULT_TEXT_MODEL);
-    let request = CreateChatCompletionRequestArgs::default()
+    let mut request_builder = CreateChatCompletionRequestArgs::default();
+
+    request_builder
         .max_tokens(2048u32)
         .model(model)
         .messages([ChatCompletionRequestUserMessageArgs::default()
             .content(body.prompt)
             .build()?
             .into()])
-        .build()?;
+        .stream(true);
 
+    if let Some(upn) = token.upn {
+        request_builder.user(upn);
+    }
+
+    let request = request_builder.build()?;
     let client = state.openai.read().await;
-    let response = client.chat().create(request).await?;
+    let stream = client.chat().create_stream(request).await?;
 
-    let choice = response
-        .choices
-        .iter()
-        .next()
-        .ok_or(anyhow::anyhow!("Model did not generate a choice"))?;
+    let sse_stream = stream.map(|chunk_result| {
+        // If the upstream stream errors, turn it into an SSE "error" event
+        let chunk = match chunk_result {
+            Ok(c) => c,
+            Err(err) => {
+                let event = Event::default()
+                    .event("error")
+                    .data(format!("stream error: {err}"));
+                return Ok(event);
+            }
+        };
 
-    let message = choice
-        .message
-        .content
-        .clone()
-        .ok_or(anyhow::anyhow!("Model did not generate a message"))?;
+        // Extract text from the delta(s)
+        // Each chunk may contain multiple choices; we concatenate their deltas.
+        let mut buf = String::new();
+        for choice in chunk.choices {
+            if let Some(delta) = choice.delta.content {
+                // `delta` is typically Vec<ChatCompletionMessageToolChoice> or similar;
+                // the exact shape depends on your async-openai version. If it's just a String, use it directly.
+                buf.push_str(&delta);
+            }
+        }
 
-    Ok(Json(ChatResponse { message }))
+        // Build an SSE event
+        let event = Event::default()
+            .event("message") // optional: "message" event type for the client
+            .data(buf);
+
+        Ok(event)
+    });
+
+    Ok(Sse::new(sse_stream))
 }
