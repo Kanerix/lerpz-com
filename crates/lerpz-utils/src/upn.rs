@@ -191,9 +191,9 @@ mod tests {
     #[test]
     fn two_letter_names() {
         let user_info = UserInfo::new(
-            "Bo",
+            "bo",
             vec!["Bi".into()],
-            "IT",
+            "HR",
             chrono::NaiveDate::from_ymd_opt(1995, 10, 15).unwrap(),
             "lerpz.com",
         );
