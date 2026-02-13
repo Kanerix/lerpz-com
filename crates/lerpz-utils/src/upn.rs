@@ -129,7 +129,7 @@ fn get_surname<T>(surnames: &[T], iteration: usize) -> &T {
 #[inline]
 pub fn replace_char(c: char) -> Option<char> {
     match c.to_ascii_lowercase() {
-        rc if ('a'..='z').contains(&rc) || rc.is_numeric() => Some(rc),
+        lc if ('a'..='z').contains(&lc) || lc.is_numeric() => Some(lc),
         'å' | 'æ' | 'ä' => Some('a'),
         'ø' | 'ö' => Some('o'),
         _ => None,
