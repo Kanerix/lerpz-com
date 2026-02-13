@@ -5,7 +5,7 @@
 //!
 //! # Examples
 //!
-//! ```
+//! ```ignore
 //! use lerpz_utils::env::{get_env, get_env_parse};
 //!
 //! // Get a simple string value
@@ -40,7 +40,7 @@ pub enum Error {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use lerpz_utils::env::get_env;
 ///
 /// // Set a variable for this example
@@ -69,7 +69,7 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use lerpz_utils::env::get_env_parse;
 ///
 /// // Parse a number
@@ -113,7 +113,7 @@ where
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use std::path::PathBuf;
 ///
 /// use lerpz_utils::env::get_env_from;

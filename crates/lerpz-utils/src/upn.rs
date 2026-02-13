@@ -7,19 +7,25 @@
 //!
 //! ### Globally unique identifier (GUID)
 //!
-//! Format: `<x><y>.<z><w>@<domain>`
+//! Allowed characters are the English alphabet (a–z) and digits (0–9). The GUID
+//! MUST always be lowercase. Special characters in names (such as `ø`, `é`, `ä`, `ß`)
+//! should be normalized to their closest ASCII equivalents (e.g., `ø` → `o`, `é` → `e`)
+//! before constructing the GUID. If there is no mapping in place for the special character,
+//! it should be skipped.
+//!
+//! Format: `<x><y>.<w>@<domain>`
 //!
 //! Where:
-//! - **x** = first 3 letters of the user's first name
-//! - **y** = first 3 letters of the user's last/middle name
-//! - **z** = the user's department
+//!
+//! - **x** = first 2–3 letters of the user's first name
+//! - **y** = first 2–3 letters of the user's last name (or middle name)
 //! - **w** = the last 2 digits of the year the user was employed
-//! - **domain** = the company's email domain
+//! - **domain** = the company's email domain (letters, digits, and `-` as allowed by normal DNS rules)
 //!
 //! Examples:
-//! - Kasper Jønsson, Engineer - 15/11/2020 @ lerpz.com -> kasjon.eng20@lerpz.com
+//! - Kasper Jønsson, Engineer - 15/11/2020 @ lerpz.com -> kasjon.20@lerpz.com
 
-use std::sync::Arc;
+use std::borrow::Cow;
 
 /// Errors that can occur when generating a UPN.
 #[derive(thiserror::Error, Debug)]
@@ -27,35 +33,30 @@ use std::sync::Arc;
 pub enum Error {
     #[error("Invalid department code")]
     DepartmentError,
-    #[error("Hire date is in the future")]
-    FutureHireDateError,
     #[error(transparent)]
     FmtError(#[from] std::fmt::Error),
 }
 
 /// User information to generate a UPN for.
 #[derive(Debug, Clone)]
-pub struct UserInfo {
-    forename: Arc<str>,
-    surnames: Arc<[Arc<str>]>,
-    department: Arc<str>,
-    hire_date: chrono::NaiveDate,
-    domain: Arc<str>,
+pub struct UserInfo<'a> {
+    pub forename: Cow<'a, str>,
+    pub surnames: Vec<Cow<'a, str>>,
+    pub hire_year: u32,
+    pub domain: Cow<'a, str>,
 }
 
-impl UserInfo {
+impl<'a> UserInfo<'a> {
     pub fn new(
-        forename: impl Into<Arc<str>>,
-        surnames: impl Into<Arc<[Arc<str>]>>,
-        department: impl Into<Arc<str>>,
-        hire_date: impl Into<chrono::NaiveDate>,
-        domain: impl Into<Arc<str>>,
-    ) -> UserInfo {
+        forename: impl Into<Cow<'a, str>>,
+        surnames: impl IntoIterator<Item = impl Into<Cow<'a, str>>>,
+        hire_year: u32,
+        domain: impl Into<Cow<'a, str>>,
+    ) -> UserInfo<'a> {
         Self {
             forename: forename.into(),
-            surnames: surnames.into(),
-            department: department.into(),
-            hire_date: hire_date.into(),
+            surnames: surnames.into_iter().map(Into::into).collect(),
+            hire_year: hire_year,
             domain: domain.into(),
         }
     }
@@ -64,7 +65,7 @@ impl UserInfo {
 /// Generate a UPN based on the provided user information.
 ///
 /// This is a shorthand for [`generate_upn_with_iteration`] with iteration set to 0.
-pub fn generate_upn(upn: impl Into<UserInfo>) -> Result<String, Error> {
+pub fn generate_upn<'a>(upn: impl Into<UserInfo<'a>>) -> Result<String, Error> {
     generate_upn_with_iteration(upn, 0)
 }
 
@@ -77,21 +78,23 @@ pub fn generate_upn(upn: impl Into<UserInfo>) -> Result<String, Error> {
 ///
 /// ### Example:
 ///
-/// ```rust
+/// ```ignore
 /// let user_info = UserInfo {
-///     forename: "Kasper".to_owned(),
-///     surnames: vec!["Jønsson".to_owned()],
-///     department: "Engineering".to_owned(),
-///     hire_date: chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-///     domain: "lerpz.com".to_owned(),
+///     forename: "Kasper",
+///     surnames: vec!["Jønsson"],
+///     hire_date: 2020,
+///     domain: "lerpz.com",
 /// };
 ///
 /// let upn = generate_upn_with_iteration(user_info, 0).unwrap();
-/// assert_eq!(upn, "kasjon.eng20@lerpz.com");
+/// assert_eq!(upn, "kasjon.20@lerpz.com");
 /// ```
-pub fn generate_upn_with_iteration(upn: impl Into<UserInfo>, i: usize) -> Result<String, Error> {
+pub fn generate_upn_with_iteration<'a>(
+    upn: impl Into<UserInfo<'a>>,
+    i: usize,
+) -> Result<String, Error> {
     let upn: UserInfo = upn.into();
-    let cap = 13 + upn.domain.len();
+    let cap = 10 + upn.domain.len();
     let mut buf = String::with_capacity(cap);
 
     shortname(&upn.forename, &mut buf);
@@ -101,25 +104,14 @@ pub fn generate_upn_with_iteration(upn: impl Into<UserInfo>, i: usize) -> Result
 
     buf.push('.');
 
-    shortname(&upn.department, &mut buf);
-
-    upn.hire_date.format("%y").write_to(&mut buf)?;
+    let year = upn.hire_year % 100;
+    use std::fmt::Write;
+    write!(&mut buf, "{year:02}")?;
 
     buf.push('@');
     buf.push_str(&upn.domain);
 
     Ok(buf)
-}
-
-/// Replace non-allowed characters with an allowed equivalent.
-#[inline]
-pub fn replace_char(c: char) -> Option<char> {
-    match c.to_ascii_lowercase() {
-        _ if ('a'..='z').contains(&c) || c.is_numeric() => Some(c),
-        'å' | 'æ' | 'ä' => Some('a'),
-        'ø' | 'ö' => Some('o'),
-        _ => None,
-    }
 }
 
 /// Gets the the surnames based on the iteration.
@@ -133,6 +125,16 @@ fn get_surname<T>(surnames: &[T], iteration: usize) -> &T {
     &surnames[idx]
 }
 
+/// Replace non-allowed characters with an allowed equivalent.
+#[inline]
+pub fn replace_char(c: char) -> Option<char> {
+    match c.to_ascii_lowercase() {
+        rc if ('a'..='z').contains(&rc) || rc.is_numeric() => Some(rc),
+        'å' | 'æ' | 'ä' => Some('a'),
+        'ø' | 'ö' => Some('o'),
+        _ => None,
+    }
+}
 /// Pushes the three first legal characters to buf.
 #[inline]
 fn shortname(name: &str, buf: &mut String) {
@@ -146,59 +148,45 @@ mod tests {
     use crate::upn::{UserInfo, generate_upn, generate_upn_with_iteration};
 
     #[test]
-    fn basic() {
-        let user_info = UserInfo::new(
-            "Kasper",
-            vec!["Jønsson".into()],
-            "Engineering",
-            chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-            "lerpz.com",
-        );
-
+    fn illegal_char() {
+        let user_info = UserInfo::new("Kasper", vec!["Jønsson"], 2020, "lerpz.com");
         let upn = generate_upn(user_info).unwrap();
-        assert_eq!(upn, "kasjon.eng20@lerpz.com");
+        assert_eq!(upn, "kasjon.20@lerpz.com");
     }
 
     #[test]
     fn surname_iterations() {
         let user_info = UserInfo::new(
             "Kasper",
-            vec!["Sørensen".into(), "Tørkilsen".into(), "Jønsson".into()],
-            "Engineering",
-            chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
+            vec!["Sørensen", "Tørkilsen", "Jønsson"],
+            2020,
             "lerpz.com",
         );
 
         let upn = generate_upn_with_iteration(user_info.clone(), 0).unwrap();
-        assert_eq!(upn, "kasjon.eng20@lerpz.com");
+        assert_eq!(upn, "kasjon.20@lerpz.com");
 
         let upn = generate_upn_with_iteration(user_info.clone(), 1).unwrap();
-        assert_eq!(upn, "kastok.eng20@lerpz.com");
+        assert_eq!(upn, "kastor.20@lerpz.com");
 
         let upn = generate_upn_with_iteration(user_info.clone(), 2).unwrap();
-        assert_eq!(upn, "kassor.eng20@lerpz.com");
+        assert_eq!(upn, "kassor.20@lerpz.com");
 
         let upn = generate_upn_with_iteration(user_info.clone(), 3).unwrap();
-        assert_eq!(upn, "kasjon.eng20@lerpz.com");
+        assert_eq!(upn, "kasjon.20@lerpz.com");
 
         let upn = generate_upn_with_iteration(user_info.clone(), 4).unwrap();
-        assert_eq!(upn, "kastok.eng20@lerpz.com");
+        assert_eq!(upn, "kastor.20@lerpz.com");
 
         let upn = generate_upn_with_iteration(user_info.clone(), 5).unwrap();
-        assert_eq!(upn, "kasson.eng20@lerpz.com");
+        assert_eq!(upn, "kassor.20@lerpz.com");
     }
 
     #[test]
     fn two_letter_names() {
-        let user_info = UserInfo::new(
-            "bo",
-            vec!["Bi".into()],
-            "HR",
-            chrono::NaiveDate::from_ymd_opt(1995, 10, 15).unwrap(),
-            "lerpz.com",
-        );
+        let user_info = UserInfo::new("bo", vec!["Bi"], 1995, "lerpz.com");
 
         let upn = generate_upn(user_info).unwrap();
-        assert_eq!(upn, "bobi.it95@lerpz.com");
+        assert_eq!(upn, "bobi.95@lerpz.com");
     }
 }

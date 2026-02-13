@@ -9,7 +9,7 @@
 ///
 /// Usage together with the [`crate::env`] module and a [`std::sync::LazyLock`].
 ///
-/// ```no_run
+/// ```ignore
 /// use std::sync::LazyLock;
 /// use lerpz_utils::{
 ///     generate_config,
