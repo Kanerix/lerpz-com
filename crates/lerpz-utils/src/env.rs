@@ -28,7 +28,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("environment variable \"{0}\" was not found")]
-    NotFound(String),
+    NotFoundError(String),
     #[error("couldn't parse environment variable \"{0}\" into {1}")]
     ParseError(String, String),
 }
@@ -57,7 +57,7 @@ pub fn get_env<K>(key: K) -> Result<String>
 where
     K: AsRef<OsStr> + Copy,
 {
-    std::env::var(key).map_err(|_| Error::NotFound(key.as_ref().to_string_lossy().to_string()))
+    std::env::var(key).map_err(|_| Error::NotFoundError(key.as_ref().to_string_lossy().to_string()))
 }
 
 /// Gets an environment variable and parses it into the specified type.
