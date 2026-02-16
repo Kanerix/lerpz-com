@@ -1,16 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::sync::Arc;
 
 use lerpz_utils::upn::{generate_upn, generate_upn_with_iteration, replace_char, UserInfo};
 
 fn basic_upn_generation(c: &mut Criterion) {
-    let user_info = UserInfo::new(
-        "Kasper",
-        vec!["Jønsson".into()],
-        "Engineering",
-        chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-        "lerpz.com",
-    );
+    let user_info = UserInfo::new("Kasper", vec!["Jønsson"], 2020, "lerpz.com");
 
     c.bench_function("basic_upn", |b| {
         b.iter(|| generate_upn(black_box(user_info.clone())))
@@ -20,9 +13,8 @@ fn basic_upn_generation(c: &mut Criterion) {
 fn upn_with_multiple_surnames(c: &mut Criterion) {
     let user_info = UserInfo::new(
         "Kasper",
-        vec!["Sørensen".into(), "Tørkilsen".into(), "Jønsson".into()],
-        "Engineering",
-        chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
+        vec!["Sørensen", "Tørkilsen", "Jønsson"],
+        2020,
         "lerpz.com",
     );
 
@@ -34,9 +26,8 @@ fn upn_with_multiple_surnames(c: &mut Criterion) {
 fn upn_iterations(c: &mut Criterion) {
     let user_info = UserInfo::new(
         "Kasper",
-        vec!["Sørensen".into(), "Tørkilsen".into(), "Jønsson".into()],
-        "Engineering",
-        chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
+        vec!["Sørensen", "Tørkilsen", "Jønsson"],
+        2020,
         "lerpz.com",
     );
 
@@ -62,23 +53,17 @@ fn character_replacement(c: &mut Criterion) {
 }
 
 fn varying_name_lengths(c: &mut Criterion) {
-    let test_cases: Vec<(Arc<str>, Vec<Arc<str>>, Arc<str>)> = vec![
-        (Arc::from("Bo"), vec![Arc::from("Li")], Arc::from("IT")),
-        (Arc::from("John"), vec![Arc::from("Doe")], Arc::from("Sales")),
-        (Arc::from("Katherine"), vec![Arc::from("Smith")], Arc::from("Engineering")),
-        (Arc::from("Bartholomew"), vec![Arc::from("Montgomery")], Arc::from("Management")),
+    let test_cases: Vec<(&str, Vec<&str>)> = vec![
+        ("Bo", vec!["Li"]),
+        ("John", vec!["Doe"]),
+        ("Katherine", vec!["Smith"]),
+        ("Bartholomew", vec!["Montgomery"]),
     ];
 
     let mut group = c.benchmark_group("name_lengths");
-    for (forename, surnames, dept) in test_cases {
-        let label = format!("{}-{}", forename, surnames[0].as_ref());
-        let user_info = UserInfo::new(
-            forename,
-            surnames.clone(),
-            dept,
-            chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-            "example.com",
-        );
+    for (forename, surnames) in test_cases {
+        let label = format!("{}-{}", forename, surnames[0]);
+        let user_info = UserInfo::new(forename, surnames.clone(), 2020, "example.com");
 
         group.bench_with_input(
             BenchmarkId::new("generate", &label),
@@ -90,13 +75,7 @@ fn varying_name_lengths(c: &mut Criterion) {
 }
 
 fn special_characters(c: &mut Criterion) {
-    let user_info = UserInfo::new(
-        "Søren",
-        vec!["Åström".into()],
-        "Ødegård",
-        chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-        "lerpz.com",
-    );
+    let user_info = UserInfo::new("Søren", vec!["Åström"], 2020, "lerpz.com");
 
     c.bench_function("special_chars", |b| {
         b.iter(|| generate_upn(black_box(user_info.clone())))
@@ -104,13 +83,7 @@ fn special_characters(c: &mut Criterion) {
 }
 
 fn clone_cost(c: &mut Criterion) {
-    let user_info = UserInfo::new(
-        "Kasper",
-        vec!["Jønsson".into()],
-        "Engineering",
-        chrono::NaiveDate::from_ymd_opt(2020, 10, 15).unwrap(),
-        "lerpz.com",
-    );
+    let user_info = UserInfo::new("Kasper", vec!["Jønsson"], 2020, "lerpz.com");
 
     c.bench_function("userinfo_clone", |b| {
         b.iter(|| black_box(user_info.clone()))
