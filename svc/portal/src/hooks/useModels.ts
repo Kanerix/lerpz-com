@@ -32,7 +32,7 @@ const currentModels: Model[] = [
     settings: [
       {
         name: "Quality",
-        key: "quality" as const,
+        key: "quality",
         icon: ImageUpscale,
         tooltip: "Quality of the image(s)",
         values: [
@@ -44,7 +44,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Amount",
-        key: "amount" as const,
+        key: "amount",
         icon: Images,
         tooltip: "Amount of image(s)",
         values: [
@@ -58,7 +58,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Filetype",
-        key: "filetype" as const,
+        key: "filetype",
         icon: FileType,
         tooltip: "Type of image(s)",
         values: [
@@ -69,7 +69,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Background",
-        key: "background" as const,
+        key: "background",
         icon: FileType,
         tooltip: "Background of the image(s)",
         values: [
@@ -87,7 +87,7 @@ const currentModels: Model[] = [
     settings: [
       {
         name: "Quality",
-        key: "quality" as const,
+        key: "quality",
         icon: ImageUpscale,
         tooltip: "Quality of the image(s)",
         values: [
@@ -99,7 +99,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Amount",
-        key: "amount" as const,
+        key: "amount",
         icon: Images,
         tooltip: "Amount of image(s)",
         values: [
@@ -113,7 +113,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Filetype",
-        key: "filetype" as const,
+        key: "filetype",
         icon: FileType,
         tooltip: "Type of image(s)",
         values: [
@@ -124,7 +124,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Background",
-        key: "background" as const,
+        key: "background",
         icon: FileType,
         tooltip: "Background of the image(s)",
         values: [
@@ -142,7 +142,7 @@ const currentModels: Model[] = [
     settings: [
       {
         name: "Quality",
-        key: "quality" as const,
+        key: "quality",
         icon: ImageUpscale,
         tooltip: "Quality of the image(s)",
         values: [
@@ -154,7 +154,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Amount",
-        key: "amount" as const,
+        key: "amount",
         icon: Images,
         tooltip: "Amount of image(s)",
         values: [
@@ -168,7 +168,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Filetype",
-        key: "filetype" as const,
+        key: "filetype",
         icon: FileType,
         tooltip: "Type of image(s)",
         values: [
@@ -179,7 +179,7 @@ const currentModels: Model[] = [
       },
       {
         name: "Background",
-        key: "background" as const,
+        key: "background",
         icon: FileType,
         tooltip: "Background of the image(s)",
         values: [
@@ -197,7 +197,7 @@ const currentModels: Model[] = [
     settings: [
       {
         name: "Resolution",
-        key: "resolution" as const,
+        key: "resolution",
         icon: ImageUpscale,
         tooltip: "Quality of the image(s)",
         values: [
@@ -208,14 +208,14 @@ const currentModels: Model[] = [
       },
       {
         name: "Filetype",
-        key: "filetype" as const,
+        key: "filetype",
         icon: FileType,
         tooltip: "Type of image(s)",
         values: [{ value: "png", label: "PNG" }],
       },
       {
         name: "Background",
-        key: "background" as const,
+        key: "background",
         icon: FileType,
         tooltip: "Background of the image(s)",
         values: [
@@ -233,7 +233,7 @@ const currentModels: Model[] = [
     settings: [
       {
         name: "Resolution",
-        key: "resolution" as const,
+        key: "resolution",
         icon: ImageUpscale,
         tooltip: "Quality of the image(s)",
         values: [
@@ -244,14 +244,14 @@ const currentModels: Model[] = [
       },
       {
         name: "Filetype",
-        key: "filetype" as const,
+        key: "filetype",
         icon: FileType,
         tooltip: "Type of image(s)",
         values: [{ value: "png", label: "PNG" }],
       },
       {
         name: "Background",
-        key: "background" as const,
+        key: "background",
         icon: FileType,
         tooltip: "Background of the image(s)",
         values: [
@@ -262,7 +262,7 @@ const currentModels: Model[] = [
       },
     ],
   },
-] as const;
+];
 
 export function useModels() {
   const [models, setModels] = useState<Model[]>([]);

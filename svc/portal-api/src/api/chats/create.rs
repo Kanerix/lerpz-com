@@ -49,7 +49,7 @@ pub async fn handler(
     }
 
     let request = request_builder.build()?;
-    let client = state.openai.read().await;
+    let client = state.openai;
     let stream = client.chat().create_stream(request).await?;
 
     let sse_stream = stream.map(|chunk_result| {

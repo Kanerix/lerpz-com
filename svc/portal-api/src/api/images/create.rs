@@ -75,23 +75,32 @@ pub async fn handler(
 
     let request = request_builder.build()?;
 
-    let client = state.openai.read().await;
+    let client = state.openai;
     let stream = client.images().generate_stream(request).await?;
 
     let sse_stream = stream.map(|chunk_result| {
         let chunk = match chunk_result {
             Ok(c) => c,
             Err(err) => {
-                return Ok(Event::default().event("error").data(err.to_string()));
+                return Ok(Event::default()
+                    .event("error")
+                    .json_data(err.to_string())
+                    .unwrap());
             }
         };
 
         let event = match chunk {
             ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, .. }) => {
-                Event::default().event("partial_image").data(b64_json)
+                Event::default()
+                    .event("partial_image")
+                    .json_data(b64_json)
+                    .unwrap()
             }
             ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, .. }) => {
-                Event::default().event("completed_image").data(b64_json)
+                Event::default()
+                    .event("completed_image")
+                    .json_data(b64_json)
+                    .unwrap()
             }
         };
 

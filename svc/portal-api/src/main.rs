@@ -13,7 +13,6 @@ use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
 use secrecy::{ExposeSecret, SecretString};
 use sqlx::postgres::PgPoolOptions;
-use tokio::sync::RwLock;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
@@ -59,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         api_key: SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
         api_provider: CONFIG.PORTKEY_PROVIDER.clone(),
     };
-    let openai = Arc::new(RwLock::new(Client::with_config(portkey_config)));
+    let openai = Arc::new(Client::with_config(portkey_config));
 
     let database = PgPoolOptions::new()
         .max_connections(5)

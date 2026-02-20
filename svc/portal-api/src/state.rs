@@ -5,9 +5,8 @@ use axum::{extract::FromRef, http::HeaderMap};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use secrecy::{ExposeSecret, SecretString};
-use tokio::sync::RwLock;
 
-type OpenAI = Arc<RwLock<Client<PortkeyConfig>>>;
+type OpenAI = Arc<Client<PortkeyConfig>>;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -74,7 +73,7 @@ impl FromRef<AppState> for AzureConfig {
     }
 }
 
-impl FromRef<AppState> for Arc<RwLock<Client<PortkeyConfig>>> {
+impl FromRef<AppState> for Arc<Client<PortkeyConfig>> {
     fn from_ref(state: &AppState) -> Self {
         state.openai.clone()
     }
