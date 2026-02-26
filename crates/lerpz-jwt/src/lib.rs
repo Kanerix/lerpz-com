@@ -17,7 +17,6 @@ use jsonwebtoken::{Header, TokenData, Validation, decode, encode};
 pub use claims::Claims;
 pub use error::{Error, Result};
 
-
 /// Create a new JWT token with the given claims and key.
 ///
 /// This uses [`encode_jwt_with_header`] and uses [`Header::default()`] as
@@ -53,6 +52,6 @@ pub fn decode_jwt_with_validation(
     key: &DecodingKey,
     validation: &Validation,
 ) -> Result<TokenData<Claims>> {
-    let token_data = decode::<Claims>(token, key, &validation).map_err(Error::TokenError)?;
+    let token_data = decode::<Claims>(token, key, validation).map_err(Error::TokenError)?;
     Ok(token_data)
 }

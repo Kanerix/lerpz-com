@@ -27,7 +27,7 @@ pub struct Claims {
     pub iat: i64,
     /// Scope of the token.
     #[serde(skip_serializing_if = "String::is_empty")]
-    pub scp: String
+    pub scp: String,
 }
 
 impl Default for Claims {

@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
-        .connect(&CONFIG.DATABASE_URL.expose_secret())
+        .connect(CONFIG.DATABASE_URL.expose_secret())
         .await
         .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 

@@ -9,7 +9,7 @@ use super::{
     error::{Error, Result},
 };
 
-static ARGON2: LazyLock<Argon2<'static>> = LazyLock::new(|| Argon2::default());
+static ARGON2: LazyLock<Argon2<'static>> = LazyLock::new(Argon2::default);
 
 pub struct Scheme01;
 
@@ -26,8 +26,9 @@ impl Scheme for Scheme01 {
     fn validate(&self, pwd_hash: &str, pwd_ref: &str, _pwd_ref_salt: &str) -> Result<bool> {
         let pwd_hash_parsed = PasswordHash::new(pwd_hash).map_err(Error::PwdHash)?;
         let pwd_ref_bytes = pwd_ref.as_bytes();
-        Ok(ARGON2
+        let is_ok = ARGON2
             .verify_password(pwd_ref_bytes, &pwd_hash_parsed)
-            .is_ok())
+            .is_ok();
+        Ok(is_ok)
     }
 }

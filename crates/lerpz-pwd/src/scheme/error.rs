@@ -11,8 +11,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum Error {
-	#[error("no scheme named \"{0}\" exist")]
-	SchemeNotFound(String),
-	#[error("error hashing password: {0}")]
-	PwdHash(#[from] Argon2Error),
+    #[error("no scheme named \"{0}\" exist")]
+    SchemeNotFound(String),
+    #[error("error hashing password: {0}")]
+    PwdHash(#[from] Argon2Error),
 }

@@ -7,9 +7,9 @@
 use std::borrow::Cow;
 
 use axum::{
-    http::{request::Parts, StatusCode},
-    response::{IntoResponse, Response},
     Json,
+    http::{StatusCode, request::Parts},
+    response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

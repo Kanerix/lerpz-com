@@ -56,7 +56,7 @@ impl<'a> UserInfo<'a> {
         Self {
             forename: forename.into(),
             surnames: surnames.into_iter().map(Into::into).collect(),
-            hire_year: hire_year,
+            hire_year,
             domain: domain.into(),
         }
     }
@@ -100,7 +100,7 @@ pub fn generate_upn_with_iteration<'a>(
     shortname(&upn.forename, &mut buf);
 
     let surname = get_surname(&upn.surnames, i);
-    shortname(&surname, &mut buf);
+    shortname(surname, &mut buf);
 
     buf.push('.');
 
@@ -129,7 +129,7 @@ fn get_surname<T>(surnames: &[T], iteration: usize) -> &T {
 #[inline]
 pub fn replace_char(c: char) -> Option<char> {
     match c.to_ascii_lowercase() {
-        lc if ('a'..='z').contains(&lc) || lc.is_numeric() => Some(lc),
+        lc if lc.is_ascii_lowercase() || lc.is_numeric() => Some(lc),
         'å' | 'æ' | 'ä' => Some('a'),
         'ø' | 'ö' => Some('o'),
         _ => None,

@@ -3,9 +3,7 @@ use jsonwebtoken::{Algorithm, Validation};
 /// Default JWT validation claims.
 ///
 /// The algorithm will always be [`Algorithm::RS256`].
-pub fn get_token_validation(
-    config: &super::AzureConfig,
-) -> Validation {
+pub fn get_token_validation(config: &super::AzureConfig) -> Validation {
     let mut validation = Validation::new(Algorithm::RS256);
     validation.set_required_spec_claims(&["aud", "iss", "exp"]);
     validation.set_audience(&[&config.aud()]);

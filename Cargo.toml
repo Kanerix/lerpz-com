@@ -67,3 +67,6 @@ thiserror = "2.0"
 url = "2.5"
 uuid = "1.18"
 validator = "0.20"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"

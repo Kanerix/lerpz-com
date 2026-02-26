@@ -1,4 +1,4 @@
-///! This module handles shutdown of the server.
+//! This module handles shutdown of the server.
 
 /// A function that resolves when a shutdown signal is received.
 pub async fn shutdown_signal() {

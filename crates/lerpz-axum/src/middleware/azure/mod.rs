@@ -240,7 +240,7 @@ where
             .get("Authorization")
             .and_then(|h| h.to_str().ok())
             .and_then(|h| h.strip_prefix("Bearer "))
-            .ok_or_else(|| HandlerError::unauthorized())?;
+            .ok_or_else(HandlerError::unauthorized)?;
 
         let header = match decode_header(token) {
             Ok(header) => header,

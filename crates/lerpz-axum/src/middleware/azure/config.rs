@@ -163,7 +163,7 @@ impl JwksCache {
         }
 
         let cache = self.inner.read().await;
-        if let Some(key) = cache.jwks.find(&kid) {
+        if let Some(key) = cache.jwks.find(kid) {
             Ok(Some(key.clone()))
         } else {
             Ok(None)
