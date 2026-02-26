@@ -248,9 +248,23 @@ where
 {
     /// Turns any error into a [`HandlerError`].
     ///
-    /// This assumes that the error is an internal server error. This will
-    /// automatically set the error in the [`Self::inner`] field.
+    /// This uses the default implementation defined in [`HandlerError::default`].
     fn from(value: E) -> Self {
+        Self {
+            inner: Some(value.into()),
+            ..Default::default()
+        }
+    }
+}
+
+impl<D> Default for HandlerError<D>
+where
+    D: Serialize + Send + Sync,
+{
+    /// Default error values.
+    ///
+    /// This assumes that the error is an internal server error.
+    fn default() -> Self {
         Self {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             kind: Cow::from("about:blank"),
@@ -259,7 +273,7 @@ where
             instance: None,
             extension: None,
             log_id: None, // This will be set in HandlerError::into_response() if `inner` is `Some`.
-            inner: Some(value.into()),
+            inner: None,
         }
     }
 }
@@ -307,7 +321,7 @@ mod test {
     }
 
     #[test]
-    fn test_any_error_to_handler_result() {
+    fn test_error_to_handler_result() {
         let example_handler = || -> HandlerResult<i32> { Ok("abc".parse::<i32>()?) };
 
         let handler_error = example_handler().unwrap_err();
@@ -318,7 +332,7 @@ mod test {
     }
 
     #[test]
-    fn test_unsafe_set_log_id() {
+    fn test_with_log_id() {
         let example_handler_one = || -> HandlerResult<i32> { Ok("abc".parse::<i32>()?) };
         let example_handler_two = || -> HandlerResult<f64> { Ok("xyz".parse::<f64>()?) };
         let example_handler_three = || -> HandlerResult<i16> { Ok("qwe".parse::<i16>()?) };
@@ -333,7 +347,7 @@ mod test {
 
         assert!(handler_error_one.log_id.is_some());
         assert!(handler_error_two.log_id.is_some());
-        assert!(handler_error_three.log_id.is_none());
+        assert!(handler_error_three.log_id.is_none()); // `log_id` is set when turned into a response.
         assert_eq!(handler_error_one.log_id, handler_error_two.log_id)
     }
 }

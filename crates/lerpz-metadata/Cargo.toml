@@ -1,0 +1,10 @@
+[package]
+name = "lerpz-metadata"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+chrono = { workspace = true }
+mongodb = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
