@@ -16,47 +16,40 @@ import {
 } from "@lerpz/ui/components/sidebar";
 import { ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useChatbox } from "@/components/chatbox/provider";
+import type { ChatboxVariant } from "@/hooks/useEnhance";
 
-interface Mode {
+export interface Mode {
+  variant: ChatboxVariant;
   name: string;
   logo: React.ElementType;
   plan: string;
+  href: string;
+  target: string;
 }
 
-interface ModeSwitcherProps {
+export interface ModeSwitcherProps {
+  defaultMode: Mode;
   modes: Mode[];
 }
-export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
+
+export default function ModeSwitcher({
+  defaultMode,
+  modes,
+}: ModeSwitcherProps) {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const [activeMode, setActiveMode] = useState<Mode | undefined>(modes[1]);
+
+  const [activeMode, setActiveMode] = useState<Mode>(defaultMode);
 
   const { setMode: setVariant } = useChatbox();
 
-  useEffect(() => {
-    if (!activeMode) return;
-
-    switch (activeMode.name) {
-      case "Video":
-        setVariant("video");
-        router.push("/videos");
-        break;
-      case "Image":
-        setVariant("image");
-        router.push("/images");
-        break;
-      case "Chat":
-        setVariant("chat");
-        router.push("/chats");
-        break;
-    }
-  }, [activeMode]);
-
-  if (!activeMode) {
-    return null;
-  }
+  const handleModeChange = (mode: Mode) => {
+    setActiveMode(mode);
+    setVariant(mode.variant);
+    router.push(mode.href);
+  };
 
   return (
     <SidebarMenu>
@@ -90,7 +83,7 @@ export default function ModeSwitcher({ modes }: ModeSwitcherProps) {
               {modes.map((mode) => (
                 <DropdownMenuItem
                   key={mode.name}
-                  onClick={() => setActiveMode(mode)}
+                  onClick={() => handleModeChange(mode)}
                   className="gap-2 p-2"
                 >
                   <div className="flex size-6 items-center justify-center rounded-md border">

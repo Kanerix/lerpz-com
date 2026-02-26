@@ -1,4 +1,4 @@
-import MsalProviderWrapper from "@/components/msal-provider";
+import MsalProvider from "@/components/msal-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@lerpz/ui/globals.css";
@@ -27,7 +27,7 @@ export default function RootLayout({
       <head />
       <body className={`${inter.variable} antialiased`}>
         <Suspense fallback="Loading...">
-          <MsalProviderWrapper>
+          <MsalProvider>
             <QueryProvider>
               <ThemeProvider
                 attribute="class"
@@ -38,7 +38,7 @@ export default function RootLayout({
                 {children}
               </ThemeProvider>
             </QueryProvider>
-          </MsalProviderWrapper>
+          </MsalProvider>
         </Suspense>
       </body>
     </html>

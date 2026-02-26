@@ -5,7 +5,7 @@ import LoginButton from "@/components/login-button";
 export default function LoginPage() {
   return (
     <div>
-      <LoginButton />
+      <LoginButton>Login with Microsoft</LoginButton>
     </div>
   );
 }

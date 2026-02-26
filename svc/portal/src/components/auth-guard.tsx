@@ -1,26 +1,43 @@
 "use client";
 
+import { InteractionStatus } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 
-export function AuthGuard({ children }: { children: ReactNode }) {
-  const { accounts } = useMsal();
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { inProgress, accounts } = useMsal();
   const router = useRouter();
 
   useEffect(() => {
-    if (accounts.length === 0) {
-      router.replace("/login");
+    if (inProgress === InteractionStatus.None && accounts.length === 0) {
+      router.push("/login");
     }
-  }, [accounts, router]);
+  }, [inProgress, accounts, router]);
 
-  if (accounts.length === 0) {
+  if (inProgress !== InteractionStatus.None) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p>Checking authentication…</p>
-      </main>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto" />
+          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
     );
   }
 
-  return <>{children}</>;
+  if (accounts.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto" />
+          <p className="mt-4 text-sm text-muted-foreground">
+            Redirecting to sign in...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
 }

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import createMDX from "@next/mdx";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url);
@@ -11,6 +12,7 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const nextConfig = {
   output: "standalone",
   cacheComponents: true,
+  pageExtensions: ["tsx", "ts", "jsx", "js", "mdx", "md"],
   transpilePackages: ["@t3-oss/env-nextjs", "@t3-oss/env-core"],
   outputFileTracingRoot: path.join(__dirname, "../../"),
   devIndicators: {
@@ -18,4 +20,8 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+const withMDX = createMDX({
+  extension: /\.(md|mdx)$/,
+});
+
+export default withMDX(nextConfig);

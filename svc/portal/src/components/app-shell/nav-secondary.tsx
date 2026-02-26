@@ -5,13 +5,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@lerpz/ui/components/sidebar";
-import { Construction, Settings2 } from "lucide-react";
+import { Construction, ScrollText, Settings2 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ComponentPropsWithoutRef } from "react";
 
 type NavSecondaryProps = ComponentPropsWithoutRef<typeof SidebarGroup>;
 
 const pages = [
+  {
+    title: "Docs",
+    url: "/docs",
+    icon: ScrollText,
+  },
   {
     title: "Settings",
     url: "/settings",
@@ -25,6 +31,8 @@ const pages = [
 ];
 
 export default function NavSecondary({ ...props }: NavSecondaryProps) {
+  const pathname = usePathname();
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
@@ -32,6 +40,7 @@ export default function NavSecondary({ ...props }: NavSecondaryProps) {
           {pages.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
+                isActive={item.url === pathname}
                 render={
                   <Link href={item.url}>
                     <item.icon />

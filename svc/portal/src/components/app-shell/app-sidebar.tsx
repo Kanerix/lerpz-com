@@ -1,5 +1,6 @@
 "use client";
 
+import { Separator } from "@lerpz/ui/components/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -11,48 +12,58 @@ import { Image, MessageCircle, Video } from "lucide-react";
 import type { ComponentProps } from "react";
 // import { NavMain } from "@/components/sidebar/nav-main";
 // import { NavProjects } from "@/components/sidebar/nav-projects";
-import ModeSwitcher from "./mode-switcher";
+import ModeSwitcher, { type ModeSwitcherProps } from "./mode-switcher";
 import NavSecondary from "./nav-secondary";
 import SidebarUserInfo from "./user-info";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+const modes: ModeSwitcherProps["modes"] = [
+  {
+    variant: "chat",
+    name: "Chat",
+    logo: MessageCircle,
+    plan: "Free",
+    href: "/chats",
+    target: "_self",
   },
-  modes: [
-    {
-      name: "Chat",
-      logo: MessageCircle,
-      plan: "Free",
-    },
-    {
-      name: "Image",
-      logo: Image,
-      plan: "Free",
-    },
-    {
-      name: "Video",
-      logo: Video,
-      plan: "Enterprise",
-    },
-  ],
-};
+  {
+    variant: "image",
+    name: "Image",
+    logo: Image,
+    plan: "Free",
+    href: "/images",
+    target: "_self",
+  },
+  {
+    variant: "video",
+    name: "Video",
+    logo: Video,
+    plan: "Enterprise",
+    href: "/videos",
+    target: "_self",
+  },
+];
 
 export default function AppSidebar({
   ...props
 }: ComponentProps<typeof Sidebar>) {
+  const defaultMode = modes[0];
+
+  if (!defaultMode) {
+    throw new Error("unreachable");
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <ModeSwitcher modes={data.modes} />
+        <ModeSwitcher defaultMode={defaultMode} modes={modes} />
       </SidebarHeader>
+      <Separator />
       <SidebarContent>
         {/*<NavMain items={data.navMain} />*/}
         {/*<NavProjects projects={data.projects} />*/}
         <NavSecondary className="mt-auto" />
       </SidebarContent>
+      <Separator />
       <SidebarFooter>
         <SidebarUserInfo />
       </SidebarFooter>
