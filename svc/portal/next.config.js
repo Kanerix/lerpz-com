@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import createMDX from "@next/mdx";
 import { createJiti } from "jiti";
+import nextra from "nextra";
 
 const jiti = createJiti(import.meta.url);
 await jiti.import("./src/lib/env");
@@ -20,8 +20,8 @@ const nextConfig = {
   },
 };
 
-const withMDX = createMDX({
-  extension: /\.(md|mdx)$/,
+const withNextra = nextra({
+  contentDirBasePath: "/docs",
 });
 
-export default withMDX(nextConfig);
+export default withNextra(nextConfig);

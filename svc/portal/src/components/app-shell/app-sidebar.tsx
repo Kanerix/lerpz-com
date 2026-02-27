@@ -10,9 +10,9 @@ import {
 } from "@lerpz/ui/components/sidebar";
 import { Image, MessageCircle, Video } from "lucide-react";
 import type { ComponentProps } from "react";
-// import { NavMain } from "@/components/sidebar/nav-main";
-// import { NavProjects } from "@/components/sidebar/nav-projects";
 import ModeSwitcher, { type ModeSwitcherProps } from "./mode-switcher";
+// import { NavMain } from "./nav-main";
+// import { NavProjects } from "./nav-projects";
 import NavSecondary from "./nav-secondary";
 import SidebarUserInfo from "./user-info";
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useAccount, useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
+import { useMsal } from "@azure/msal-react";
 import {
   Avatar,
   AvatarFallback,
@@ -27,14 +28,71 @@ import {
   ChevronsUpDown,
   LogOut,
   Sparkles,
+  Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { loginRequest } from "@/lib/msal-config";
+import { getCurrentUserPhotoUrl } from "@/services/graph/photo";
 
 export default function SidebarUserInfo() {
-  const { accounts } = useMsal();
-  const account = useAccount(accounts[0] || {});
+  const [avatarSrc, setAvatarSrc] = useState<string>();
+
+  const { instance, inProgress } = useMsal();
+  const account = instance.getActiveAccount();
+  const accountId = account?.homeAccountId;
 
   const { isMobile } = useSidebar();
 
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      if (!accountId) {
+        setAvatarSrc(undefined);
+        return;
+      }
+
+      if (inProgress !== InteractionStatus.None) {
+        return;
+      }
+
+      const url = await getCurrentUserPhotoUrl();
+      if (!isMounted) return;
+
+      setAvatarSrc(url ?? undefined);
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, inProgress]);
+
+  const avatarFallback =
+    account?.name
+      ?.split(" ")
+      .map((n) => (n ? n[0]?.toUpperCase() : ""))
+      .filter((n) => n)
+      .slice(0, 2)
+      .join("") || "?";
+
+  const handleAccountSwitch = async () => {
+    try {
+      await instance.loginRedirect({
+        prompt: "select_account",
+        ...loginRequest,
+      });
+    } catch (error) {
+      console.error("Account switch failed:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await instance.logoutRedirect();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -46,8 +104,10 @@ export default function SidebarUserInfo() {
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={undefined} />
-                  <AvatarFallback className="rounded-lg">KJ</AvatarFallback>
+                  <AvatarImage src={avatarSrc} />
+                  <AvatarFallback className="rounded-lg">
+                    {avatarFallback}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{account?.name}</span>
@@ -67,8 +127,10 @@ export default function SidebarUserInfo() {
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={undefined} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    <AvatarImage src={avatarSrc} />
+                    <AvatarFallback className="rounded-lg">
+                      {avatarFallback}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">
@@ -100,7 +162,11 @@ export default function SidebarUserInfo() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleAccountSwitch}>
+              <Users />
+              Switch Account
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

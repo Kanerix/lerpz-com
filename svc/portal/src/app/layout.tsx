@@ -1,6 +1,6 @@
-import MsalProvider from "@/components/msal-provider";
-import { QueryProvider } from "@/components/query-provider";
-import { ThemeProvider } from "@/components/theme-provider";
+import MsalProvider from "@/components/providers/msal-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "@lerpz/ui/globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";

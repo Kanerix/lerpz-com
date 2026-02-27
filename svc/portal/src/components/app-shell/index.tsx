@@ -1,19 +1,16 @@
-import { SidebarInset, SidebarTrigger } from "@lerpz/ui/components/sidebar";
-import { Toaster } from "sonner";
+import { SidebarInset, SidebarProvider } from "@lerpz/ui/components/sidebar";
 import AppSidebar from "./app-sidebar";
+import AppTopbar from "./app-topbar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <AppSidebar>
-      <SidebarInset>
-        <header className="flex items-center shrink-0 gap-2 border-b px-4 h-12">
-          <SidebarTrigger className="ml-1" />
-        </header>
-        <Toaster />
-      </SidebarInset>
+    <SidebarProvider>
       <AppSidebar />
-      {children}
-    </AppSidebar>
+      <SidebarInset>
+        <AppTopbar />
+        {children}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 

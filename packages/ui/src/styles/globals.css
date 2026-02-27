@@ -1,9 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@source "../../../apps/**/*.{ts,tsx}";
-@source "../../../components/**/*.{ts,tsx}";
-@source "../**/*.{ts,tsx}";
+@plugin "@tailwindcss/typography";
+
+@source "../**/*.{ts,tsx,mdx}";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -133,4 +133,16 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
 }
