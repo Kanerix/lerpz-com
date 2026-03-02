@@ -5,8 +5,6 @@ use utoipa::ToSchema;
 
 use crate::oapi::MODELS_TAG;
 
-pub type Response = Json<Models>;
-
 #[derive(Serialize, ToSchema)]
 pub struct Models {
     models: Vec<Model>,
@@ -28,8 +26,8 @@ pub struct Model {
         (status = OK, description = "Success", body = Models)
     )
 )]
-#[axum::debug_handler]
-pub async fn handler() -> HandlerResult<Response> {
+#[axum::debug_handler(state = AppState)]
+pub async fn handler() -> HandlerResult<Json<Models>> {
     let models = vec![
         Model {
             name: "gpt-image-1".into(),

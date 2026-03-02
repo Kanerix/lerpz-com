@@ -12,7 +12,11 @@ use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
 
-use crate::{config::CONFIG, oapi::CHATS_TAG, state::AppState};
+use crate::{
+    config::CONFIG,
+    oapi::CHATS_TAG,
+    state::{AppState, OpenAI},
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ChatRequest {
@@ -26,10 +30,10 @@ pub struct ChatRequest {
     tag = CHATS_TAG,
     summary = "Create a new chat",
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler(
     token: AzureAccessToken,
-    State(state): State<AppState>,
+    State(openai): State<OpenAI>,
     Json(body): Json<ChatRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let model = body.model.as_deref().unwrap_or(&CONFIG.DEFAULT_TEXT_MODEL);
@@ -49,8 +53,7 @@ pub async fn handler(
     }
 
     let request = request_builder.build()?;
-    let client = state.openai;
-    let stream = client.chat().create_stream(request).await?;
+    let stream = openai.chat().create_stream(request).await?;
 
     let sse_stream = stream.map(|chunk_result| {
         // If the upstream stream errors, turn it into an SSE "error" event

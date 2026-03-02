@@ -8,6 +8,7 @@ use crate::oapi::ORGS_TAG;
     tag = ORGS_TAG,
     summary = "Get a specific of organization"
 )]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

@@ -8,7 +8,7 @@ use crate::oapi::MODELS_TAG;
     tag = MODELS_TAG,
     summary = "Delete a model"
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

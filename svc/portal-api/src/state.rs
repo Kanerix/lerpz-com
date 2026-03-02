@@ -6,18 +6,22 @@ use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use secrecy::{ExposeSecret, SecretString};
 
-type OpenAI = Arc<Client<PortkeyConfig>>;
+pub(crate) type OpenAI = Arc<Client<PortkeyConfig>>;
+
+pub(crate) type DatabasePool = sqlx::PgPool;
+
+pub(crate) type RedisPool = bb8::Pool<RedisConnectionManager>;
 
 #[derive(Clone)]
-pub struct AppState {
+pub(crate) struct AppState {
     pub azure_config: AzureConfig,
     pub openai: OpenAI,
-    pub database: sqlx::PgPool,
-    pub redis: bb8::Pool<RedisConnectionManager>,
+    pub database: DatabasePool,
+    pub redis: RedisPool,
 }
 
 #[derive(Clone, Debug)]
-pub struct PortkeyConfig {
+pub(crate) struct PortkeyConfig {
     pub api_base: Arc<str>,
     pub api_key: SecretString,
     pub api_provider: Arc<str>,
@@ -73,19 +77,19 @@ impl FromRef<AppState> for AzureConfig {
     }
 }
 
-impl FromRef<AppState> for Arc<Client<PortkeyConfig>> {
+impl FromRef<AppState> for OpenAI {
     fn from_ref(state: &AppState) -> Self {
         state.openai.clone()
     }
 }
 
-impl FromRef<AppState> for sqlx::PgPool {
+impl FromRef<AppState> for DatabasePool {
     fn from_ref(state: &AppState) -> sqlx::PgPool {
         state.database.clone()
     }
 }
 
-impl FromRef<AppState> for bb8::Pool<RedisConnectionManager> {
+impl FromRef<AppState> for RedisPool {
     fn from_ref(state: &AppState) -> Self {
         state.redis.clone()
     }

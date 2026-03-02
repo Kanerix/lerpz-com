@@ -14,11 +14,11 @@ mod failure;
 
 pub fn router(state: AppState) -> OpenApiRouter<AppState> {
     let router = OpenApiRouter::new()
-        .nest("/orgs", orgs::router(state.clone()))
-        .nest("/groups", groups::router(state.clone()))
-        .nest("/chats", chats::router(state.clone()))
-        .nest("/images", images::router(state.clone()))
-        .nest("/models", models::router(state.clone()))
+        .nest("/orgs", orgs::router())
+        .nest("/groups", groups::router())
+        .nest("/chats", chats::router())
+        .nest("/images", images::router())
+        .nest("/models", models::router())
         .routes(routes!(health::handler))
         .with_state(state);
 

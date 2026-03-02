@@ -8,6 +8,7 @@ use crate::oapi::GROUPS_TAG;
     tag = GROUPS_TAG,
     summary = "Update a specific group"
 )]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

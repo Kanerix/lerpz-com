@@ -8,7 +8,7 @@ use crate::oapi::GROUPS_TAG;
     tag = GROUPS_TAG,
     summary = "Get a specific group",
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

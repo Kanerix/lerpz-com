@@ -1,6 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
-use lerpz_utils::upn::{generate_upn, generate_upn_with_iteration, replace_char, UserInfo};
+use lerpz_utils::upn::{UserInfo, generate_upn, generate_upn_with_iteration, replace_char};
 
 fn basic_upn_generation(c: &mut Criterion) {
     let user_info = UserInfo::new("Kasper", vec!["Jønsson"], 2020, "lerpz.com");

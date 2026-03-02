@@ -6,9 +6,9 @@ mod create;
 mod delete;
 mod edit;
 
-pub fn router(state: AppState) -> OpenApiRouter<AppState> {
+pub fn router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(create::handler, delete::handler))
+        .routes(routes!(create::handler))
         .routes(routes!(edit::handler))
-        .with_state(state)
+        .routes(routes!(delete::handler))
 }

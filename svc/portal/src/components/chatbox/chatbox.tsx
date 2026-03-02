@@ -173,7 +173,6 @@ function ChatboxToolbar() {
 
   return (
     <div className="grid grid-cols-[max-content_1fr_max-content_max-content] gap-4">
-
       {/* IMAGES UPLOAD BUTTON */}
       <Tooltip>
         <TooltipTrigger

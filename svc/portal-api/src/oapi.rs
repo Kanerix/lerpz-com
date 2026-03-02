@@ -1,7 +1,7 @@
 use utoipa::OpenApi;
 
-pub(crate) const CHATS_TAG: &str = "chat";
-pub(crate) const IMAGES_TAG: &str = "image";
+pub(crate) const CHATS_TAG: &str = "chats";
+pub(crate) const IMAGES_TAG: &str = "images";
 pub(crate) const MODELS_TAG: &str = "models";
 pub(crate) const GROUPS_TAG: &str = "groups";
 pub(crate) const ORGS_TAG: &str = "orgs";

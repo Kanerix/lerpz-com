@@ -8,7 +8,7 @@ use crate::oapi::IMAGES_TAG;
     tag = IMAGES_TAG,
     summary = "Delete a specific image",
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

@@ -8,9 +8,8 @@ mod list;
 mod read;
 mod update;
 
-pub fn router(state: AppState) -> OpenApiRouter<AppState> {
+pub fn router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(list::handler, create::handler))
         .routes(routes!(read::handler, update::handler, delete::handler))
-        .with_state(state)
 }

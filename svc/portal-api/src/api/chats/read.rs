@@ -8,7 +8,7 @@ use crate::oapi::CHATS_TAG;
     tag = CHATS_TAG,
     summary = "Get a specific chat",
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

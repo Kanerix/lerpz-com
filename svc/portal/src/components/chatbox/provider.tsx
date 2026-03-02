@@ -93,6 +93,10 @@ export function ChatboxProvider({
           error: (e) => ({
             message: "Failed to enhance prompt",
             description: `${e instanceof Error ? e.message : String(e)}`,
+            // action: {
+            //   label: "Expand",
+            //   onClick: () => showExpandedEror(true)
+            // }
           }),
         });
         await request;

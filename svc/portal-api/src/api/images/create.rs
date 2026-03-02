@@ -13,7 +13,11 @@ use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
 
-use crate::{config::CONFIG, oapi::IMAGES_TAG, state::AppState};
+use crate::{
+    config::CONFIG,
+    oapi::IMAGES_TAG,
+    state::{AppState, OpenAI},
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ImageRequest {
@@ -27,28 +31,16 @@ pub struct ImageRequest {
     amount: Option<u8>,
 }
 
-// #[derive(Debug, Serialize)]
-// pub struct PartialImage {
-//     image_index: usize,
-//     image_data: String,
-// }
-
-// #[derive(Debug, Serialize)]
-// pub struct CompletedImage {
-//     index: usize,
-//     data: String,
-// }
-
 #[utoipa::path(
     method(post),
     path = "/",
     tag = IMAGES_TAG,
     summary = "Create a new image",
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler(
     token: AzureAccessToken,
-    State(state): State<AppState>,
+    State(openai): State<OpenAI>,
     Json(body): Json<ImageRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let model = ImageModel::Other(
@@ -74,9 +66,7 @@ pub async fn handler(
     };
 
     let request = request_builder.build()?;
-
-    let client = state.openai;
-    let stream = client.images().generate_stream(request).await?;
+    let stream = openai.images().generate_stream(request).await?;
 
     let sse_stream = stream.map(|chunk_result| {
         let chunk = match chunk_result {
@@ -103,6 +93,8 @@ pub async fn handler(
                     .unwrap()
             }
         };
+
+        dbg!(&event);
 
         Ok(event)
     });
