@@ -284,7 +284,6 @@ dependencies = [
 name = "benchmarks"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "criterion 0.5.1",
  "lerpz-utils",
 ]
@@ -1684,8 +1683,6 @@ dependencies = [
  "regex",
  "reqwest",
  "serde",
- "serde_json",
- "sqlx",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -2285,7 +2282,6 @@ checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
 name = "portal-api"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "async-openai",
  "axum",
  "base64 0.22.1",
@@ -2300,7 +2296,6 @@ dependencies = [
  "redis",
  "secrecy",
  "serde",
- "serde_json",
  "sqlx",
  "strum",
  "tokio",
@@ -2311,7 +2306,6 @@ dependencies = [
  "utoipa",
  "utoipa-axum",
  "utoipa-swagger-ui",
- "uuid",
  "validator",
 ]
 

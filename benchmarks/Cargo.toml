@@ -6,7 +6,6 @@ publish = false
 
 [dependencies]
 lerpz-utils = { workspace = true, features = ["upn"] }
-chrono = { workspace = true }
 
 [dev-dependencies]
 criterion = "0.5"

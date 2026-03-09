@@ -40,9 +40,7 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 # Serde
 serde = { workspace = true }
-serde_json = { workspace = true }
 # Utilities
-anyhow = { workspace = true }
 async-openai = { workspace = true, features = ["chat-completion", "image", "audio", "video"] }
 base64 = { workspace = true }
 chrono = { workspace = true }
@@ -50,7 +48,6 @@ cookie = { workspace = true }
 dotenvy = { workspace = true }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
-uuid = { workspace = true }
 validator = { workspace = true }
 
 [dev-dependencies]
