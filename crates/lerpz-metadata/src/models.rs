@@ -53,14 +53,14 @@ pub enum Metadata {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: AnalysisMetadata,
+        analysis: Option<AnalysisMetadata>,
     },
     /// Image metadata.
     Image {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: AnalysisMetadata,
+        analysis: Option<AnalysisMetadata>,
         storage: StorageMetadata,
         width: u32,
         height: u32,
@@ -70,7 +70,7 @@ pub enum Metadata {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: AnalysisMetadata,
+        analysis: Option<AnalysisMetadata>,
         storage: StorageMetadata,
         width: u32,
         height: u32,
@@ -81,7 +81,7 @@ pub enum Metadata {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: AnalysisMetadata,
+        analysis: Option<AnalysisMetadata>,
         storage: StorageMetadata,
         duration: u32,
     },
