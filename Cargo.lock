@@ -1705,6 +1705,7 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "lerpz-macros"
 version = "0.1.0"
 dependencies = [
@@ -1724,6 +1725,18 @@ dependencies = [
 ]
 
 [[package]]
+||||||| parent of 30983be (Refactor of create endpoint)
+name = "lerpz-metadata"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+=======
+>>>>>>> 30983be (Refactor of create endpoint)
 name = "lerpz-model"
 version = "0.1.0"
 dependencies = [

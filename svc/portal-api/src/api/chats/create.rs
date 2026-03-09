@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::sync::Arc;
 
 use async_openai::types::chat::{
     ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs,
@@ -10,6 +11,7 @@ use axum::{
 };
 use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
 use serde::Deserialize;
+use tokio::sync::Mutex;
 use tokio_stream::{Stream, StreamExt as _};
 
 use crate::{
@@ -22,6 +24,7 @@ use crate::{
 pub struct ChatRequest {
     model: Option<String>,
     prompt: String,
+    title: Option<String>,
 }
 
 #[utoipa::path(
@@ -37,13 +40,34 @@ pub async fn handler(
     Json(body): Json<ChatRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let model = body.model.as_deref().unwrap_or(&CONFIG.DEFAULT_TEXT_MODEL);
+    let user_id = token.sub;
+    let prompt = body.prompt;
+    let title = body.title.unwrap_or_else(|| truncate_title(&prompt, 100));
+
+    let conv_id = sqlx::query_scalar!(
+        "INSERT INTO conversations (user_id, title, model) VALUES ($1, $2, $3) RETURNING id",
+        &user_id,
+        &title,
+        &model
+    )
+    .fetch_one(&state.database)
+    .await?;
+
+    sqlx::query!(
+        "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'user', $2)",
+        &conv_id,
+        &prompt,
+    )
+    .execute(&state.database)
+    .await?;
+
     let mut request_builder = CreateChatCompletionRequestArgs::default();
 
     request_builder
         .max_tokens(2048u32)
         .model(model)
         .messages([ChatCompletionRequestUserMessageArgs::default()
-            .content(body.prompt)
+            .content(prompt)
             .build()?
             .into()])
         .stream(true);
@@ -55,36 +79,86 @@ pub async fn handler(
     let request = request_builder.build()?;
     let stream = openai.chat().create_stream(request).await?;
 
-    let sse_stream = stream.map(|chunk_result| {
-        // If the upstream stream errors, turn it into an SSE "error" event
+    let assistant_buf = Arc::new(Mutex::new(String::new()));
+    let db = state.database.clone();
+
+    let init_event = tokio_stream::once(Ok::<Event, Infallible>(
+        Event::default()
+            .event("conversation_created")
+            .data(conv_id.to_string()),
+    ));
+
+    let buf_ref = assistant_buf.clone();
+    let db_ref = db.clone();
+
+    let content_stream = stream.map(move |chunk_result| {
+        let buf = buf_ref.clone();
+        let db = db_ref.clone();
+
         let chunk = match chunk_result {
             Ok(c) => c,
             Err(err) => {
-                let event = Event::default()
+                return Ok(Event::default()
                     .event("error")
-                    .data(format!("stream error: {err}"));
-                return Ok(event);
+                    .data(format!("stream error: {err}")));
             }
         };
 
-        // Extract text from the delta(s)
-        // Each chunk may contain multiple choices; we concatenate their deltas.
-        let mut buf = String::new();
-        for choice in chunk.choices {
-            if let Some(delta) = choice.delta.content {
-                // `delta` is typically Vec<ChatCompletionMessageToolChoice> or similar;
-                // the exact shape depends on your async-openai version. If it's just a String, use it directly.
-                buf.push_str(&delta);
+        let mut text = String::new();
+        let mut is_done = false;
+
+        for choice in &chunk.choices {
+            if let Some(ref delta) = choice.delta.content {
+                text.push_str(delta);
+            }
+            if choice.finish_reason.is_some() {
+                is_done = true;
             }
         }
 
-        // Build an SSE event
-        let event = Event::default()
-            .event("message") // optional: "message" event type for the client
-            .data(buf);
+        let text_clone = text.clone();
+        tokio::spawn(async move {
+            buf.lock().await.push_str(&text_clone);
 
-        Ok(event)
+            if is_done {
+                let full_response = buf.lock().await.clone();
+                if !full_response.is_empty() {
+                    let result = sqlx::query(
+                        "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
+                    )
+                    .bind(conv_id)
+                    .bind(&full_response)
+                    .execute(&db)
+                    .await;
+
+                    if let Err(err) = result {
+                        tracing::error!(
+                            conversation_id = %conv_id,
+                            "failed to persist assistant message: {err}"
+                        );
+                    }
+                }
+            }
+        });
+
+        if is_done {
+            Ok(Event::default().event("done").data(conv_id.to_string()))
+        } else {
+            Ok(Event::default().event("message").data(text))
+        }
     });
 
+    let sse_stream = init_event.chain(content_stream);
+
     Ok(Sse::new(sse_stream))
+}
+
+/// Truncate a string to at most `max_len` characters, appending "…" if truncated.
+fn truncate_title(s: &str, max_len: usize) -> String {
+    if s.chars().count() <= max_len {
+        s.to_string()
+    } else {
+        let truncated: String = s.chars().take(max_len.saturating_sub(1)).collect();
+        format!("{truncated}…")
+    }
 }
