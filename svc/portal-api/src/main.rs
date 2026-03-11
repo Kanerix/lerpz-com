@@ -67,10 +67,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 
-    let manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
+    let redis_manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
         .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
     let redis = bb8::Pool::builder()
-        .build(manager)
+        .build(redis_manager)
         .await
         .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
 
@@ -108,5 +108,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[axum::debug_handler]
 pub async fn redirect() -> impl IntoResponse {
-    Redirect::to("/swagger-ui").into_response()
+    Redirect::to("/swagger-ui")
 }

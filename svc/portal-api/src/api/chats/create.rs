@@ -17,7 +17,7 @@ use tokio_stream::{Stream, StreamExt as _};
 use crate::{
     config::CONFIG,
     oapi::CHATS_TAG,
-    state::{AppState, OpenAI},
+    state::{AppState, DatabasePool, OpenAI},
 };
 
 #[derive(Debug, Deserialize)]
@@ -37,6 +37,7 @@ pub struct ChatRequest {
 pub async fn handler(
     token: AzureAccessToken,
     State(openai): State<OpenAI>,
+    State(database): State<DatabasePool>,
     Json(body): Json<ChatRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let model = body.model.as_deref().unwrap_or(&CONFIG.DEFAULT_TEXT_MODEL);
@@ -50,7 +51,7 @@ pub async fn handler(
         &title,
         &model
     )
-    .fetch_one(&state.database)
+    .fetch_one(&database)
     .await?;
 
     sqlx::query!(
@@ -58,7 +59,7 @@ pub async fn handler(
         &conv_id,
         &prompt,
     )
-    .execute(&state.database)
+    .execute(&database)
     .await?;
 
     let mut request_builder = CreateChatCompletionRequestArgs::default();
@@ -80,21 +81,13 @@ pub async fn handler(
     let stream = openai.chat().create_stream(request).await?;
 
     let assistant_buf = Arc::new(Mutex::new(String::new()));
-    let db = state.database.clone();
-
     let init_event = tokio_stream::once(Ok::<Event, Infallible>(
         Event::default()
             .event("conversation_created")
             .data(conv_id.to_string()),
     ));
 
-    let buf_ref = assistant_buf.clone();
-    let db_ref = db.clone();
-
     let content_stream = stream.map(move |chunk_result| {
-        let buf = buf_ref.clone();
-        let db = db_ref.clone();
-
         let chunk = match chunk_result {
             Ok(c) => c,
             Err(err) => {
@@ -116,30 +109,30 @@ pub async fn handler(
             }
         }
 
-        let text_clone = text.clone();
-        tokio::spawn(async move {
-            buf.lock().await.push_str(&text_clone);
+        // let text_clone = text.clone();
+        // tokio::spawn(async move {
+        //     buf.lock().await.push_str(&text_clone);
 
-            if is_done {
-                let full_response = buf.lock().await.clone();
-                if !full_response.is_empty() {
-                    let result = sqlx::query(
-                        "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
-                    )
-                    .bind(conv_id)
-                    .bind(&full_response)
-                    .execute(&db)
-                    .await;
+        //     if is_done {
+        //         let full_response = buf.lock().await.clone();
+        //         if !full_response.is_empty() {
+        //             let result = sqlx::query(
+        //                 "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
+        //             )
+        //             .bind(conv_id)
+        //             .bind(&full_response)
+        //             .execute(&db)
+        //             .await;
 
-                    if let Err(err) = result {
-                        tracing::error!(
-                            conversation_id = %conv_id,
-                            "failed to persist assistant message: {err}"
-                        );
-                    }
-                }
-            }
-        });
+        //             if let Err(err) = result {
+        //                 tracing::error!(
+        //                     conversation_id = %conv_id,
+        //                     "failed to persist assistant message: {err}"
+        //                 );
+        //             }
+        //         }
+        //     }
+        // });
 
         if is_done {
             Ok(Event::default().event("done").data(conv_id.to_string()))
@@ -153,12 +146,6 @@ pub async fn handler(
     Ok(Sse::new(sse_stream))
 }
 
-/// Truncate a string to at most `max_len` characters, appending "…" if truncated.
 fn truncate_title(s: &str, max_len: usize) -> String {
-    if s.chars().count() <= max_len {
-        s.to_string()
-    } else {
-        let truncated: String = s.chars().take(max_len.saturating_sub(1)).collect();
-        format!("{truncated}…")
-    }
+    s.chars().take(max_len).collect::<String>()
 }
