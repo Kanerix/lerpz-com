@@ -5,19 +5,19 @@ import { createSseConnection } from "@/lib/sse";
 import { apiService } from "@/services/api/client";
 
 export const apiKeys = {
-  imageStream: () => apiService.getUrl("/images"),
+  chatStream: () => apiService.getUrl("/chats"),
 };
 
-type ImageStreamState = {
+type ChatStreamState = {
   image: string | null;
   isLoading: boolean;
   isDone: boolean;
   error: string | null;
 };
 
-export function useImageSse() {
-  const [state, setState] = useState<ImageStreamState>({
-    image: null,
+export function useChatSse() {
+  const [state, setState] = useState<ChatStreamState>({
+    content: null,
     isLoading: false,
     isDone: false,
     error: null,
@@ -51,13 +51,6 @@ export function useImageSse() {
     const { close } = createSseConnection(
       url.toString(),
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      },
-      {
         onOpen: () => {
           console.log("Image stream connection opened");
         },
@@ -81,6 +74,13 @@ export function useImageSse() {
           }));
           closeRef.current = null;
         },
+      },
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
       },
     );
 
