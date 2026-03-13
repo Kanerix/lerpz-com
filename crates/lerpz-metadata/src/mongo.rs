@@ -1,3 +1,5 @@
+use mongodb::bson::oid::ObjectId;
+
 use crate::{MetadataClient, error::Result, models::Metadata};
 
 pub struct MongoClient {
@@ -14,10 +16,19 @@ impl MongoClient {
 }
 
 impl MetadataClient for MongoClient {
-    fn query(&self) -> Result<Metadata> {
+    fn read(&self) -> Result<Metadata> {
         todo!()
     }
-    fn query_page(&self, _page: u32) -> Result<Vec<Metadata>> {
+
+    fn write(&self, metadta: Metadata) -> Result<ObjectId> {
+        todo!()
+    }
+
+    fn update(&self, id: ObjectId, updates: Metadata) -> Result<ObjectId> {
+        todo!()
+    }
+
+    fn delete(&self, id: ObjectId) -> Result<Metadata> {
         todo!()
     }
 }
