@@ -16,7 +16,7 @@ import {
 import { Brain, LoaderPinwheel, ScanEye } from "lucide-react";
 import { useEffect } from "react";
 import { type ModelSetting, useModels } from "@/hooks/useModels";
-import { useChatboxStore } from "@/store/chatbox.store";
+import { useChatboxStore } from "./store";
 import { DEFAULT_IMAGE_MODEL, useChatbox } from "./provider";
 
 type ModelSelectValue = string | null;

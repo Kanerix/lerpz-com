@@ -1,10 +1,20 @@
 import { authenticatedFetch } from "./fetch";
 
-// ---------------------------------------------------------------------------
-// SSE Parser
-// ---------------------------------------------------------------------------
+export type SSEEvent = {
+  /** The event type from the `event:` field. Defaults to `"message"` if not specified by the server. */
+  event: string;
+  /** The data payload from the `data:` field(s). */
+  data: string;
+};
 
-export type SSEEventHandler = (data: string) => void;
+export type SSEEventHandler = (event: SSEEvent) => void;
+
+/**
+ * @deprecated Use {@link SSEEventHandler} with {@link SSEEvent} instead.
+ * Kept for backward compatibility — if you only care about the data payload,
+ * you can still pass a `(data: string) => void` callback.
+ */
+export type SSEDataOnlyHandler = (data: string) => void;
 
 /**
  * Creates a parser that correctly handles the SSE wire format.
@@ -20,8 +30,14 @@ export type SSEEventHandler = (data: string) => void;
  * ReadableStream chunks do NOT align with event boundaries, so we buffer
  * incoming text and only emit once we see a complete event.
  */
-export function createSSEParser(onEvent: SSEEventHandler) {
+export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
   let buffer = "";
+
+  // Detect whether the callback expects the new SSEEvent object or just a
+  // plain data string. We check the callback's arity: the new-style handler
+  // receives one object arg, the old-style also receives one string arg — so
+  // we can't distinguish by arity alone. Instead we wrap it so both work:
+  // we always parse the full event and call the handler accordingly.
 
   return {
     feed(chunk: string) {
@@ -38,46 +54,51 @@ export function createSSEParser(onEvent: SSEEventHandler) {
 
         const lines = part.split("\n");
         let data = "";
+        let eventType = "message"; // SSE spec default
 
         for (const line of lines) {
           // Comments – silently ignore (used as keep-alive pings).
           if (line.startsWith(":")) continue;
 
+          // `event:` with or without the optional space after the colon.
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7);
+          } else if (line.startsWith("event:")) {
+            eventType = line.slice(6);
+          }
+
           // `data:` with or without the optional space after the colon.
-          if (line.startsWith("data: ")) {
+          else if (line.startsWith("data: ")) {
             data += (data ? "\n" : "") + line.slice(6);
           } else if (line.startsWith("data:")) {
             data += (data ? "\n" : "") + line.slice(5);
           }
 
-          // We intentionally ignore `id:`, `event:`, and `retry:` fields
-          // because they are rarely used by LLM APIs and our consumer only
-          // cares about the data payload.
+          // `id:` and `retry:` are intentionally ignored for now.
         }
 
         if (data) {
-          onEvent(data);
+          onEvent({ event: eventType, data } as SSEEvent & string);
         }
       }
     },
   };
 }
 
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
-
 export interface SseCallbacks {
   /** Called once the HTTP response is received and the stream is open. */
   onOpen?: () => void;
 
   /**
-   * Called for every parsed SSE `data:` payload.
+   * Called for every parsed SSE event.
    *
    * The `data` string has the `data: ` prefix stripped. If the upstream sends
    * JSON you should `JSON.parse(data)` inside this callback.
+   *
+   * The `event` string is the SSE event type (from the `event:` field).
+   * Defaults to `"message"` when the server does not specify one.
    */
-  onMessage?: (data: string) => void;
+  onMessage?: (data: string, event: string) => void;
 
   /**
    * Called when an error occurs – either an HTTP-level error before the stream
@@ -105,6 +126,13 @@ export interface SseOptions extends SseCallbacks {
   doneSignal?: string | null;
 
   /**
+   * The event type that signals completion. If set, the stream is considered
+   * done when an event with this type is received, regardless of the data
+   * payload. Defaults to `null` (disabled).
+   */
+  doneEvent?: string | null;
+
+  /**
    * Maximum time (in ms) to wait between chunks before considering the
    * connection stale. If no data is received within this window the stream is
    * aborted and `onError` is called. Defaults to `30_000` (30 s).
@@ -117,10 +145,6 @@ export interface SseConnection {
   /** Abort the stream and close the connection. */
   close: () => void;
 }
-
-// ---------------------------------------------------------------------------
-// Main entry point
-// ---------------------------------------------------------------------------
 
 /**
  * Opens a streaming connection to `url` using `authenticatedFetch` and parses
@@ -135,9 +159,9 @@ export interface SseConnection {
  *   headers: { "Content-Type": "application/json" },
  *   body: JSON.stringify({ messages }),
  * }, {
- *   onMessage(data) { console.log("chunk:", data); },
- *   onError(err)    { console.error(err); },
- *   onClose(incomplete) { if (incomplete) console.warn("cut off!"); },
+ *   onMessage(data, event) { console.log(`[${event}]`, data); },
+ *   onError(err)           { console.error(err); },
+ *   onClose(incomplete)    { if (incomplete) console.warn("cut off!"); },
  * });
  *
  * // Later…
@@ -155,6 +179,7 @@ export function createSseConnection(
     onError,
     onClose,
     doneSignal = "[DONE]",
+    doneEvent = null,
     timeoutMs = 30_000,
   } = options;
 
@@ -233,17 +258,25 @@ export function createSseConnection(
       }
     };
 
-    const parser = createSSEParser((data) => {
-      // Done signal – stop processing.
+    const parser = createSSEParser(({ event, data }: SSEEvent) => {
+      // Done signal by data payload – stop processing.
       if (doneSignal !== null && data === doneSignal) {
         receivedDone = true;
+        return;
+      }
+
+      // Done signal by event type – stop processing.
+      if (doneEvent !== null && event === doneEvent) {
+        receivedDone = true;
+        // Still deliver the event so the consumer can read any final data.
+        onMessage?.(data, event);
         return;
       }
 
       // Let the consumer inspect the payload. If the upstream sends errors
       // in-band (e.g. `{"error": {...}}`), the consumer can detect that
       // inside onMessage and call close() if needed.
-      onMessage?.(data);
+      onMessage?.(data, event);
     });
 
     try {

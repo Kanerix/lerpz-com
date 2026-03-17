@@ -1,28 +1,31 @@
 "use client";
 
-import { useImageSse } from "@/hooks/useImage";
-import { Button } from "@lerpz/ui/components/button";
-import Image from 'next/image'
+import Image from "next/image";
+import { useAi } from "../layout";
 
 export default function Images() {
-  const { image: imageData, start, isLoading } = useImageSse();
+  const { generatedImage, isImageLoading, imageError } = useAi();
 
-  const handleClick = () => {
-    start("Show me a playful Toller dog!");
-  };
-
-  return <div className="max-w-[1024px] w-full h-full mx-auto">
-    {imageData ? (
-      <Image
-        src={imageData}
-        alt="something"
-        width={1200}
-        height={800}
-        unoptimized
-      />
-    ) : (
-      <p>Generate an image (data-string)!</p>
-    )}
-    <Button onClick={handleClick} disabled={isLoading}>Generate</Button>
-  </div>;
+  return (
+    <div className="max-w-[1024px] w-full h-full mx-auto">
+      {imageError && (
+        <p className="text-sm text-destructive mb-4">{imageError}</p>
+      )}
+      {generatedImage ? (
+        <Image
+          src={generatedImage}
+          alt="Generated image"
+          width={1200}
+          height={800}
+          unoptimized
+        />
+      ) : (
+        <p>
+          {isImageLoading
+            ? "Generating image..."
+            : "Describe an image in the chatbox below to generate one!"}
+        </p>
+      )}
+    </div>
+  );
 }

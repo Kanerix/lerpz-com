@@ -10,12 +10,22 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
-import { type Model, useModels } from "@/hooks/useModels";
-import { fakeDelay, fakeDelayFailure } from "@/lib/delay";
-import { useChatboxStore } from "@/store/chatbox.store";
+import type { Model } from "@/hooks/useModels";
+import {
+  type ChatboxModelSettingsForModel,
+  type ChatboxUploadedImage,
+  useChatboxStore,
+} from "./store";
 
 export type ChatboxMode = "chat" | "image" | "video";
+
+export interface ChatboxSubmitArgs {
+  prompt: string;
+  mode: ChatboxMode;
+  model: string | null;
+  modelSettings: ChatboxModelSettingsForModel;
+  images: ChatboxUploadedImage[];
+}
 
 export interface ChatboxContextValue {
   mode: ChatboxMode;
@@ -31,16 +41,11 @@ export interface ChatboxContextValue {
   isModelsLoading: boolean;
   loadModels: (mode?: string | undefined) => Promise<void>;
 
-  enhancePrompt: (prompt: string) => Promise<string>;
+  submit: () => void | Promise<void>;
+  isSubmitting: boolean;
+
+  enhancePrompt?: (prompt: string) => Promise<string>;
   isEnhancePending: boolean;
-
-  generateImage: () => Promise<void>;
-  isGeneratePending: boolean;
-
-  editImage: () => Promise<void>;
-  isEditPending: boolean;
-
-  hasPendingWork: boolean;
 }
 
 const ChatboxContext = createContext<ChatboxContextValue | undefined>(
@@ -48,127 +53,73 @@ const ChatboxContext = createContext<ChatboxContextValue | undefined>(
 );
 
 export interface ChatboxProviderProps {
+  onSubmit: (args: ChatboxSubmitArgs) => void | Promise<void>;
+  onEnhancePrompt?: (prompt: string) => Promise<string>;
+  models?: Model[];
+  isModelsLoading?: boolean;
+  loadModels?: (mode?: string) => Promise<void>;
   defaultMode?: ChatboxMode;
   children: ReactNode;
 }
 
 export const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image" as const;
-export const DEFAULT_ENHANCE_MODEL = "gemini-2.5-flash" as const;
+
+const noopLoadModels = async () => {};
 
 export function ChatboxProvider({
-  defaultMode = "image",
+  onSubmit,
+  onEnhancePrompt,
+  models = [],
+  isModelsLoading = false,
+  loadModels = noopLoadModels,
+  defaultMode = "chat",
   children,
 }: ChatboxProviderProps) {
   const [mode, setMode] = useState<ChatboxMode>(defaultMode);
   const [showSettings, setShowSettings] = useState<boolean>(true);
   const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isEnhancePending, setIsEnhancePending] = useState<boolean>(false);
-  const [isGeneratePending, setIsGeneratePending] = useState<boolean>(false);
-  const [isEditPending, setIsEditPending] = useState<boolean>(false);
 
-  const { models, isLoading: isModelsLoading, loadModels } = useModels();
+  const handleSubmit = useCallback(async () => {
+    const { prompt, model, uploadedImages, getModelSettings, setPrompt, clearUploadedImages } =
+      useChatboxStore.getState();
+
+    const trimmed = prompt.trim();
+    if (!trimmed) return;
+
+    const args: ChatboxSubmitArgs = {
+      prompt: trimmed,
+      mode,
+      model,
+      modelSettings: getModelSettings(model ?? undefined),
+      images: uploadedImages,
+    };
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(args);
+      setPrompt("");
+      clearUploadedImages();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [mode, onSubmit]);
 
   const handleEnhancePrompt = useCallback(
-    async (prompt: string, model?: string) => {
-      const { setPrompt } = useChatboxStore.getState();
-
-      const selectedModel = model || DEFAULT_ENHANCE_MODEL;
+    async (prompt: string): Promise<string> => {
+      if (!onEnhancePrompt) return prompt;
 
       setIsEnhancePending(true);
       try {
-        const request = fakeDelayFailure(2000);
-        toast.promise(request, {
-          position: "top-center",
-          loading: "Enhancing prompt...",
-          duration: 15000,
-          success: {
-            message: `Prompt enhanced using ${selectedModel}`,
-            description: "Your prompt has been enhanced.",
-            action: {
-              label: "Undo",
-              onClick: () => setPrompt(prompt),
-            },
-          },
-          error: (e) => ({
-            message: "Failed to enhance prompt",
-            description: `${e instanceof Error ? e.message : String(e)}`,
-            // action: {
-            //   label: "Expand",
-            //   onClick: () => showExpandedEror(true)
-            // }
-          }),
-        });
-        await request;
+        return await onEnhancePrompt(prompt);
       } finally {
         setIsEnhancePending(false);
       }
-
-      return `Enhanced prompt: ${prompt}`;
     },
-    [],
+    [onEnhancePrompt],
   );
-
-  const handleGenerateImage = useCallback(async () => {
-    const { prompt, setPrompt, model, modelSettings } =
-      useChatboxStore.getState();
-
-    if (!prompt) return;
-
-    const selectedModel = model || DEFAULT_IMAGE_MODEL;
-    const selectedModelSettings = modelSettings[selectedModel];
-
-    try {
-      const res = fakeDelay(2000);
-      toast.promise(res, {
-        position: "top-center",
-        loading: "Generating image(s)...",
-        success: () => ({
-          message: `Generated image(s)!`,
-          description: "Saved the image(s) as 123.png",
-        }),
-        error: (e) => ({
-          message: "Failed to generate image(s)!",
-          description: `${e instanceof Error ? e.message : String(e)}`,
-        }),
-      });
-      await res;
-      setPrompt("");
-    } finally {
-      setIsGeneratePending(false);
-    }
-  }, []);
-
-  const handleEditImage = useCallback(async () => {
-    const { prompt, setPrompt, model, uploadedImages, modelSettings } =
-      useChatboxStore.getState();
-
-    if (!prompt || uploadedImages.length === 0) return;
-
-    const selectedModel = model || DEFAULT_IMAGE_MODEL;
-    const selectedModelSettings = modelSettings[selectedModel];
-
-    setIsEditPending(true);
-    try {
-      const res = fakeDelay(2000);
-      toast.promise(res, {
-        position: "top-center",
-        loading: "Generating image(s)...",
-        success: () => ({
-          message: "Failed to generate image(s)!",
-          description: "Saved the image(s) as 123.png",
-        }),
-        error: (e) => ({
-          message: "Failed to generate image(s)!",
-          description: `${e instanceof Error ? e.message : String(e)}`,
-        }),
-      });
-      await res;
-      setPrompt("");
-    } finally {
-      setIsEditPending(false);
-    }
-  }, []);
 
   const value = useMemo<ChatboxContextValue>(
     () => ({
@@ -185,16 +136,11 @@ export function ChatboxProvider({
       isModelsLoading,
       loadModels,
 
-      enhancePrompt: handleEnhancePrompt,
+      submit: handleSubmit,
+      isSubmitting,
+
+      enhancePrompt: onEnhancePrompt ? handleEnhancePrompt : undefined,
       isEnhancePending,
-
-      generateImage: handleGenerateImage,
-      isGeneratePending,
-
-      editImage: handleEditImage,
-      isEditPending,
-
-      hasPendingWork: isEnhancePending || isGeneratePending || isEditPending,
     }),
     [
       mode,
@@ -203,9 +149,11 @@ export function ChatboxProvider({
       models,
       isModelsLoading,
       loadModels,
+      handleSubmit,
+      isSubmitting,
+      onEnhancePrompt,
+      handleEnhancePrompt,
       isEnhancePending,
-      isGeneratePending,
-      isEditPending,
     ],
   );
 

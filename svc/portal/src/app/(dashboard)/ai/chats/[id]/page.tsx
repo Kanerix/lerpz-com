@@ -1,9 +1,9 @@
 "use client";
 
-import { useAi } from "../layout";
-import ChatView from "./chat-view";
+import { useAi } from "../../layout";
+import ChatView from "../chat-view";
 
-export default function Chat() {
+export default function ChatPage() {
   const { chatMessages, isChatStreaming, chatError } = useAi();
 
   return (

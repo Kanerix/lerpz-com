@@ -8,22 +8,42 @@ export const apiKeys = {
   chatStream: () => apiService.getUrl("/chats"),
 };
 
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 type ChatStreamState = {
-  image: string | null;
+  conversationId: string | null;
+  messages: ChatMessage[];
   isLoading: boolean;
-  isDone: boolean;
+  isStreaming: boolean;
+  isSaved: boolean;
   error: string | null;
 };
 
-export function useChatSse() {
-  const [state, setState] = useState<ChatStreamState>({
-    content: null,
-    isLoading: false,
-    isDone: false,
-    error: null,
-  });
+const initialState: ChatStreamState = {
+  conversationId: null,
+  messages: [],
+  isLoading: false,
+  isStreaming: false,
+  isSaved: false,
+  error: null,
+};
 
+export type UseChatOptions = {
+  model?: string;
+  title?: string;
+  onConversationCreated?: (convId: string) => void;
+  onDone?: (content: string) => void;
+  onSaved?: (convId: string) => void;
+  onError?: (error: string) => void;
+};
+
+export function useChat(options: UseChatOptions = {}) {
+  const [state, setState] = useState<ChatStreamState>(initialState);
   const closeRef = useRef<null | (() => void)>(null);
+  const assistantBufRef = useRef<string>("");
 
   useEffect(() => {
     return () => {
@@ -33,59 +53,150 @@ export function useChatSse() {
     };
   }, []);
 
-  const start = useCallback((prompt: string) => {
-    if (closeRef.current) {
-      closeRef.current();
-      closeRef.current = null;
-    }
+  const send = useCallback(
+    (prompt: string) => {
+      if (closeRef.current) {
+        closeRef.current();
+        closeRef.current = null;
+      }
 
-    const url = apiKeys.imageStream();
+      const url = apiKeys.chatStream();
 
-    setState({
-      image: null,
-      isLoading: true,
-      isDone: false,
-      error: null,
-    });
+      assistantBufRef.current = "";
 
-    const { close } = createSseConnection(
-      url.toString(),
-      {
-        onOpen: () => {
-          console.log("Image stream connection opened");
+      setState({
+        ...initialState,
+        messages: [{ role: "user", content: prompt }],
+        isLoading: true,
+        isStreaming: true,
+      });
+
+      const { close } = createSseConnection(
+        url.toString(),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt,
+            model: options.model ?? undefined,
+            title: options.title ?? undefined,
+          }),
         },
-        onMessage: (data) => {
-          if (data.startsWith("data:")) {
-            data = data.slice("data:".length).trimStart();
-          }
+        {
+          doneSignal: null,
+          onOpen: () => {
+            setState((prev) => ({ ...prev, isLoading: false }));
+          },
+          onMessage: (data, event) => {
+            switch (event) {
+              case "conversation_created": {
+                const conversationId = data;
+                setState((prev) => ({ ...prev, conversationId }));
+                options.onConversationCreated?.(conversationId);
+                break;
+              }
 
-          setState((prev) => ({
-            ...prev,
-            image: `data:image/png;base64,${data}`,
-          }));
-        },
-        onError: (error) => {
-          console.error("Image stream error:", error);
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            isDone: true,
-            error: "An error occurred while streaming the image.",
-          }));
-          closeRef.current = null;
-        },
-      },
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      },
-    );
+              case "message": {
+                assistantBufRef.current += data;
+                const content = assistantBufRef.current;
 
-    closeRef.current = close;
-  }, []);
+                setState((prev) => {
+                  const messages = [...prev.messages];
+                  const lastMsg = messages[messages.length - 1];
+
+                  if (lastMsg && lastMsg.role === "assistant") {
+                    messages[messages.length - 1] = {
+                      role: "assistant",
+                      content,
+                    };
+                  } else {
+                    messages.push({ role: "assistant", content });
+                  }
+
+                  return { ...prev, messages };
+                });
+                break;
+              }
+
+              case "done": {
+                assistantBufRef.current += data;
+                const content = assistantBufRef.current;
+
+                setState((prev) => {
+                  const messages = [...prev.messages];
+                  const lastMsg = messages[messages.length - 1];
+
+                  if (lastMsg && lastMsg.role === "assistant") {
+                    messages[messages.length - 1] = {
+                      role: "assistant",
+                      content,
+                    };
+                  } else {
+                    messages.push({ role: "assistant", content });
+                  }
+
+                  return { ...prev, messages, isStreaming: false };
+                });
+
+                options.onDone?.(content);
+                break;
+              }
+
+              case "saved": {
+                const conversationId = data;
+                setState((prev) => ({
+                  ...prev,
+                  isSaved: true,
+                  isLoading: false,
+                }));
+                options.onSaved?.(conversationId);
+                break;
+              }
+
+              case "error": {
+                setState((prev) => ({
+                  ...prev,
+                  isLoading: false,
+                  isStreaming: false,
+                  error: data,
+                }));
+                options.onError?.(data);
+                closeRef.current = null;
+                break;
+              }
+            }
+          },
+          onError: (error) => {
+            console.error("Chat stream error:", error);
+            setState((prev) => ({
+              ...prev,
+              isLoading: false,
+              isStreaming: false,
+              error: error.message || "An error occurred while streaming.",
+            }));
+            options.onError?.(error.message);
+            closeRef.current = null;
+          },
+          onClose: (incomplete) => {
+            if (incomplete) {
+              setState((prev) => ({
+                ...prev,
+                isLoading: false,
+                isStreaming: false,
+                error: prev.error ?? "Stream ended unexpectedly.",
+              }));
+            }
+            closeRef.current = null;
+          },
+        },
+      );
+
+      closeRef.current = close;
+    },
+    [options.model, options.title],
+  );
 
   const stop = useCallback(() => {
     if (closeRef.current) {
@@ -94,7 +205,7 @@ export function useChatSse() {
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        isDone: true,
+        isStreaming: false,
       }));
     }
   }, []);
@@ -104,17 +215,13 @@ export function useChatSse() {
       closeRef.current();
       closeRef.current = null;
     }
-    setState({
-      image: null,
-      isLoading: false,
-      isDone: false,
-      error: null,
-    });
+    assistantBufRef.current = "";
+    setState(initialState);
   }, []);
 
   return {
     ...state,
-    start,
+    send,
     stop,
     reset,
   };

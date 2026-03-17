@@ -59,7 +59,6 @@ export const useChatboxStore = create<ChatboxState>((set, get) => ({
     return set({ autoAnalyze });
   },
 
-  // modelId -> { key: value }
   modelSettings: {},
 
   setModelSetting: (modelId, modelKey, value) =>

@@ -1,21 +1,20 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
-import { Chatbox, ChatboxProvider } from "@/components/chatbox";
+import { ChatboxProvider, type ChatboxSubmitArgs } from "@/components/chatbox";
 
-interface LayoutProps {
-  children: ReactNode;
-}
+export default function ProtectedLayout({ children }: { children: ReactNode }) {
+  const handleSubmit = async (args: ChatboxSubmitArgs) => {
+    console.log("Chat submit:", args);
+  };
 
-export default function ProtectedLayout({ children }: LayoutProps) {
   return (
     <AuthGuard>
-      <ChatboxProvider>
+      <ChatboxProvider onSubmit={handleSubmit}>
         <AppShell>
-          <main className="w-full h-full p-4">
-            {children}
-            <Chatbox />
-          </main>
+          <main className="w-full h-full p-4">{children}</main>
         </AppShell>
       </ChatboxProvider>
     </AuthGuard>

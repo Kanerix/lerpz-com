@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import type { ChangeEventHandler } from "react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useChatboxStore } from "@/store/chatbox.store";
+import { useChatboxStore } from "./store";
 import ImageShelf from "./image-shelf";
 import { type ChatboxMode, useChatbox } from "./provider";
 import ChatboxSettings from "./settings";
@@ -51,7 +51,9 @@ const chatareaPlaceholder: Record<ChatboxMode, string> = {
 };
 
 export default function Chatbox() {
-  const { showSettings, hasPendingWork } = useChatbox();
+  const { showSettings, isSubmitting, isEnhancePending } = useChatbox();
+
+  const hasPendingWork = isSubmitting || isEnhancePending;
 
   useEffect(() => {
     if (!hasPendingWork) return;
@@ -98,27 +100,24 @@ function ChatboxToolbar() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const {
-    mode,
     setShowSettings,
     enhancePrompt,
     isEnhancePending,
     allowImageUploads,
-    generateImage,
-    isGeneratePending,
-    editImage,
-    isEditPending,
-    hasPendingWork,
+    submit,
+    isSubmitting,
   } = useChatbox();
 
-  const { prompt, setPrompt, uploadedImages, addUploadedImages } =
-    useChatboxStore();
+  const { prompt, setPrompt, addUploadedImages } = useChatboxStore();
+
+  const hasPendingWork = isSubmitting || isEnhancePending;
 
   const toggleSettings = () => {
     setShowSettings((old) => !old);
   };
 
   const handleEnhance = async () => {
-    if (!prompt) return;
+    if (!prompt || !enhancePrompt) return;
     const newPrompt = await enhancePrompt(prompt);
     setPrompt(newPrompt);
   };
@@ -148,27 +147,87 @@ function ChatboxToolbar() {
     triggerFilePicker();
   };
 
+  const handleCameraCapture = useCallback(async () => {
+    if (!allowImageUploads) return;
+
+    let stream: MediaStream | null = null;
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+    } catch (err) {
+      const message =
+        err instanceof DOMException && err.name === "NotAllowedError"
+          ? "Camera access was denied. Please allow camera permissions and try again."
+          : "Could not access the camera. Make sure your device has a camera available.";
+
+      toast.error("Camera error", {
+        position: "top-center",
+        description: message,
+      });
+      return;
+    }
+
+    try {
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
+      await video.play();
+
+      // Let the camera auto-expose for a moment
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        toast.error("Camera error", {
+          position: "top-center",
+          description: "Failed to create canvas context for the photo.",
+        });
+        return;
+      }
+
+      ctx.drawImage(video, 0, 0);
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png"),
+      );
+
+      if (!blob) {
+        toast.error("Camera error", {
+          position: "top-center",
+          description: "Failed to capture the photo. Please try again.",
+        });
+        return;
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const file = new File([blob], `camera-${timestamp}.png`, {
+        type: "image/png",
+      });
+
+      addUploadedImages([file]);
+    } catch (_) {
+      toast.error("Camera error", {
+        position: "top-center",
+        description: "Something went wrong while taking the photo.",
+      });
+    } finally {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+    }
+  }, [allowImageUploads, addUploadedImages]);
+
   const handleSubmit = async () => {
     const trimmed = prompt.trim();
     if (!trimmed) return;
 
-    switch (mode) {
-      case "image":
-        if (uploadedImages.length > 0) {
-          await editImage();
-        } else {
-          await generateImage();
-        }
-        return;
-      case "video":
-        // TODO: implement when ready
-        toast.error("Video feature is available.");
-        return;
-      case "chat":
-        // TODO: implement when ready
-        toast.error("Chat feature is available.");
-        return;
-    }
+    await submit();
   };
 
   return (
@@ -182,9 +241,7 @@ function ChatboxToolbar() {
               variant="outline"
               size="icon"
               aria-label="Add images"
-              disabled={
-                !allowImageUploads || isGeneratePending || isEditPending
-              }
+              disabled={!allowImageUploads || isSubmitting}
               onClick={handleAddImages}
             >
               <input
@@ -218,7 +275,7 @@ function ChatboxToolbar() {
         className="col-span-2 w-full ml-auto sm:ml-0"
         aria-label="Generate image"
       >
-        {isGeneratePending || isEditPending ? (
+        {isSubmitting ? (
           <LoaderPinwheel className="animate-spin" />
         ) : (
           <Send />
@@ -235,10 +292,8 @@ function ChatboxToolbar() {
               variant="outline"
               size="icon"
               aria-label="Take photo"
-              disabled={
-                !allowImageUploads || isGeneratePending || isEditPending
-              }
-              onClick={handleAddImages}
+              disabled={!allowImageUploads || isSubmitting}
+              onClick={handleCameraCapture}
             >
               <Camera />
             </Button>
@@ -255,7 +310,7 @@ function ChatboxToolbar() {
           render={
             <Button
               onClick={handleEnhance}
-              disabled={hasPendingWork || !prompt.trim()}
+              disabled={hasPendingWork || !prompt.trim() || !enhancePrompt}
               variant="outline"
               size="icon"
               aria-label="Enhance prompt"
@@ -299,8 +354,10 @@ function ChatboxToolbar() {
 function PromptInput({ isMobile, className }: ChatareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { mode: variant, hasPendingWork } = useChatbox();
+  const { mode: variant, isSubmitting, isEnhancePending } = useChatbox();
   const { prompt, setPrompt } = useChatboxStore();
+
+  const hasPendingWork = isSubmitting || isEnhancePending;
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
     setPrompt(e.target.value);

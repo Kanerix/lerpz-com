@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
-import { useChatboxStore } from "@/store/chatbox.store";
+import { useChatboxStore } from "./store";
 
 export default function ImageShelf() {
   const { uploadedImages, removeUploadedImage } = useChatboxStore();
