@@ -53,6 +53,8 @@ services:
     restart: on-failure
     hostname: traefik
     domainname: lerpz.local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -74,14 +76,17 @@ services:
       - cert.pem
       - key.pem
     networks:
-      lerpz-network:
-        aliases:
-          - lerpz.local
+      - lerpz-network
+
+  # ---------------------------------------------------------------------------
+  # Containerized services (only started with: docker compose --profile full up)
+  # ---------------------------------------------------------------------------
 
   portal:
     container_name: portal
     restart: on-failure
     init: true
+    profiles: ["full"]
     build:
       context: .
       dockerfile: svc/portal/Dockerfile
@@ -114,6 +119,7 @@ services:
     container_name: portal-api
     restart: on-failure
     init: true
+    profiles: ["full"]
     build:
       context: .
       dockerfile: svc/portal-api/Dockerfile
@@ -142,6 +148,21 @@ services:
         aliases:
           - portal-api.lerpz.local
 
+# -----------------------------------------------------------------------------
+# Dynamic Traefik configuration
+#
+# Default mode (docker compose up):
+#   Only infra services start (postgres, dragonfly, traefik).
+#   Traefik routes to apps running on the host via host.docker.internal.
+#   Start your apps locally:
+#     - Portal:     pnpm dev:portal          (localhost:3000)
+#     - Portal API: cargo run -p portal-api  (localhost:3001)
+#
+# Full mode (docker compose --profile full up --build):
+#   All services run in containers. The container labels override the
+#   file-based routes below (Docker provider takes priority by default).
+# -----------------------------------------------------------------------------
+
 configs:
   traefik-dynamic:
     content: |
@@ -154,6 +175,49 @@ configs:
             defaultCertificate:
               certFile: /run/secrets/cert.pem
               keyFile: /run/secrets/key.pem
+
+      http:
+        routers:
+          portal-local-http:
+            rule: "Host(`lerpz.local`)"
+            entryPoints:
+              - web
+            service: portal-local
+            priority: 1
+
+          portal-local-https:
+            rule: "Host(`lerpz.local`)"
+            entryPoints:
+              - websecure
+            tls: {}
+            service: portal-local
+            priority: 1
+
+          portal-api-local-http:
+            rule: "Host(`api.lerpz.local`)"
+            entryPoints:
+              - web
+            service: portal-api-local
+            priority: 1
+
+          portal-api-local-https:
+            rule: "Host(`api.lerpz.local`)"
+            entryPoints:
+              - websecure
+            tls: {}
+            service: portal-api-local
+            priority: 1
+
+        services:
+          portal-local:
+            loadBalancer:
+              servers:
+                - url: "http://host.docker.internal:3000"
+
+          portal-api-local:
+            loadBalancer:
+              servers:
+                - url: "http://host.docker.internal:3001"
 
 secrets:
   cert.pem:
