@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+    <title>Lerpz AI - API Reference</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+<body>
+<script id="api-reference" type="application/json">
+    $spec
+</script>
+<script>
+document.getElementById('api-reference').dataset.configuration = JSON.stringify({
+    authentication: {
+        preferredSecurityScheme: 'oauth2',
+        securitySchemes: {
+            oauth2: {
+                flows: {
+                    authorizationCode: {
+                        'x-scalar-client-id': '$client_id',
+                        'x-usePkce': 'SHA-256',
+                        selectedScopes: ['$scope']
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+</body>
+</html>

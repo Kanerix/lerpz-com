@@ -35,7 +35,7 @@ tower-http = { workspace = true, features = ["cors"] }
 async-stream = { workspace = true }
 utoipa = { workspace = true, features = ["macros"] }
 utoipa-axum  = { workspace = true }
-utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+utoipa-scalar = { workspace = true, features = ["axum"] }
 # Tracing
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
@@ -49,6 +49,7 @@ cookie = { workspace = true }
 dotenvy = { workspace = true }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
+uuid = { workspace = true }
 validator = { workspace = true }
 
 [dev-dependencies]

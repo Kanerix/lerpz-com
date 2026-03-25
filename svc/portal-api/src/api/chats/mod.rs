@@ -9,6 +9,8 @@ mod read;
 
 pub fn router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(list::handler, create::handler))
-        .routes(routes!(read::handler, message::handler))
+        .routes(routes!(list::handler))
+        .routes(routes!(create::handler))
+        .routes(routes!(read::handler))
+        .routes(routes!(message::handler))
 }

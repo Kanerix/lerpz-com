@@ -34,6 +34,7 @@ tower = "0.5"
 tower-http = "0.6"
 utoipa = "5.4"
 utoipa-axum = "0.2"
+utoipa-scalar = "0.3"
 utoipa-swagger-ui = "9.0"
 # Tracing
 tracing = "0.1"

@@ -17,7 +17,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
-use utoipa_swagger_ui::SwaggerUi;
+use utoipa_scalar::{Scalar, Servable};
 
 mod api;
 mod config;
@@ -93,7 +93,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .fallback(redirect)
         .split_for_parts();
 
-    let app = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api));
+    let scalar_html = include_str!("../scalar.html")
+        .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
+        .replace("$scope", &CONFIG.ENTRA_ID_CLIENT_SCOPE);
+
+    let app = router.merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
     tracing::info!("server started listening on {}", CONFIG.ADDR);
@@ -108,5 +112,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[axum::debug_handler]
 pub async fn redirect() -> impl IntoResponse {
-    Redirect::to("/swagger-ui")
+    Redirect::to("/scalar")
 }

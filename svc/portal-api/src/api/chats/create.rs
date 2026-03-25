@@ -44,7 +44,9 @@ pub async fn handler(
     let title = body.title.unwrap_or_else(|| truncate_title(&prompt, 100));
 
     let conv_id = sqlx::query_scalar!(
-        "INSERT INTO conversations (user_id, title, model) VALUES ($1, $2, $3) RETURNING id",
+        "INSERT INTO conversations (user_id, title, model)
+        VALUES ($1, $2, $3)
+        RETURNING id",
         &user_id,
         &title,
         &model
@@ -53,7 +55,8 @@ pub async fn handler(
     .await?;
 
     sqlx::query!(
-        "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'user', $2)",
+        "INSERT INTO messages (conversation_id, role, content)
+        VALUES ($1, 'user', $2)",
         &conv_id,
         &prompt,
     )
@@ -138,7 +141,8 @@ pub async fn handler(
         }
 
         let result = sqlx::query!(
-            "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
+            "INSERT INTO messages (conversation_id, role, content)
+            VALUES ($1, 'assistant', $2)",
             &conv_id,
             &assistant_buf,
         )
