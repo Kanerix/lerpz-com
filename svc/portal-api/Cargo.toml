@@ -52,3 +52,6 @@ strum = { workspace = true, features = ["derive"] }
 validator = { workspace = true }
 
 [dev-dependencies]
+
+[lints]
+workspace = true

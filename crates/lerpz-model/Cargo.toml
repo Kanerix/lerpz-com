@@ -9,3 +9,6 @@ serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
+
+[lints]
+workspace = true

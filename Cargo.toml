@@ -75,6 +75,12 @@ validator = "0.20"
 [workspace.lints.clippy]
 unwrap_used = "deny"
 
+# For beginning of project only
+[workspace.lints.rust]
+unused_imports = "allow"
+unused_variables = "allow"
+dead_code = "allow"
+
 [profile.release]
 opt-level = 3
 lto = "fat"
