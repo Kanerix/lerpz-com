@@ -139,7 +139,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <ChatboxProvider
       onSubmit={handleSubmit}
-      onEnhancePrompt={handleEnhancePrompt}
+      onEnhance={handleEnhancePrompt}
       models={models}
       isModelsLoading={isModelsLoading}
       loadModels={loadModels}

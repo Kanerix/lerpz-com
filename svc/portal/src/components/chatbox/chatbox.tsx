@@ -3,30 +3,17 @@
 import { Button } from "@lerpz/ui/components/button";
 import { Card, CardContent } from "@lerpz/ui/components/card";
 import { Textarea } from "@lerpz/ui/components/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@lerpz/ui/components/tooltip";
 import { cn } from "@lerpz/ui/lib/utils";
-import {
-  Camera,
-  ImagePlus,
-  LoaderPinwheel,
-  Send,
-  Settings,
-  WandSparkles,
-} from "lucide-react";
+import { ArrowUp, LoaderPinwheel } from "lucide-react";
 import { motion } from "motion/react";
 import type { ChangeEventHandler } from "react";
-import { useCallback, useEffect, useRef } from "react";
-import { toast } from "sonner";
-import { useChatboxStore } from "./store";
+import { useEffect, useRef } from "react";
 import ImageShelf from "./image-shelf";
 import { type ChatboxMode, useChatbox } from "./provider";
 import ChatboxSettings from "./settings";
+import { useChatboxStore } from "./store";
 
-interface ChatareaProps {
+interface PromptInputProps {
   isMobile: boolean;
   className?: string;
 }
@@ -51,12 +38,10 @@ const chatareaPlaceholder: Record<ChatboxMode, string> = {
 };
 
 export default function Chatbox() {
-  const { showSettings, isSubmitting, isEnhancePending } = useChatbox();
-
-  const hasPendingWork = isSubmitting || isEnhancePending;
+  const { isPending, showSettings } = useChatbox();
 
   useEffect(() => {
-    if (!hasPendingWork) return;
+    if (!isPending) return;
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -68,7 +53,7 @@ export default function Chatbox() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [hasPendingWork]);
+  }, [isPending]);
 
   return (
     <motion.div
@@ -97,267 +82,37 @@ export default function Chatbox() {
 }
 
 function ChatboxToolbar() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { isPending, submit, isSubmitPending } = useChatbox();
 
-  const {
-    setShowSettings,
-    enhancePrompt,
-    isEnhancePending,
-    allowImageUploads,
-    submit,
-    isSubmitting,
-  } = useChatbox();
-
-  const { prompt, setPrompt, addUploadedImages } = useChatboxStore();
-
-  const hasPendingWork = isSubmitting || isEnhancePending;
-
-  const toggleSettings = () => {
-    setShowSettings((old) => !old);
-  };
-
-  const handleEnhance = async () => {
-    if (!prompt || !enhancePrompt) return;
-    const newPrompt = await enhancePrompt(prompt);
-    setPrompt(newPrompt);
-  };
-
-  const handleImagesFileSelection: ChangeEventHandler<HTMLInputElement> = (
-    event,
-  ) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const imageFiles = Array.from(files).filter((file) =>
-      file.type.startsWith("image/"),
-    );
-    if (!imageFiles.length) return;
-
-    addUploadedImages(imageFiles);
-
-    event.target.value = "";
-  };
-
-  const triggerFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAddImages = () => {
-    if (!allowImageUploads) return;
-    triggerFilePicker();
-  };
-
-  const handleCameraCapture = useCallback(async () => {
-    if (!allowImageUploads) return;
-
-    let stream: MediaStream | null = null;
-
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-    } catch (err) {
-      const message =
-        err instanceof DOMException && err.name === "NotAllowedError"
-          ? "Camera access was denied. Please allow camera permissions and try again."
-          : "Could not access the camera. Make sure your device has a camera available.";
-
-      toast.error("Camera error", {
-        position: "top-center",
-        description: message,
-      });
-      return;
-    }
-
-    try {
-      const video = document.createElement("video");
-      video.srcObject = stream;
-      video.setAttribute("playsinline", "true");
-      await video.play();
-
-      // Let the camera auto-expose for a moment
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        toast.error("Camera error", {
-          position: "top-center",
-          description: "Failed to create canvas context for the photo.",
-        });
-        return;
-      }
-
-      ctx.drawImage(video, 0, 0);
-
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png"),
-      );
-
-      if (!blob) {
-        toast.error("Camera error", {
-          position: "top-center",
-          description: "Failed to capture the photo. Please try again.",
-        });
-        return;
-      }
-
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const file = new File([blob], `camera-${timestamp}.png`, {
-        type: "image/png",
-      });
-
-      addUploadedImages([file]);
-    } catch (_) {
-      toast.error("Camera error", {
-        position: "top-center",
-        description: "Something went wrong while taking the photo.",
-      });
-    } finally {
-      stream.getTracks().forEach((track) => {
-        track.stop();
-      });
-    }
-  }, [allowImageUploads, addUploadedImages]);
-
-  const handleSubmit = async () => {
-    const trimmed = prompt.trim();
-    if (!trimmed) return;
-
-    await submit();
-  };
+  const { prompt } = useChatboxStore();
 
   return (
-    <div className="grid grid-cols-[max-content_1fr_max-content_max-content] gap-4">
-      {/* IMAGES UPLOAD BUTTON */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              className="hidden sm:flex"
-              variant="outline"
-              size="icon"
-              aria-label="Add images"
-              disabled={!allowImageUploads || isSubmitting}
-              onClick={handleAddImages}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleImagesFileSelection}
-              />
-              <ImagePlus />
-            </Button>
-          }
-        />
-        <TooltipContent>
-          <p>
-            {allowImageUploads
-              ? "Add images to your prompt"
-              : "Image uploads are disabled"}
-          </p>
-        </TooltipContent>
-      </Tooltip>
-
+    <div className="flex gap-4">
       {/* TEXT AREA */}
-      <PromptInput className="row-span-2" isMobile={false} />
+      <PromptInput className="grow" isMobile={false} />
 
       {/* GENERATE BUTTON */}
       <Button
-        onClick={handleSubmit}
-        disabled={hasPendingWork || !prompt?.trim()}
-        className="col-span-2 w-full ml-auto sm:ml-0"
-        aria-label="Generate image"
+        size="icon"
+        onClick={submit}
+        disabled={isPending || !prompt?.trim()}
+        aria-label="Send prompt"
       >
-        {isSubmitting ? (
+        {isSubmitPending ? (
           <LoaderPinwheel className="animate-spin" />
         ) : (
-          <Send />
+          <ArrowUp />
         )}
-        Send
       </Button>
-
-      {/* CAMERA BUTTON */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              className="hidden sm:flex"
-              variant="outline"
-              size="icon"
-              aria-label="Take photo"
-              disabled={!allowImageUploads || isSubmitting}
-              onClick={handleCameraCapture}
-            >
-              <Camera />
-            </Button>
-          }
-        />
-        <TooltipContent>
-          <p>Take a photo using camera</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {/* ENHANCE BUTTON */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              onClick={handleEnhance}
-              disabled={hasPendingWork || !prompt.trim() || !enhancePrompt}
-              variant="outline"
-              size="icon"
-              aria-label="Enhance prompt"
-            >
-              {isEnhancePending ? (
-                <LoaderPinwheel className="animate-spin" />
-              ) : (
-                <WandSparkles />
-              )}
-            </Button>
-          }
-        />
-        <TooltipContent>
-          <p>Enhance the image prompt!</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {/* SETTINGS BUTTON */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              className="hidden sm:flex"
-              variant="outline"
-              size="icon"
-              aria-label="Show/hide settings"
-              onClick={toggleSettings}
-            >
-              <Settings />
-            </Button>
-          }
-        />
-        <TooltipContent>
-          <p>Show/hide settings</p>
-        </TooltipContent>
-      </Tooltip>
     </div>
   );
 }
 
-function PromptInput({ isMobile, className }: ChatareaProps) {
+function PromptInput({ isMobile, className }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { mode: variant, isSubmitting, isEnhancePending } = useChatbox();
+  const { mode: variant, isPending } = useChatbox();
   const { prompt, setPrompt } = useChatboxStore();
-
-  const hasPendingWork = isSubmitting || isEnhancePending;
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
     setPrompt(e.target.value);
@@ -370,14 +125,14 @@ function PromptInput({ isMobile, className }: ChatareaProps) {
   return (
     <Textarea
       ref={textareaRef}
-      disabled={hasPendingWork}
+      disabled={isPending}
       placeholder={chatareaPlaceholder[variant]}
       value={prompt}
       onChange={handleChange}
       className={cn(
-        "grow",
+        "grow border-none ring-none outline-none",
         className,
-        isMobile ? "block sm:hidden mb-4" : "hidden sm:block",
+        isMobile ? "block sm:hidden" : "hidden sm:block",
       )}
     />
   );

@@ -15,3 +15,4 @@ export type {
   ChatboxProviderProps,
   ChatboxSubmitArgs,
 } from "./provider";
+export { useChatbox } from "./provider";

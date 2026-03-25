@@ -42,10 +42,12 @@ export interface ChatboxContextValue {
   loadModels: (mode?: string | undefined) => Promise<void>;
 
   submit: () => void | Promise<void>;
-  isSubmitting: boolean;
+  isSubmitPending: boolean;
 
-  enhancePrompt?: (prompt: string) => Promise<string>;
+  enhance?: (prompt: string) => Promise<string>;
   isEnhancePending: boolean;
+
+  isPending: boolean;
 }
 
 const ChatboxContext = createContext<ChatboxContextValue | undefined>(
@@ -54,7 +56,7 @@ const ChatboxContext = createContext<ChatboxContextValue | undefined>(
 
 export interface ChatboxProviderProps {
   onSubmit: (args: ChatboxSubmitArgs) => void | Promise<void>;
-  onEnhancePrompt?: (prompt: string) => Promise<string>;
+  onEnhance?: (prompt: string) => Promise<string>;
   models?: Model[];
   isModelsLoading?: boolean;
   loadModels?: (mode?: string) => Promise<void>;
@@ -62,13 +64,11 @@ export interface ChatboxProviderProps {
   children: ReactNode;
 }
 
-export const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image" as const;
-
 const noopLoadModels = async () => {};
 
 export function ChatboxProvider({
   onSubmit,
-  onEnhancePrompt,
+  onEnhance,
   models = [],
   isModelsLoading = false,
   loadModels = noopLoadModels,
@@ -79,12 +79,18 @@ export function ChatboxProvider({
   const [showSettings, setShowSettings] = useState<boolean>(true);
   const [allowImageUploads, setAllowImageUploads] = useState<boolean>(true);
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitPending, setIsSubmitPending] = useState<boolean>(false);
   const [isEnhancePending, setIsEnhancePending] = useState<boolean>(false);
 
   const handleSubmit = useCallback(async () => {
-    const { prompt, model, uploadedImages, getModelSettings, setPrompt, clearUploadedImages } =
-      useChatboxStore.getState();
+    const {
+      prompt,
+      setPrompt,
+      model,
+      getModelSettings,
+      uploadedImages,
+      clearUploadedImages,
+    } = useChatboxStore.getState();
 
     const trimmed = prompt.trim();
     if (!trimmed) return;
@@ -97,29 +103,31 @@ export function ChatboxProvider({
       images: uploadedImages,
     };
 
-    setIsSubmitting(true);
+    setIsSubmitPending(true);
     try {
       await onSubmit(args);
       setPrompt("");
       clearUploadedImages();
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitPending(false);
     }
   }, [mode, onSubmit]);
 
-  const handleEnhancePrompt = useCallback(
+  const handleEnhance = useCallback(
     async (prompt: string): Promise<string> => {
-      if (!onEnhancePrompt) return prompt;
+      if (!onEnhance) return prompt;
 
       setIsEnhancePending(true);
       try {
-        return await onEnhancePrompt(prompt);
+        return await onEnhance(prompt);
       } finally {
         setIsEnhancePending(false);
       }
     },
-    [onEnhancePrompt],
+    [onEnhance],
   );
+
+  const isPending = isSubmitPending || isEnhancePending;
 
   const value = useMemo<ChatboxContextValue>(
     () => ({
@@ -137,10 +145,12 @@ export function ChatboxProvider({
       loadModels,
 
       submit: handleSubmit,
-      isSubmitting,
+      isSubmitPending,
 
-      enhancePrompt: onEnhancePrompt ? handleEnhancePrompt : undefined,
+      enhance: handleEnhance,
       isEnhancePending,
+
+      isPending,
     }),
     [
       mode,
@@ -150,10 +160,10 @@ export function ChatboxProvider({
       isModelsLoading,
       loadModels,
       handleSubmit,
-      isSubmitting,
-      onEnhancePrompt,
-      handleEnhancePrompt,
+      isSubmitPending,
+      handleEnhance,
       isEnhancePending,
+      isPending,
     ],
   );
 

@@ -1,3 +1,6 @@
+"use client";
+
+import { Button } from "@lerpz/ui/components/button";
 import {
   Select,
   SelectContent,
@@ -7,17 +10,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@lerpz/ui/components/select";
-import { Toggle } from "@lerpz/ui/components/toggle";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@lerpz/ui/components/tooltip";
-import { Brain, LoaderPinwheel, ScanEye } from "lucide-react";
-import { useEffect } from "react";
-import { type ModelSetting, useModels } from "@/hooks/useModels";
+import {
+  Brain,
+  Camera,
+  ImagePlus,
+  LoaderPinwheel,
+  WandSparkles,
+} from "lucide-react";
+import { type ChangeEventHandler, useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { useChatbox } from "./provider";
 import { useChatboxStore } from "./store";
-import { DEFAULT_IMAGE_MODEL, useChatbox } from "./provider";
 
 type ModelSelectValue = string | null;
 
@@ -27,9 +35,20 @@ interface ModelSelectItem {
 }
 
 export default function ChatboxSettings() {
-  const { mode: variant } = useChatbox();
-  const { model, setModel } = useChatboxStore();
-  const { models, isLoading: isLoadingModels, loadModels } = useModels();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const {
+    mode,
+    isPending,
+    enhance,
+    isEnhancePending,
+    allowImageUploads,
+    models,
+    isModelsLoading,
+    loadModels,
+  } = useChatbox();
+  const { model, setModel, prompt, setPrompt, addUploadedImages } =
+    useChatboxStore();
 
   const modelItems: ModelSelectItem[] =
     models?.map((m) => ({
@@ -37,24 +56,125 @@ export default function ChatboxSettings() {
       value: m.value,
     })) ?? [];
 
-  const modelsWithNone: ModelSelectItem[] = [
-    { label: "Default model", value: null },
-    ...modelItems,
-  ];
-
   useEffect(() => {
-    void loadModels(variant);
-  }, [variant, loadModels]);
+    loadModels(mode);
+  }, [mode, loadModels]);
+
+  const handleEnhance = async () => {
+    if (!prompt || !enhance) return;
+    const newPrompt = await enhance(prompt);
+    setPrompt(newPrompt);
+  };
+
+  const handleImagesFileSelection: ChangeEventHandler<HTMLInputElement> = (
+    event,
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const imageFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    if (!imageFiles.length) return;
+
+    addUploadedImages(imageFiles);
+
+    event.target.value = "";
+  };
+
+  const triggerFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAddImages = () => {
+    if (!allowImageUploads) return;
+    triggerFilePicker();
+  };
+
+  const handleCameraCapture = useCallback(async () => {
+    if (!allowImageUploads) return;
+
+    let stream: MediaStream | null = null;
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+    } catch (err) {
+      const message =
+        err instanceof DOMException && err.name === "NotAllowedError"
+          ? "Camera access was denied. Please allow camera permissions and try again."
+          : "Could not access the camera. Make sure your device has a camera available.";
+
+      toast.error("Camera error", {
+        position: "top-center",
+        description: message,
+      });
+      return;
+    }
+
+    try {
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
+      await video.play();
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        toast.error("Camera error", {
+          position: "top-center",
+          description: "Was unable to create a canvas context for the photo.",
+        });
+        return;
+      }
+
+      ctx.drawImage(video, 0, 0);
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png"),
+      );
+
+      if (!blob) {
+        toast.error("Camera error", {
+          position: "top-center",
+          description: "Failed to capture the photo. Please try again.",
+        });
+        return;
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const file = new File([blob], `camera-${timestamp}.png`, {
+        type: "image/png",
+      });
+
+      addUploadedImages([file]);
+    } catch (_) {
+      toast.error("Camera error", {
+        position: "top-center",
+        description: "Something went wrong while taking the photo.",
+      });
+    } finally {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+    }
+  }, [allowImageUploads, addUploadedImages]);
 
   return (
-    <div className="flex gap-x-4 justify-between mt-4">
-      <Select items={modelsWithNone} value={model} onValueChange={setModel}>
+    <div className="flex mt-4">
+      <Select items={modelItems} value={model} onValueChange={setModel}>
         <Tooltip>
           <TooltipTrigger
             render={
-              <SelectTrigger className="relative" disabled={isLoadingModels}>
+              <SelectTrigger className="relative" disabled={isModelsLoading}>
                 <div className="flex items-center">
-                  {isLoadingModels ? (
+                  {isModelsLoading ? (
                     <LoaderPinwheel className="mr-2 animate-spin" />
                   ) : (
                     <Brain className="mr-2" />
@@ -71,7 +191,7 @@ export default function ChatboxSettings() {
         <SelectContent className="w-fit" alignItemWithTrigger={false}>
           <SelectGroup>
             <SelectLabel>Model</SelectLabel>
-            {modelsWithNone.map((m) => (
+            {modelItems.map((m) => (
               <SelectItem key={m.value ?? "default"} value={m.value}>
                 {m.label}
               </SelectItem>
@@ -80,99 +200,85 @@ export default function ChatboxSettings() {
         </SelectContent>
       </Select>
 
-      {(() => {
-        const selectedModel = model || DEFAULT_IMAGE_MODEL;
-        const found = models.find((m) => m.value === selectedModel);
-        if (!found) return null;
-
-        return (
-          <ChatboxSettingsDynamic
-            settings={found.settings}
-            modelId={selectedModel}
-          />
-        );
-      })()}
-    </div>
-  );
-}
-
-interface ChatboxSettingsDynamicProps {
-  settings: ModelSetting[];
-  modelId: string;
-}
-
-function ChatboxSettingsDynamic({
-  settings,
-  modelId,
-}: ChatboxSettingsDynamicProps) {
-  const { autoAnalyze, setAutoAnalyze, getModelSetting, setModelSetting } =
-    useChatboxStore();
-
-  const toggleAutoAnalyze = () => {
-    setAutoAnalyze(!autoAnalyze);
-  };
-
-  return (
-    <div className="flex gap-x-4 justify-between">
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Toggle
-              pressed={autoAnalyze}
-              onPressedChange={toggleAutoAnalyze}
-              variant="outline"
-              aria-label="Auto analyze image(s)"
-            >
-              <ScanEye />
-            </Toggle>
-          }
-        />
-        <TooltipContent>
-          <p>Analyze created image(s)</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {settings.map((setting) => {
-        const currentValue =
-          getModelSetting(modelId, setting.name) ?? setting.values[0]?.value;
-
-        return (
-          <Select
-            key={setting.name}
-            items={setting.values}
-            value={currentValue}
-            onValueChange={(value) =>
-              setModelSetting(modelId, setting.name, value)
+      <div className="flex gap-x-4 ml-auto">
+        {/* CAMERA BUTTON */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                className="hidden sm:flex"
+                variant="outline"
+                size="icon"
+                aria-label="Take photo"
+                disabled={!allowImageUploads || isPending}
+                onClick={handleCameraCapture}
+              >
+                <Camera />
+              </Button>
             }
-          >
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <SelectTrigger className="relative">
-                    <div className="flex items-center">
-                      <setting.icon className="mr-2" />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                }
-              />
-              <TooltipContent>
-                <p>{setting.tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-            <SelectContent className="w-fit" alignItemWithTrigger={false}>
-              <SelectGroup>
-                <SelectLabel>{setting.name}</SelectLabel>
-                {setting.values.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        );
-      })}
+          />
+          <TooltipContent>
+            <p>Take a photo using camera</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* IMAGES UPLOAD BUTTON */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                className="hidden sm:flex"
+                variant="outline"
+                size="icon"
+                aria-label="Add images"
+                disabled={!allowImageUploads || isPending}
+                onClick={handleAddImages}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImagesFileSelection}
+                />
+                <ImagePlus />
+              </Button>
+            }
+          />
+          <TooltipContent>
+            <p>
+              {allowImageUploads
+                ? "Add images to your prompt"
+                : "Image uploads are disabled"}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* ENHANCE BUTTON */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                onClick={handleEnhance}
+                disabled={isPending || !prompt.trim() || !enhance}
+                variant="outline"
+                size="icon"
+                aria-label="Enhance prompt"
+              >
+                {isEnhancePending ? (
+                  <LoaderPinwheel className="animate-spin" />
+                ) : (
+                  <WandSparkles />
+                )}
+              </Button>
+            }
+          />
+          <TooltipContent>
+            <p>Enhance the image prompt!</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 }
