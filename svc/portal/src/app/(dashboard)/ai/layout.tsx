@@ -6,6 +6,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
 } from "react";
 import { toast } from "sonner";
@@ -56,8 +57,18 @@ export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
 
+  useEffect(() => {
+    console.log("TOAST");
+    toast.success("Models loaded", {
+      description: "Your conversation has been saved.",
+    });
+  }, [])
+
   const chat = useChat({
     onSaved: (convId) => {
+      toast.success("Chat saved", {
+        description: "Your conversation has been saved.",
+      });
       router.replace(`/ai/chats/${convId}`);
     },
     onError: (error) => {
@@ -140,6 +151,7 @@ export default function Layout({ children }: LayoutProps) {
     <ChatboxProvider
       onSubmit={handleSubmit}
       onEnhance={handleEnhancePrompt}
+      isStreaming={chat.isStreaming || chat.isLoading || image.isLoading}
       models={models}
       isModelsLoading={isModelsLoading}
       loadModels={loadModels}

@@ -59,6 +59,7 @@ export interface ChatboxProviderProps {
   onEnhance?: (prompt: string) => Promise<string>;
   models?: Model[];
   isModelsLoading?: boolean;
+  isStreaming?: boolean;
   loadModels?: (mode?: string) => Promise<void>;
   defaultMode?: ChatboxMode;
   children: ReactNode;
@@ -71,6 +72,7 @@ export function ChatboxProvider({
   onEnhance,
   models = [],
   isModelsLoading = false,
+  isStreaming = false,
   loadModels = noopLoadModels,
   defaultMode = "chat",
   children,
@@ -127,7 +129,7 @@ export function ChatboxProvider({
     [onEnhance],
   );
 
-  const isPending = isSubmitPending || isEnhancePending;
+  const isPending = isSubmitPending || isEnhancePending || isStreaming;
 
   const value = useMemo<ChatboxContextValue>(
     () => ({

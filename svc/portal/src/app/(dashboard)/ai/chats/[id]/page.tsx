@@ -1,9 +1,15 @@
 "use client";
 
+import { use } from "react";
 import { useAi } from "../../layout";
 import ChatView from "../chat-view";
 
-export default function ChatPage() {
+interface ChatPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function ChatPage({ params }: ChatPageProps) {
+  const { id: _chatId } = use(params);
   const { chatMessages, isChatStreaming, chatError } = useAi();
 
   return (

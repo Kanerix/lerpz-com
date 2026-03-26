@@ -23,7 +23,7 @@ export default function ChatView({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, []);
 
   if (messages.length === 0) {
     return <EmptyState />;
@@ -79,23 +79,22 @@ export default function ChatView({
           ))}
         </AnimatePresence>
 
-        {isStreaming &&
-          messages[messages.length - 1]?.role === "user" && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3 justify-start"
-            >
-              <Avatar size="sm" className="mt-1 shrink-0">
-                <AvatarFallback>
-                  <Bot className="size-3.5" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              </div>
-            </motion.div>
-          )}
+        {isStreaming && messages[messages.length - 1]?.role === "user" && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-3 justify-start"
+          >
+            <Avatar size="sm" className="mt-1 shrink-0">
+              <AvatarFallback>
+                <Bot className="size-3.5" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            </div>
+          </motion.div>
+        )}
 
         {error && (
           <motion.div

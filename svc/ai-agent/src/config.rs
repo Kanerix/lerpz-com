@@ -1,0 +1,34 @@
+//! Configuration module for the agent.
+
+use std::sync::{Arc, LazyLock};
+
+use lerpz_utils::{
+    env::{get_env_from, get_env_parse},
+    generate_config,
+};
+use secrecy::SecretString;
+
+/// The environment the server is running in.
+#[derive(strum::EnumString, Debug, Clone, Copy, PartialEq, Eq)]
+enum Env {
+    #[strum(serialize = "production")]
+    Production,
+    #[strum(serialize = "development")]
+    Development,
+    #[strum(serialize = "test")]
+    Test,
+}
+
+/// The main configuration struct for the server.
+///
+/// Lazy loaded using [`LazyLock`] to ensure that the configuration is only
+/// loaded once.
+pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::from_env().unwrap());
+
+generate_config!(
+    ENV: Env = get_env_parse,
+    PORTKEY_BASE_URL: Arc<str> = get_env_from,
+    PORTKEY_PROVIDER: Arc<str> = get_env_from,
+    PORTKEY_API_KEY: SecretString = get_env_from,
+    DEFAULT_MODEL: Arc<str> = get_env_from
+);

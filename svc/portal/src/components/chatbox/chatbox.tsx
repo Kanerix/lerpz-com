@@ -6,7 +6,7 @@ import { Textarea } from "@lerpz/ui/components/textarea";
 import { cn } from "@lerpz/ui/lib/utils";
 import { ArrowUp, LoaderPinwheel } from "lucide-react";
 import { motion } from "motion/react";
-import type { ChangeEventHandler } from "react";
+import type { ChangeEventHandler, KeyboardEventHandler } from "react";
 import { useEffect, useRef } from "react";
 import ImageShelf from "./image-shelf";
 import { type ChatboxMode, useChatbox } from "./provider";
@@ -63,8 +63,8 @@ export default function Chatbox() {
     >
       <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[750px] p-4">
         <ImageShelf />
-        <Card className="rounded-4xl">
-          <CardContent className="flex flex-col">
+        <Card className="rounded-4xl py-3 gap-3">
+          <CardContent className="flex flex-col px-3">
             <PromptInput isMobile={true} />
             <ChatboxToolbar />
             <motion.div
@@ -82,8 +82,7 @@ export default function Chatbox() {
 }
 
 function ChatboxToolbar() {
-  const { isPending, submit, isSubmitPending } = useChatbox();
-
+  const { isPending, submit } = useChatbox();
   const { prompt } = useChatboxStore();
 
   return (
@@ -98,11 +97,7 @@ function ChatboxToolbar() {
         disabled={isPending || !prompt?.trim()}
         aria-label="Send prompt"
       >
-        {isSubmitPending ? (
-          <LoaderPinwheel className="animate-spin" />
-        ) : (
-          <ArrowUp />
-        )}
+        {isPending ? <LoaderPinwheel className="animate-spin" /> : <ArrowUp />}
       </Button>
     </div>
   );
@@ -111,11 +106,20 @@ function ChatboxToolbar() {
 function PromptInput({ isMobile, className }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { mode: variant, isPending } = useChatbox();
+  const { mode: variant, isPending, submit } = useChatbox();
   const { prompt, setPrompt } = useChatboxStore();
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
     setPrompt(e.target.value);
+  };
+
+  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!isPending && prompt?.trim()) {
+        submit();
+      }
+    }
   };
 
   useEffect(() => {
@@ -129,8 +133,10 @@ function PromptInput({ isMobile, className }: PromptInputProps) {
       placeholder={chatareaPlaceholder[variant]}
       value={prompt}
       onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      rows={1}
       className={cn(
-        "grow border-none ring-none outline-none",
+        "grow min-h-0 border-none shadow-none ring-0 outline-none focus-visible:ring-0 focus-visible:border-none bg-transparent",
         className,
         isMobile ? "block sm:hidden" : "hidden sm:block",
       )}

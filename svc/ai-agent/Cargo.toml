@@ -1,0 +1,26 @@
+[package]
+name = "ai-agent"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+authors.workspace = true
+lints.workspace = true
+
+[dependencies]
+# Internal
+lerpz-utils = { workspace = true }
+# AI & async
+async-openai = { workspace = true, features = ["chat-completion"]  }
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+# Database
+qdrant-client = { workspace = true }
+# Other
+anyhow = { workspace = true }
+dotenvy = { workspace = true }
+http = { workspace = true }
+secrecy = { workspace = true }
+serde_json = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
