@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_openai::Client;
 use async_openai::types::chat::{
     ChatCompletionMessageToolCalls, ChatCompletionRequestAssistantMessageArgs,
@@ -8,6 +7,7 @@ use async_openai::types::chat::{
 };
 use tracing::info;
 
+use crate::error::{Error, Result};
 use crate::oai::PortkeyConfig;
 use crate::tools::{execute_tool, tool_definitions};
 
@@ -65,21 +65,17 @@ impl Agent {
 
             let message = choice.message;
 
-            // If there are tool calls, execute them and loop back
             if let Some(ref tool_calls) = message.tool_calls {
                 info!(count = tool_calls.len(), "Model requested tool calls");
 
-                // Add the assistant's message (with tool_calls) to history
                 let assistant_msg = ChatCompletionRequestAssistantMessageArgs::default()
                     .tool_calls(tool_calls.clone())
                     .build()?;
                 messages.push(assistant_msg.into());
 
-                // Execute each tool and add the results
                 for tool_call in tool_calls {
                     if let ChatCompletionMessageToolCalls::Function(func) = tool_call {
-                        let args: serde_json::Value =
-                            serde_json::from_str(&func.function.arguments)?;
+                        let args = serde_json::from_str(&func.function.arguments)?;
 
                         info!(tool = %func.function.name, "Executing tool");
                         let result = execute_tool(&func.function.name, &args).await?;
@@ -93,18 +89,17 @@ impl Agent {
                     }
                 }
 
-                continue; // Loop back for the next LLM call
+                continue;
             }
 
-            // No tool calls — we have a final text response
             let content = message
                 .content
                 .ok_or_else(|| anyhow::anyhow!("No content in final response"))?;
             return Ok(content.to_string());
         }
 
-        Err(anyhow::anyhow!(
+        Err(Error::Agent(format!(
             "Agent exceeded max tool rounds ({MAX_TOOL_ROUNDS})"
-        ))
+        )))
     }
 }

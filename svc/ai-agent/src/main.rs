@@ -2,16 +2,17 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 
 use crate::agent::Agent;
 use crate::config::CONFIG;
+use crate::error::Result;
 use crate::oai::PortkeyConfig;
 
 mod agent;
 mod config;
+mod error;
 mod oai;
-mod rag;
 mod tools;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::from(format!(
@@ -46,9 +47,7 @@ async fn main() -> anyhow::Result<()> {
          Always cite your sources.",
     );
 
-    let response = agent
-        .run("What are the key features of our product?")
-        .await?;
+    let response = agent.run("Who am i?").await?;
     println!("Agent response:\n{response}");
 
     Ok(())

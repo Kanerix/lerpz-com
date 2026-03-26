@@ -43,20 +43,13 @@ pub fn tool_definitions() -> Vec<ChatCompletionTools> {
     ]
 }
 
-pub async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
+pub async fn execute_tool(name: &str, _: &Value) -> Result<Value> {
     match name {
-        "search_knowledge_base" => {
-            let query = args["query"]
-                .as_str()
-                .ok_or_else(|| anyhow::anyhow!("Missing 'query' argument"))?;
-            let top_k = args["top_k"].as_u64().unwrap_or(5) as usize;
-
-            Ok(json!({
-                "results": [
-                    {"title": "Example doc", "content": "This is a retrieved document."}
-                ]
-            }))
-        }
+        "search_knowledge_base" => Ok(json!({
+            "results": [
+                {"title": "Example doc", "content": "This is a retrieved document."}
+            ]
+        })),
         "get_user_profile" => Ok(json!({
             "name": "Kasper",
             "email": "kas@lerpz.com"
