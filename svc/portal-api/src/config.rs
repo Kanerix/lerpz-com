@@ -35,7 +35,7 @@ generate_config!(
     ALLOWED_ORIGINS: HeaderValue = get_env_parse,
     ENTRA_ID_TENANT_ID: String = get_env, // TODO: Change to Arc<str> in future
     ENTRA_ID_CLIENT_ID: String = get_env, // TODO: Change to Arc<str> in future
-    ENTRA_ID_CLIENT_SCOPE: String = get_env, // TODO: Change to Arc<str> in future
+    ENTRA_ID_SCOPE: String = get_env, // TODO: Change to Arc<str> in future
     PORTKEY_BASE_URL: Arc<str> = get_env_from,
     PORTKEY_PROVIDER: Arc<str> = get_env_from,
     PORTKEY_API_KEY: SecretString = get_env_from,
