@@ -23,13 +23,13 @@ import {
   useSidebar,
 } from "@lerpz/ui/components/sidebar";
 import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  LogOut,
-  Sparkles,
-  Users,
-} from "lucide-react";
+  MdVerified,
+  MdNotifications,
+  MdUnfoldMore,
+  MdLogout,
+  MdAutoAwesome,
+  MdGroup,
+} from "react-icons/md";
 import { useEffect, useState } from "react";
 import { loginRequest } from "@/lib/msal-config";
 import { getCurrentUserPhotoUrl } from "@/services/graph/photo";
@@ -113,7 +113,7 @@ export default function SidebarUserInfo() {
                   <span className="truncate font-medium">{account?.name}</span>
                   <span className="truncate text-xs">{account?.username}</span>
                 </div>
-                <ChevronsUpDown className="ml-auto size-4" />
+                <MdUnfoldMore className="ml-auto size-4" />
               </SidebarMenuButton>
             }
           ></DropdownMenuTrigger>
@@ -146,28 +146,28 @@ export default function SidebarUserInfo() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles />
+                <MdAutoAwesome />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheck />
+                <MdVerified />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Bell />
+                <MdNotifications />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleAccountSwitch}>
-              <Users />
+              <MdGroup />
               Switch Account
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
+              <MdLogout />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

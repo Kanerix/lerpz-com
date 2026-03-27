@@ -8,7 +8,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@lerpz/ui/components/sidebar";
-import { Image, MessageCircle, Video } from "lucide-react";
+import { MdImage, MdChatBubble, MdVideocam } from "react-icons/md";
 import type { ComponentProps } from "react";
 import ModeSwitcher, { type ModeSwitcherProps } from "./mode-switcher";
 // import { NavMain } from "./nav-main";
@@ -20,7 +20,7 @@ const modes: ModeSwitcherProps["modes"] = [
   {
     variant: "chat",
     name: "Chat",
-    logo: MessageCircle,
+    logo: MdChatBubble,
     plan: "Free",
     href: "/chats",
     target: "_self",
@@ -28,7 +28,7 @@ const modes: ModeSwitcherProps["modes"] = [
   {
     variant: "image",
     name: "Image",
-    logo: Image,
+    logo: MdImage,
     plan: "Free",
     href: "/images",
     target: "_self",
@@ -36,7 +36,7 @@ const modes: ModeSwitcherProps["modes"] = [
   {
     variant: "video",
     name: "Video",
-    logo: Video,
+    logo: MdVideocam,
     plan: "Enterprise",
     href: "/videos",
     target: "_self",

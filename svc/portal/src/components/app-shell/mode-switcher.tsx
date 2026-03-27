@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@lerpz/ui/components/sidebar";
-import { ChevronsUpDown } from "lucide-react";
+import { MdUnfoldMore } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useChatbox } from "@/components/chatbox/provider";
@@ -67,7 +67,7 @@ export default function ModeSwitcher({
                   </span>
                   <span className="truncate text-md">{activeMode.plan}</span>
                 </div>
-                <ChevronsUpDown className="ml-auto" />
+                <MdUnfoldMore className="ml-auto" />
               </SidebarMenuButton>
             }
           />

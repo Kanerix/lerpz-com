@@ -7,6 +7,7 @@ import {
   type SetStateAction,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -55,7 +56,7 @@ const ChatboxContext = createContext<ChatboxContextValue | undefined>(
 );
 
 export interface ChatboxProviderProps {
-  onSubmit: (args: ChatboxSubmitArgs) => void | Promise<void>;
+  onSubmit?: (args: ChatboxSubmitArgs) => void | Promise<void>;
   onEnhance?: (prompt: string) => Promise<string>;
   models?: Model[];
   isModelsLoading?: boolean;
@@ -65,15 +66,13 @@ export interface ChatboxProviderProps {
   children: ReactNode;
 }
 
-const noopLoadModels = async () => {};
-
 export function ChatboxProvider({
   onSubmit,
   onEnhance,
   models = [],
   isModelsLoading = false,
   isStreaming = false,
-  loadModels = noopLoadModels,
+  loadModels = async () => {},
   defaultMode = "chat",
   children,
 }: ChatboxProviderProps) {
@@ -83,6 +82,22 @@ export function ChatboxProvider({
 
   const [isSubmitPending, setIsSubmitPending] = useState<boolean>(false);
   const [isEnhancePending, setIsEnhancePending] = useState<boolean>(false);
+
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
+
+  useEffect(() => {
+    if (isModelsLoading || models.length === 0) return;
+
+    const { model, setModel } = useChatboxStore.getState();
+    if (model !== null) return;
+
+    const firstModel = models[0];
+    if (firstModel) {
+      setModel(firstModel.value);
+    }
+  }, [models, isModelsLoading]);
 
   const handleSubmit = useCallback(async () => {
     const {
@@ -107,7 +122,7 @@ export function ChatboxProvider({
 
     setIsSubmitPending(true);
     try {
-      await onSubmit(args);
+      if (onSubmit) await onSubmit(args);
       setPrompt("");
       clearUploadedImages();
     } finally {

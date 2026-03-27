@@ -1,13 +1,13 @@
 "use client";
 
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
 import { useTheme } from "next-themes";
+import {
+  MdCheckCircle,
+  MdError,
+  MdInfo,
+  MdLoop,
+  MdWarning,
+} from "react-icons/md";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -18,11 +18,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+        success: <MdCheckCircle className="size-4" />,
+        info: <MdInfo className="size-4" />,
+        warning: <MdWarning className="size-4" />,
+        error: <MdError className="size-4" />,
+        loading: <MdLoop className="size-4 animate-spin" />,
       }}
       style={
         {

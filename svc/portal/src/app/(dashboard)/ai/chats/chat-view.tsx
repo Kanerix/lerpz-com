@@ -3,7 +3,8 @@
 import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { cn } from "@lerpz/ui/lib/utils";
-import { Bot, Loader2, User } from "lucide-react";
+import { MdSmartToy, MdPerson } from "react-icons/md";
+import { MdLoop } from "react-icons/md";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/hooks/useChat";
@@ -47,7 +48,7 @@ export default function ChatView({
               {message.role === "assistant" && (
                 <Avatar size="sm" className="mt-1 shrink-0">
                   <AvatarFallback>
-                    <Bot className="size-3.5" />
+                    <MdSmartToy className="size-3.5" />
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -71,7 +72,7 @@ export default function ChatView({
               {message.role === "user" && (
                 <Avatar size="sm" className="mt-1 shrink-0">
                   <AvatarFallback>
-                    <User className="size-3.5" />
+                    <MdPerson className="size-3.5" />
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -87,11 +88,11 @@ export default function ChatView({
           >
             <Avatar size="sm" className="mt-1 shrink-0">
               <AvatarFallback>
-                <Bot className="size-3.5" />
+                <MdSmartToy className="size-3.5" />
               </AvatarFallback>
             </Avatar>
             <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              <MdLoop className="size-4 animate-spin text-muted-foreground" />
             </div>
           </motion.div>
         )}
@@ -122,7 +123,7 @@ function EmptyState() {
         className="flex flex-col items-center gap-3"
       >
         <div className="bg-muted rounded-full p-4">
-          <Bot className="size-8 text-muted-foreground" />
+          <MdSmartToy className="size-8 text-muted-foreground" />
         </div>
         <h2 className="text-xl font-semibold tracking-tight">
           Start a conversation

@@ -18,6 +18,9 @@ export interface ChatboxState {
   model: string | null;
   setModel: (model: string | null) => void;
 
+  chatboxAnchor: HTMLElement | null;
+  setChatboxAnchor: (el: HTMLElement | null) => void;
+
   autoAnalyze: boolean;
   setAutoAnalyze: (autoAnalyze: boolean) => void;
 
@@ -52,6 +55,11 @@ export const useChatboxStore = create<ChatboxState>((set, get) => ({
   model: null,
   setModel: (model) => {
     return set({ model });
+  },
+
+  chatboxAnchor: null,
+  setChatboxAnchor: (el) => {
+    return set({ chatboxAnchor: el });
   },
 
   autoAnalyze: true,

@@ -5,7 +5,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@lerpz/ui/components/sidebar";
-import { Construction, ScrollText, Settings2 } from "lucide-react";
+import { MdConstruction, MdDescription, MdSettings } from "react-icons/md";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentPropsWithoutRef } from "react";
@@ -16,17 +16,17 @@ const pages = [
   {
     title: "Docs",
     url: "/docs",
-    icon: ScrollText,
+    icon: MdDescription,
   },
   {
     title: "Settings",
     url: "/settings",
-    icon: Settings2,
+    icon: MdSettings,
   },
   {
     title: "Roadmap",
     url: "/roadmap",
-    icon: Construction,
+    icon: MdConstruction,
   },
 ];
 

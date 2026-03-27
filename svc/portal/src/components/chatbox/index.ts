@@ -1,14 +1,14 @@
 import Chatbox from "./chatbox";
-import { ChatboxProvider } from "./provider";
+export { Chatbox };
 
-export { Chatbox, ChatboxProvider };
 export type {
   ChatboxContextValue,
   ChatboxMode,
   ChatboxProviderProps,
   ChatboxSubmitArgs,
 } from "./provider";
-export { useChatbox } from "./provider";
+export { ChatboxProvider, useChatbox } from "./provider";
+
 export type {
   ChatboxModelSettings,
   ChatboxModelSettingsForModel,

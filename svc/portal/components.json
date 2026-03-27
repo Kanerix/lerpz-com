@@ -17,7 +17,7 @@
     "lib": "@lerpz/ui/lib",
     "hooks": "@lerpz/ui/hooks"
   },
-  "iconLibrary": "lucide",
+  "iconLibrary": "react-icons/md",
   "menuColor": "default",
   "menuAccent": "subtle",
   "registries": {}

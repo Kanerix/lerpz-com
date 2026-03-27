@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import * as React from "react"
-
-import { cn } from "@lerpz/ui/lib/utils"
+import { cn } from "@lerpz/ui/lib/utils";
+import type * as React from "react";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: This is a reusable primitive — input association is the consumer's responsibility via htmlFor or nesting
     <label
       data-slot="label"
       className={cn(
         "gap-2 text-sm leading-none font-medium group-data-[disabled=true]:opacity-50 peer-disabled:opacity-50 flex items-center select-none group-data-[disabled=true]:pointer-events-none peer-disabled:cursor-not-allowed",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-export { Label }
+export { Label };

@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { MdClose } from "react-icons/md";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useChatboxStore } from "./store";
@@ -30,7 +30,7 @@ export default function ImageShelf() {
               group-hover:opacity-100"
               aria-label={`Remove ${image.file.name || "image"}`}
             >
-              <X className="h-3 w-3" />
+              <MdClose className="h-3 w-3" />
             </button>
 
             <Image

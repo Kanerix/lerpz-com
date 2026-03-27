@@ -2,63 +2,23 @@
 
 import { Button } from "@lerpz/ui/components/button";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@lerpz/ui/components/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@lerpz/ui/components/tooltip";
-import {
-  Brain,
-  Camera,
-  ImagePlus,
-  LoaderPinwheel,
-  WandSparkles,
-} from "lucide-react";
-import { type ChangeEventHandler, useCallback, useEffect, useRef } from "react";
+import { MdCameraAlt, MdAddPhotoAlternate, MdLoop, MdAutoFixHigh } from "react-icons/md";
+import { type ChangeEventHandler, useCallback, useRef } from "react";
 import { toast } from "sonner";
+import { ModelSelectorTrigger } from "./model-selector";
 import { useChatbox } from "./provider";
 import { useChatboxStore } from "./store";
-
-type ModelSelectValue = string | null;
-
-interface ModelSelectItem {
-  label: string;
-  value: ModelSelectValue;
-}
 
 export default function ChatboxSettings() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const {
-    mode,
-    isPending,
-    enhance,
-    isEnhancePending,
-    allowImageUploads,
-    models,
-    isModelsLoading,
-    loadModels,
-  } = useChatbox();
-  const { model, setModel, prompt, setPrompt, addUploadedImages } =
-    useChatboxStore();
-
-  const modelItems: ModelSelectItem[] =
-    models?.map((m) => ({
-      label: m.label,
-      value: m.value,
-    })) ?? [];
-
-  useEffect(() => {
-    loadModels(mode);
-  }, [mode, loadModels]);
+  const { isPending, enhance, isEnhancePending, allowImageUploads } =
+    useChatbox();
+  const { prompt, setPrompt, addUploadedImages } = useChatboxStore();
 
   const handleEnhance = async () => {
     if (!prompt || !enhance) return;
@@ -168,37 +128,7 @@ export default function ChatboxSettings() {
 
   return (
     <div className="flex mt-4">
-      <Select items={modelItems} value={model} onValueChange={setModel}>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <SelectTrigger className="relative" disabled={isModelsLoading}>
-                <div className="flex items-center">
-                  {isModelsLoading ? (
-                    <LoaderPinwheel className="mr-2 animate-spin" />
-                  ) : (
-                    <Brain className="mr-2" />
-                  )}
-                  <SelectValue placeholder="Image model" />
-                </div>
-              </SelectTrigger>
-            }
-          />
-          <TooltipContent>
-            <p>Change image model</p>
-          </TooltipContent>
-        </Tooltip>
-        <SelectContent className="w-fit" alignItemWithTrigger={false}>
-          <SelectGroup>
-            <SelectLabel>Model</SelectLabel>
-            {modelItems.map((m) => (
-              <SelectItem key={m.value ?? "default"} value={m.value}>
-                {m.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <ModelSelectorTrigger />
 
       <div className="flex gap-x-4 ml-auto">
         {/* CAMERA BUTTON */}
@@ -213,7 +143,7 @@ export default function ChatboxSettings() {
                 disabled={!allowImageUploads || isPending}
                 onClick={handleCameraCapture}
               >
-                <Camera />
+                <MdCameraAlt />
               </Button>
             }
           />
@@ -242,7 +172,7 @@ export default function ChatboxSettings() {
                   className="hidden"
                   onChange={handleImagesFileSelection}
                 />
-                <ImagePlus />
+                <MdAddPhotoAlternate />
               </Button>
             }
           />
@@ -267,9 +197,9 @@ export default function ChatboxSettings() {
                 aria-label="Enhance prompt"
               >
                 {isEnhancePending ? (
-                  <LoaderPinwheel className="animate-spin" />
+                  <MdLoop className="animate-spin" />
                 ) : (
-                  <WandSparkles />
+                  <MdAutoFixHigh />
                 )}
               </Button>
             }

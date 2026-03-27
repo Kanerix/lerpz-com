@@ -6,7 +6,6 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
 } from "react";
 import { toast } from "sonner";
@@ -56,13 +55,6 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const { models, isLoading: isModelsLoading, loadModels } = useModels();
-
-  useEffect(() => {
-    console.log("TOAST");
-    toast.success("Models loaded", {
-      description: "Your conversation has been saved.",
-    });
-  }, [])
 
   const chat = useChat({
     onSaved: (convId) => {

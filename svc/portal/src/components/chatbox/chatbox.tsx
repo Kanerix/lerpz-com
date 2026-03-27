@@ -4,10 +4,10 @@ import { Button } from "@lerpz/ui/components/button";
 import { Card, CardContent } from "@lerpz/ui/components/card";
 import { Textarea } from "@lerpz/ui/components/textarea";
 import { cn } from "@lerpz/ui/lib/utils";
-import { ArrowUp, LoaderPinwheel } from "lucide-react";
+import { MdArrowUpward, MdLoop } from "react-icons/md";
 import { motion } from "motion/react";
 import type { ChangeEventHandler, KeyboardEventHandler } from "react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import ImageShelf from "./image-shelf";
 import { type ChatboxMode, useChatbox } from "./provider";
 import ChatboxSettings from "./settings";
@@ -39,6 +39,14 @@ const chatareaPlaceholder: Record<ChatboxMode, string> = {
 
 export default function Chatbox() {
   const { isPending, showSettings } = useChatbox();
+  const { setChatboxAnchor } = useChatboxStore();
+
+  const cardRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setChatboxAnchor(node);
+    },
+    [setChatboxAnchor],
+  );
 
   useEffect(() => {
     if (!isPending) return;
@@ -63,7 +71,7 @@ export default function Chatbox() {
     >
       <aside className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[750px] p-4">
         <ImageShelf />
-        <Card className="rounded-4xl py-3 gap-3">
+        <Card ref={cardRef} className="rounded-4xl py-3 gap-3">
           <CardContent className="flex flex-col px-3">
             <PromptInput isMobile={true} />
             <ChatboxToolbar />
@@ -97,7 +105,7 @@ function ChatboxToolbar() {
         disabled={isPending || !prompt?.trim()}
         aria-label="Send prompt"
       >
-        {isPending ? <LoaderPinwheel className="animate-spin" /> : <ArrowUp />}
+        {isPending ? <MdLoop className="animate-spin" /> : <MdArrowUpward />}
       </Button>
     </div>
   );
