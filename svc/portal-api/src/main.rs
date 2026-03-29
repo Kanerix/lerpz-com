@@ -27,6 +27,13 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(debug_assertions)]
+    {
+        use std::path::PathBuf;
+        let env_path = PathBuf::from_iter([env!("CARGO_MANIFEST_DIR"), ".env"]);
+        let _ = dotenvy::from_path(&env_path);
+    }
+
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::from(format!(
@@ -36,16 +43,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .with(tracing_subscriber::fmt::layer())
         .init();
-
-    #[cfg(debug_assertions)]
-    {
-        use std::path::PathBuf;
-
-        let env_path = PathBuf::from_iter([env!("CARGO_MANIFEST_DIR"), ".env"]);
-        if let Err(err) = dotenvy::from_path(&env_path) {
-            tracing::warn!("failed loading .env file: {}", err);
-        }
-    }
 
     let azure_config = AzureConfig::new(
         CONFIG.ENTRA_ID_TENANT_ID.clone(),
@@ -95,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let scalar_html = include_str!("../scalar.html")
         .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
-        .replace("$scope", &CONFIG.ENTRA_ID_CLIENT_SCOPE);
+        .replace("$scope", &CONFIG.ENTRA_ID_SCOPE);
 
     let app = router.merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
 

@@ -5,10 +5,10 @@ use async_openai::types::chat::{
     ChatCompletionRequestToolMessage, ChatCompletionRequestUserMessage,
     CreateChatCompletionRequestArgs,
 };
-use tracing::info;
+use tracing::trace;
 
 use crate::error::{Error, Result};
-use crate::oai::PortkeyConfig;
+use crate::portkey::PortkeyConfig;
 use crate::tools::{execute_tool, tool_definitions};
 
 const MAX_TOOL_ROUNDS: usize = 10;
@@ -28,16 +28,14 @@ impl Agent {
         }
     }
 
-    /// Run the agent: send user input, handle tool calls in a loop,
-    /// return the final text response.
+    /// Run the agent: send user input, handle tool calls in a loop, return the
+    /// final text response.
     pub async fn run(&self, user_input: &str) -> Result<String> {
         let mut messages: Vec<ChatCompletionRequestMessage> = vec![
-            // System prompt with instructions
             ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
                 content: self.system_prompt.clone().into(),
                 ..Default::default()
             }),
-            // User message
             ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
                 content: user_input.to_string().into(),
                 ..Default::default()
@@ -47,7 +45,7 @@ impl Agent {
         let tools = tool_definitions();
 
         for round in 0..MAX_TOOL_ROUNDS {
-            info!(round, "Sending chat completion request");
+            trace!(round, "Sending chat completion request");
 
             let tools = tools.clone();
             let request = CreateChatCompletionRequestArgs::default()
@@ -66,7 +64,7 @@ impl Agent {
             let message = choice.message;
 
             if let Some(ref tool_calls) = message.tool_calls {
-                info!(count = tool_calls.len(), "Model requested tool calls");
+                trace!(count = tool_calls.len(), "Model requested tool calls");
 
                 let assistant_msg = ChatCompletionRequestAssistantMessageArgs::default()
                     .tool_calls(tool_calls.clone())
@@ -77,7 +75,7 @@ impl Agent {
                     if let ChatCompletionMessageToolCalls::Function(func) = tool_call {
                         let args = serde_json::from_str(&func.function.arguments)?;
 
-                        info!(tool = %func.function.name, "Executing tool");
+                        trace!(tool = %func.function.name, "Executing tool");
                         let result = execute_tool(&func.function.name, &args).await?;
 
                         messages.push(ChatCompletionRequestMessage::Tool(
