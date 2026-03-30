@@ -1,103 +1,165 @@
-use async_openai::Client;
-use async_openai::types::chat::{
-    ChatCompletionMessageToolCalls, ChatCompletionRequestAssistantMessageArgs,
-    ChatCompletionRequestMessage, ChatCompletionRequestSystemMessage,
-    ChatCompletionRequestToolMessage, ChatCompletionRequestUserMessage,
-    CreateChatCompletionRequestArgs,
-};
-use tracing::trace;
+//! Agent construction and execution.
+//!
+//! This module wires together:
+//!
+//! - A single [`openai::Client`] pointed at the **Portkey** gateway, used for
+//!   both chat-completion inference and embedding generation.
+//! - Two [`QdrantVectorStore`] instances sharing the same collection, embedding
+//!   model, and Qdrant connection:
+//!   - `context_store` → passed to [`AgentBuilder::dynamic_context`] so rig
+//!     automatically injects the top-N most relevant documents before every
+//!     prompt.
+//!   - `tool_store` → injected into [`SearchKnowledgeBase`] so the LLM can
+//!     also trigger an explicit search at any point during a conversation.
+//! - Static tools ([`SearchKnowledgeBase`], [`GetUserProfile`]) registered on
+//!   the [`AgentBuilder`].
+//!
+//! # Why two stores?
+//!
+//! [`QdrantVectorStore`] does not implement [`Clone`], but all three of its
+//! inner components do:
+//!
+//! - [`Qdrant`] — wraps an Arc-backed gRPC channel
+//! - [`openai::EmbeddingModel`] — wraps an Arc-backed HTTP client
+//! - [`QueryPoints`] — a generated protobuf struct that derives Clone
+//!
+//! We therefore build both stores from cloned components at zero meaningful
+//! cost.
+//!
+//! # Usage
+//!
+//! ```ignore
+//! use crate::agent::build_agent;
+//! use crate::config::CONFIG;
+//!
+//! let agent = build_agent(&CONFIG).await?;
+//! let response = agent.prompt("What is Lerpz?").await?;
+//! println!("{response}");
+//! ```
 
-use crate::error::{Error, Result};
-use crate::portkey::PortkeyConfig;
-use crate::tools::{execute_tool, tool_definitions};
+use qdrant_client::Qdrant;
+use qdrant_client::qdrant::QueryPointsBuilder;
+use rig::client::CompletionClient;
+use rig::client::EmbeddingsClient;
+use rig::completion::Prompt;
+use rig::providers::openai;
+use rig_qdrant::QdrantVectorStore;
+use tracing::instrument;
 
-const MAX_TOOL_ROUNDS: usize = 10;
+use crate::config::Config;
+use crate::error::Result;
+use crate::portkey::build_portkey_client;
+use crate::tools::{GetUserProfile, SearchKnowledgeBase};
 
-pub struct Agent {
-    client: Client<PortkeyConfig>,
-    model: String,
-    system_prompt: String,
-}
+/// Number of documents retrieved from Qdrant and injected as dynamic context
+/// into every prompt.
+///
+/// Increase for broader recall at the cost of a larger context window.
+/// Decrease to reduce latency and token usage.
+const RAG_TOP_N: usize = 5;
 
-impl Agent {
-    pub fn new(config: PortkeyConfig, model: &str, system_prompt: &str) -> Self {
-        Self {
-            client: Client::with_config(config),
-            model: model.to_string(),
-            system_prompt: system_prompt.to_string(),
-        }
-    }
+/// A fully configured, ready-to-use rig [`rig::agent::Agent`].
+///
+/// The inner type is intentionally opaque — callers only need [`Prompt`].
+///
+/// Uses the OpenAI Responses API completion model, which is what the default
+/// `openai::Client` (and any Portkey-proxied variant of it) exposes via
+/// [`CompletionClient::completion_model`].
+pub type Agent = rig::agent::Agent<openai::responses_api::ResponsesCompletionModel>;
 
-    /// Run the agent: send user input, handle tool calls in a loop, return the
-    /// final text response.
-    pub async fn run(&self, user_input: &str) -> Result<String> {
-        let mut messages: Vec<ChatCompletionRequestMessage> = vec![
-            ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
-                content: self.system_prompt.clone().into(),
-                ..Default::default()
-            }),
-            ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
-                content: user_input.to_string().into(),
-                ..Default::default()
-            }),
-        ];
+/// Build a production-ready [`Agent`] from the provided [`Config`].
+///
+/// # Steps
+///
+/// 1. Builds a single OpenAI-compatible Portkey client for both completions
+///    and embeddings. No separate `OPENAI_API_KEY` is required.
+/// 2. Connects to Qdrant and creates two [`QdrantVectorStore`] instances from
+///    cloned inner components (see module docs for rationale).
+/// 3. Assembles a rig [`Agent`] with a system prompt, automatic RAG context
+///    injection via `dynamic_context`, and explicit tool support.
+///
+/// # Errors
+///
+/// Returns an error if the Portkey client cannot be built (invalid header
+/// values) or if the Qdrant client fails to initialise.
+#[instrument(skip(config), name = "build_agent")]
+pub async fn build_agent(config: &Config) -> Result<Agent> {
+    // ------------------------------------------------------------------
+    // 1. Portkey-proxied client — used for both completions and embeddings.
+    // ------------------------------------------------------------------
+    let portkey_client = build_portkey_client(
+        &config.PORTKEY_BASE_URL,
+        &config.PORTKEY_API_KEY,
+        &config.PORTKEY_PROVIDER,
+    )?;
 
-        let tools = tool_definitions();
+    let embed_model = portkey_client.embedding_model_with_ndims(
+        config.DEFAULT_EMBEDDING_MODEL.as_ref(),
+        config.EMBEDDING_DIMENSIONS,
+    );
 
-        for round in 0..MAX_TOOL_ROUNDS {
-            trace!(round, "Sending chat completion request");
+    // ------------------------------------------------------------------
+    // 2. Qdrant connection + shared query params.
+    //
+    // `QueryPointsBuilder` establishes the collection name and ensures the
+    // full payload is returned so document text is available for the LLM.
+    // We do NOT set `.limit()` here — the per-request `samples` count in
+    // `VectorSearchRequest` always overrides it at query time.
+    // ------------------------------------------------------------------
+    let qdrant = Qdrant::from_url(config.QDRANT_URL.as_ref())
+        .build()
+        .map_err(|e| anyhow::anyhow!("failed to connect to Qdrant at {}: {e}", config.QDRANT_URL))?;
 
-            let tools = tools.clone();
-            let request = CreateChatCompletionRequestArgs::default()
-                .model(&self.model)
-                .messages(messages.clone())
-                .tools(tools)
-                .build()?;
+    let query_params = QueryPointsBuilder::new(config.QDRANT_COLLECTION.as_ref())
+        .with_payload(true)
+        .build();
 
-            let response = self.client.chat().create(request).await?;
-            let choice = response
-                .choices
-                .into_iter()
-                .next()
-                .ok_or_else(|| anyhow::anyhow!("No choices in response"))?;
+    // ------------------------------------------------------------------
+    // 3. Two independent stores from cloned components.
+    //
+    // `tool_store` → given to `SearchKnowledgeBase` for on-demand searches
+    //               initiated by an explicit LLM tool call.
+    //
+    // `context_store` → given to `dynamic_context` for automatic pre-prompt
+    //                   document injection on every turn.
+    // ------------------------------------------------------------------
+    let tool_store = QdrantVectorStore::new(
+        qdrant.clone(),
+        embed_model.clone(),
+        query_params.clone(),
+    );
+    let context_store = QdrantVectorStore::new(qdrant, embed_model, query_params);
 
-            let message = choice.message;
+    // ------------------------------------------------------------------
+    // 4. Completion model + agent assembly.
+    // ------------------------------------------------------------------
+    let completion_model = portkey_client.completion_model(config.DEFAULT_MODEL.as_ref());
 
-            if let Some(ref tool_calls) = message.tool_calls {
-                trace!(count = tool_calls.len(), "Model requested tool calls");
+    let agent = rig::agent::AgentBuilder::new(completion_model)
+        .preamble(
+            "You are a helpful assistant for the Lerpz platform. \
+             Before answering factual questions, use the search_knowledge_base \
+             tool to retrieve relevant information from the knowledge base. \
+             Always ground your answers in retrieved sources and cite them \
+             where appropriate. \
+             Use the get_user_profile tool when the user asks about their \
+             account, name, or email.",
+        )
+        // Automatic RAG: top-N documents are embedded, retrieved from Qdrant,
+        // and injected into the context window before every user message.
+        .dynamic_context(RAG_TOP_N, context_store)
+        // Explicit tool: lets the LLM request a targeted search mid-conversation.
+        .tool(SearchKnowledgeBase(tool_store))
+        .tool(GetUserProfile)
+        .build();
 
-                let assistant_msg = ChatCompletionRequestAssistantMessageArgs::default()
-                    .tool_calls(tool_calls.clone())
-                    .build()?;
-                messages.push(assistant_msg.into());
+    tracing::info!(
+        model             = %config.DEFAULT_MODEL,
+        embedding_model   = %config.DEFAULT_EMBEDDING_MODEL,
+        qdrant_collection = %config.QDRANT_COLLECTION,
+        rag_top_n         = RAG_TOP_N,
+        "Agent built successfully",
+    );
 
-                for tool_call in tool_calls {
-                    if let ChatCompletionMessageToolCalls::Function(func) = tool_call {
-                        let args = serde_json::from_str(&func.function.arguments)?;
-
-                        trace!(tool = %func.function.name, "Executing tool");
-                        let result = execute_tool(&func.function.name, &args).await?;
-
-                        messages.push(ChatCompletionRequestMessage::Tool(
-                            ChatCompletionRequestToolMessage {
-                                content: result.to_string().into(),
-                                tool_call_id: func.id.clone(),
-                            },
-                        ));
-                    }
-                }
-
-                continue;
-            }
-
-            let content = message
-                .content
-                .ok_or_else(|| anyhow::anyhow!("No content in final response"))?;
-            return Ok(content.to_string());
-        }
-
-        Err(Error::Agent(format!(
-            "Agent exceeded max tool rounds ({MAX_TOOL_ROUNDS})"
-        )))
-    }
+    Ok(agent)
 }

@@ -19,7 +19,7 @@ enum Env {
     Test,
 }
 
-/// The main configuration struct for the server.
+/// The main configuration struct for the agent.
 ///
 /// Lazy loaded using [`LazyLock`] to ensure that the configuration is only
 /// loaded once.
@@ -30,5 +30,9 @@ generate_config!(
     PORTKEY_BASE_URL: Arc<str> = get_env_from,
     PORTKEY_PROVIDER: Arc<str> = get_env_from,
     PORTKEY_API_KEY: SecretString = get_env_from,
-    DEFAULT_MODEL: Arc<str> = get_env_from
+    DEFAULT_MODEL: Arc<str> = get_env_from,
+    DEFAULT_EMBEDDING_MODEL: Arc<str> = get_env_from,
+    EMBEDDING_DIMENSIONS: usize = get_env_parse,
+    QDRANT_URL: Arc<str> = get_env_from,
+    QDRANT_COLLECTION: Arc<str> = get_env_from
 );

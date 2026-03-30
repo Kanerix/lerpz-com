@@ -1,11 +1,11 @@
-use std::io::Read;
+use std::io::BufRead;
 
+use rig::completion::Prompt;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::agent::Agent;
+use crate::agent::build_agent;
 use crate::config::CONFIG;
 use crate::error::Result;
-use crate::portkey::PortkeyConfig;
 
 mod agent;
 mod config;
@@ -32,25 +32,21 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let config = PortkeyConfig {
-        api_base: CONFIG.PORTKEY_BASE_URL.clone(),
-        api_key: CONFIG.PORTKEY_API_KEY.clone(),
-        api_provider: CONFIG.PORTKEY_PROVIDER.clone(),
-    };
+    let agent = build_agent(&CONFIG).await?;
 
-    let agent = Agent::new(
-        config,
-        &CONFIG.DEFAULT_MODEL,
-        "You are a helpful assistant. Use the search_knowledge_base tool \
-         to find relevant information before answering questions. \
-         Always cite your sources.",
-    );
-
-    let mut input = String::new();
     let stdin = std::io::stdin();
-    stdin.read_line(&mut input).unwrap();
+    let mut input = String::new();
+    stdin.lock().read_line(&mut input).unwrap();
+    let input = input.trim();
 
-    let response = agent.run(&input).await?;
+    if input.is_empty() {
+        eprintln!("No input provided.");
+        return Ok(());
+    }
+
+    tracing::debug!(%input, "Running agent");
+
+    let response = agent.prompt(input).await?;
     println!("Agent response:\n{response}");
 
     Ok(())

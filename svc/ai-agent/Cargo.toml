@@ -10,18 +10,22 @@ authors.workspace = true
 # Internal
 lerpz-utils = { workspace = true }
 # AI & async
-async-openai = { workspace = true, features = ["chat-completion"]  }
+rig-core = { workspace = true }
+rig-qdrant = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 # Database
 qdrant-client = { workspace = true }
+# Serde
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+schemars = { workspace = true }
 # Other
 anyhow = { workspace = true }
 dotenvy = { workspace = true }
 http = { workspace = true }
 secrecy = { workspace = true }
-serde_json = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 

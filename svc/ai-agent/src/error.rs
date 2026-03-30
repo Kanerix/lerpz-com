@@ -9,8 +9,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("agent error: {0}")]
     Agent(String),
-    #[error("openai error: {0}")]
-    OpenAI(#[from] async_openai::error::OpenAIError),
+    #[error("rig completion error: {0}")]
+    Rig(#[from] rig::completion::PromptError),
+    #[error("vector store error: {0}")]
+    VectorStore(#[from] rig::vector_store::VectorStoreError),
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
     #[error("generic error: {0}")]

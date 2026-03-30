@@ -50,6 +50,8 @@ serde = "1.0"
 serde_json = "1.0"
 # AI
 async-openai = "0.32"
+rig-core = "0.33"
+rig-qdrant = "0.2"
 rmcp = "0.6"
 # Utilities
 anyhow = "1.0"
