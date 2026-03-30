@@ -1,0 +1,2 @@
+# Ignore compiled Typst PDFs
+*.pdf

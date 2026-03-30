@@ -32,16 +32,6 @@ use secrecy::SecretString;
 
 use crate::error::Result;
 
-/// Builds a `rig` OpenAI-compatible client pointed at the Portkey gateway.
-///
-/// The returned [`openai::Client`] can be used exactly like a standard `rig`
-/// OpenAI client — call `.agent(model)`, `.embedding_model(model)`, etc. All
-/// requests will be routed through the Portkey gateway at `api_base`.
-///
-/// # Errors
-///
-/// Returns an error if any of the header values cannot be parsed into valid
-/// HTTP header values (e.g. they contain non-ASCII or control characters).
 pub fn build_portkey_client(
     api_base: &Arc<str>,
     api_key: &SecretString,

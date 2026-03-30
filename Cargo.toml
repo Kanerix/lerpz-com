@@ -53,6 +53,8 @@ async-openai = "0.32"
 rig-core = "0.33"
 rig-qdrant = "0.2"
 rmcp = "0.6"
+# Dev
+typst = "0.14.2"
 # Utilities
 anyhow = "1.0"
 argon2 = "0.5"

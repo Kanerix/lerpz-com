@@ -84,55 +84,28 @@ pub type Agent = rig::agent::Agent<openai::responses_api::ResponsesCompletionMod
 /// values) or if the Qdrant client fails to initialise.
 #[instrument(skip(config), name = "build_agent")]
 pub async fn build_agent(config: &Config) -> Result<Agent> {
-    // ------------------------------------------------------------------
-    // 1. Portkey-proxied client — used for both completions and embeddings.
-    // ------------------------------------------------------------------
     let portkey_client = build_portkey_client(
         &config.PORTKEY_BASE_URL,
         &config.PORTKEY_API_KEY,
         &config.PORTKEY_PROVIDER,
     )?;
 
-    let embed_model = portkey_client.embedding_model_with_ndims(
-        config.DEFAULT_EMBEDDING_MODEL.as_ref(),
-        config.EMBEDDING_DIMENSIONS,
-    );
+    let embed_model = portkey_client.embedding_model(config.DEFAULT_EMBEDDING_MODEL.as_ref());
 
-    // ------------------------------------------------------------------
-    // 2. Qdrant connection + shared query params.
-    //
-    // `QueryPointsBuilder` establishes the collection name and ensures the
-    // full payload is returned so document text is available for the LLM.
-    // We do NOT set `.limit()` here — the per-request `samples` count in
-    // `VectorSearchRequest` always overrides it at query time.
-    // ------------------------------------------------------------------
     let qdrant = Qdrant::from_url(config.QDRANT_URL.as_ref())
         .build()
-        .map_err(|e| anyhow::anyhow!("failed to connect to Qdrant at {}: {e}", config.QDRANT_URL))?;
+        .map_err(|e| {
+            anyhow::anyhow!("failed to connect to Qdrant at {}: {e}", config.QDRANT_URL)
+        })?;
 
     let query_params = QueryPointsBuilder::new(config.QDRANT_COLLECTION.as_ref())
         .with_payload(true)
         .build();
 
-    // ------------------------------------------------------------------
-    // 3. Two independent stores from cloned components.
-    //
-    // `tool_store` → given to `SearchKnowledgeBase` for on-demand searches
-    //               initiated by an explicit LLM tool call.
-    //
-    // `context_store` → given to `dynamic_context` for automatic pre-prompt
-    //                   document injection on every turn.
-    // ------------------------------------------------------------------
-    let tool_store = QdrantVectorStore::new(
-        qdrant.clone(),
-        embed_model.clone(),
-        query_params.clone(),
-    );
+    let tool_store =
+        QdrantVectorStore::new(qdrant.clone(), embed_model.clone(), query_params.clone());
     let context_store = QdrantVectorStore::new(qdrant, embed_model, query_params);
 
-    // ------------------------------------------------------------------
-    // 4. Completion model + agent assembly.
-    // ------------------------------------------------------------------
     let completion_model = portkey_client.completion_model(config.DEFAULT_MODEL.as_ref());
 
     let agent = rig::agent::AgentBuilder::new(completion_model)
@@ -145,10 +118,7 @@ pub async fn build_agent(config: &Config) -> Result<Agent> {
              Use the get_user_profile tool when the user asks about their \
              account, name, or email.",
         )
-        // Automatic RAG: top-N documents are embedded, retrieved from Qdrant,
-        // and injected into the context window before every user message.
         .dynamic_context(RAG_TOP_N, context_store)
-        // Explicit tool: lets the LLM request a targeted search mid-conversation.
         .tool(SearchKnowledgeBase(tool_store))
         .tool(GetUserProfile)
         .build();
