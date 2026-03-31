@@ -9,7 +9,7 @@
 )
 
 #set text(
-  font: "Linux Libertine",
+  font: "New Computer Modern",
   size: 11pt,
 )
 
