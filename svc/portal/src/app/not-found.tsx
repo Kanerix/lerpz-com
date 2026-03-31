@@ -1,6 +1,6 @@
-import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@lerpz/ui/components/button";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -11,7 +11,7 @@ export default function NotFound() {
           alt="Lerpz"
           width={48}
           height={48}
-          className="h-12 w-12 opacity-40"
+          className="h-12 w-12"
           priority
         />
 

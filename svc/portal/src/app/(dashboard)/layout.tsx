@@ -10,10 +10,12 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard>
       <ChatboxProvider>
-        <AppShell>
-          <main className="w-full h-full p-4">{children}</main>
-          <Toaster />
-        </AppShell>
+        <div className="overflow-hidden h-screen w-screen">
+          <AppShell>
+            <main className="w-full h-full p-4">{children}</main>
+            <Toaster />
+          </AppShell>
+        </div>
       </ChatboxProvider>
     </AuthGuard>
   );

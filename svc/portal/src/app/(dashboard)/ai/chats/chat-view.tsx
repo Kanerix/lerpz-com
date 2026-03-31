@@ -3,10 +3,9 @@
 import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { cn } from "@lerpz/ui/lib/utils";
-import { MdSmartToy, MdPerson } from "react-icons/md";
-import { MdLoop } from "react-icons/md";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
+import { MdLoop, MdPerson, MdSmartToy } from "react-icons/md";
 import type { ChatMessage } from "@/hooks/useChat";
 
 interface ChatViewProps {
