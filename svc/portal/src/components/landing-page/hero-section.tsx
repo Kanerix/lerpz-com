@@ -1,81 +1,64 @@
 "use client";
 
 import { Button } from "@lerpz/ui/components/button";
-import { Input } from "@lerpz/ui/components/input";
 import { TextLoop } from "@lerpz/ui/components/text-loop";
 import { motion } from "motion/react";
-import { MdArrowForward, MdAutoAwesome } from "react-icons/md";
+import Link from "next/link";
+import { MdArrowForward } from "react-icons/md";
+import LoginButton from "../login-button";
 
 export default function HeroSection() {
   return (
-    <section className="relative flex flex-col items-center justify-center gap-8 py-16 md:py-24 text-center">
-      {/* Eyebrow badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
+    <section className="flex flex-col gap-6 py-16 md:py-24">
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary"
+        transition={{ duration: 0.35 }}
+        className="text-sm font-medium text-muted-foreground uppercase tracking-widest"
       >
-        <MdAutoAwesome className="size-4 shrink-0" />
-        <span>Your organisation's AI portal</span>
-      </motion.div>
+        Lerpz AI Portal
+      </motion.p>
 
-      {/* Headline */}
       <motion.h1
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.08 }}
-        className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl xl:text-7xl"
+        transition={{ duration: 0.4, delay: 0.06 }}
+        className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl xl:text-7xl max-w-3xl"
       >
-        Unlock AI for{" "}
-        <span className="inline-flex h-[1.2em] items-center text-primary">
-          <TextLoop interval={2.8}>
-            <span>your team</span>
-            <span>your workflow</span>
-            <span>your business</span>
+        AI tools for{" "}
+        <span className="inline-flex h-[1.15em] items-end text-primary">
+          <TextLoop interval={3}>
+            <span>your daily work.</span>
+            <span>your whole team.</span>
+            <span>your organisation.</span>
           </TextLoop>
         </span>
       </motion.h1>
 
-      {/* Sub-headline */}
       <motion.p
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.16 }}
-        className="max-w-2xl text-lg text-muted-foreground md:text-xl"
+        transition={{ duration: 0.4, delay: 0.12 }}
+        className="max-w-xl text-lg text-muted-foreground leading-relaxed"
       >
-        Access a curated ecosystem of AI tools, resources, and expertise to
-        drive innovation and efficiency across your organisation — all in one
-        place.
+        Sign in with your work account to access AI chat, image generation, and
+        more — centralised and maintained for everyone in the organisation.
       </motion.p>
 
-      {/* CTA row */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.24 }}
-        className="flex w-full max-w-md flex-col gap-3 sm:flex-row"
+        transition={{ duration: 0.4, delay: 0.18 }}
+        className="flex items-center gap-3 pt-2"
       >
-        <Input
-          type="email"
-          placeholder="Enter your work email…"
-          className="h-11 flex-1 text-base"
-        />
-        <Button size="lg" className="shrink-0 gap-2">
-          Get early access
+        <LoginButton size="lg">
+          Sign in
           <MdArrowForward className="size-4" />
+        </LoginButton>
+        <Button variant="ghost" size="lg" render={<Link href="/docs" />}>
+          Documentation
         </Button>
       </motion.div>
-
-      {/* Social proof / trust strip */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.36 }}
-        className="text-xs text-muted-foreground"
-      >
-        No credit card required · Invite-only beta · Enterprise-ready
-      </motion.p>
     </section>
   );
 }

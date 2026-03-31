@@ -6,9 +6,11 @@ import Link from "next/link";
 import LoginButton from "../login-button";
 
 const navLinks = [
-  { label: "Features", href: "#features" },
+  { label: "Tools", href: "/ai" },
+  { label: "Roadmap", href: "/roadmap" },
   { label: "Docs", href: "/docs" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Changelog", href: "/changelog" },
+  { label: "Status", href: "/status" },
 ];
 
 export default function Header() {

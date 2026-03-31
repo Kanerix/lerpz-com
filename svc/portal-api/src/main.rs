@@ -8,6 +8,7 @@ use std::time::Duration;
 use async_openai::Client;
 use axum::http::Method;
 use axum::response::{IntoResponse, Redirect};
+use axum::{Json, routing::get};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
@@ -94,7 +95,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
         .replace("$scope", &CONFIG.ENTRA_ID_SCOPE);
 
-    let app = router.merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
+    let openapi_json = api.clone();
+    let app = router
+        .route("/api/openapi.json", get(|| async { Json(openapi_json) }))
+        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
     tracing::info!("server started listening on {}", CONFIG.ADDR);

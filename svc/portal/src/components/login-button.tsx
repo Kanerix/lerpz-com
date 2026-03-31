@@ -6,7 +6,7 @@ import { Button } from "@lerpz/ui/components/button";
 import type { ComponentProps } from "react";
 import { loginRequest } from "@/lib/msal-config";
 
-type LoginButtonProps = Omit<ComponentProps<"button">, "disabled" | "onClick">;
+type LoginButtonProps = Omit<ComponentProps<typeof Button>, "disabled" | "onClick">;
 
 export default function LoginButton({
   children,
