@@ -13,32 +13,10 @@
 //!     also trigger an explicit search at any point during a conversation.
 //! - Static tools ([`SearchKnowledgeBase`], [`GetUserProfile`]) registered on
 //!   the [`AgentBuilder`].
-//!
-//! # Why two stores?
-//!
-//! [`QdrantVectorStore`] does not implement [`Clone`], but all three of its
-//! inner components do:
-//!
-//! - [`Qdrant`] — wraps an Arc-backed gRPC channel
-//! - [`openai::EmbeddingModel`] — wraps an Arc-backed HTTP client
-//! - [`QueryPoints`] — a generated protobuf struct that derives Clone
-//!
-//! We therefore build both stores from cloned components at zero meaningful
-//! cost.
-//!
-//! # Usage
-//!
-//! ```ignore
-//! use crate::agent::build_agent;
-//! use crate::config::CONFIG;
-//!
-//! let agent = build_agent(&CONFIG).await?;
-//! let response = agent.prompt("What is Lerpz?").await?;
-//! println!("{response}");
-//! ```
 
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
+use rig::agent::AgentBuilder;
 use rig::client::CompletionClient;
 use rig::client::EmbeddingsClient;
 use rig::completion::Prompt;
@@ -46,13 +24,12 @@ use rig::providers::openai;
 use rig_qdrant::QdrantVectorStore;
 use tracing::instrument;
 
-use crate::config::Config;
-use crate::error::Result;
+use crate::config::CONFIG;
+use crate::error::{Error, Result};
 use crate::portkey::build_portkey_client;
 use crate::tools::{GetUserProfile, SearchKnowledgeBase};
 
-/// Number of documents retrieved from Qdrant and injected as dynamic context
-/// into every prompt.
+/// How many documents to retrieve from the knowledge base for RAG context.
 ///
 /// Increase for broader recall at the cost of a larger context window.
 /// Decrease to reduce latency and token usage.
@@ -82,23 +59,26 @@ pub type Agent = rig::agent::Agent<openai::responses_api::ResponsesCompletionMod
 ///
 /// Returns an error if the Portkey client cannot be built (invalid header
 /// values) or if the Qdrant client fails to initialise.
-#[instrument(skip(config), name = "build_agent")]
-pub async fn build_agent(config: &Config) -> Result<Agent> {
+#[instrument()]
+pub async fn build_agent() -> Result<Agent> {
     let portkey_client = build_portkey_client(
-        &config.PORTKEY_BASE_URL,
-        &config.PORTKEY_API_KEY,
-        &config.PORTKEY_PROVIDER,
+        &CONFIG.PORTKEY_BASE_URL,
+        &CONFIG.PORTKEY_API_KEY,
+        &CONFIG.PORTKEY_PROVIDER,
     )?;
 
-    let embed_model = portkey_client.embedding_model(config.DEFAULT_EMBEDDING_MODEL.as_ref());
+    let embed_model = portkey_client.embedding_model(CONFIG.DEFAULT_EMBEDDING_MODEL.as_ref());
 
-    let qdrant = Qdrant::from_url(config.QDRANT_URL.as_ref())
+    let qdrant = Qdrant::from_url(CONFIG.QDRANT_URL_GRPC.as_ref())
         .build()
         .map_err(|e| {
-            anyhow::anyhow!("failed to connect to Qdrant at {}: {e}", config.QDRANT_URL)
+            Error::Agent(format!(
+                "failed to connect to Qdrant at {}: {e}",
+                CONFIG.QDRANT_URL_GRPC
+            ))
         })?;
 
-    let query_params = QueryPointsBuilder::new(config.QDRANT_COLLECTION.as_ref())
+    let query_params = QueryPointsBuilder::new(CONFIG.QDRANT_COLLECTION.as_ref())
         .with_payload(true)
         .build();
 
@@ -106,9 +86,9 @@ pub async fn build_agent(config: &Config) -> Result<Agent> {
         QdrantVectorStore::new(qdrant.clone(), embed_model.clone(), query_params.clone());
     let context_store = QdrantVectorStore::new(qdrant, embed_model, query_params);
 
-    let completion_model = portkey_client.completion_model(config.DEFAULT_MODEL.as_ref());
+    let completion_model = portkey_client.completion_model(CONFIG.DEFAULT_MODEL.as_ref());
 
-    let agent = rig::agent::AgentBuilder::new(completion_model)
+    let agent = AgentBuilder::new(completion_model)
         .preamble(
             "You are a helpful assistant for the Lerpz platform. \
              Before answering factual questions, use the search_knowledge_base \
@@ -124,9 +104,9 @@ pub async fn build_agent(config: &Config) -> Result<Agent> {
         .build();
 
     tracing::info!(
-        model             = %config.DEFAULT_MODEL,
-        embedding_model   = %config.DEFAULT_EMBEDDING_MODEL,
-        qdrant_collection = %config.QDRANT_COLLECTION,
+        model             = %CONFIG.DEFAULT_MODEL,
+        embedding_model   = %CONFIG.DEFAULT_EMBEDDING_MODEL,
+        qdrant_collection = %CONFIG.QDRANT_COLLECTION,
         rag_top_n         = RAG_TOP_N,
         "Agent built successfully",
     );

@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let agent = build_agent(&CONFIG).await?;
+    let agent = build_agent().await?;
 
     let stdin = std::io::stdin();
     let mut input = String::new();
