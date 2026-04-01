@@ -12,37 +12,24 @@ use tracing::instrument;
 
 use crate::tools::ToolError;
 
-/// Arguments accepted by the [`SearchKnowledgeBase`] tool.
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct SearchKnowledgeBaseArgs {
-    /// The natural-language query used to find relevant documents.
     pub query: String,
-    /// Maximum number of results to return. Defaults to `5` when omitted.
     pub top_k: Option<u32>,
 }
 
-/// Result returned by the [`SearchKnowledgeBase`] tool.
 #[derive(Debug, Serialize)]
 pub struct SearchKnowledgeBaseOutput {
     pub results: Vec<KnowledgeBaseResult>,
 }
 
-/// A single search result from the knowledge base.
 #[derive(Debug, Serialize)]
 pub struct KnowledgeBaseResult {
-    /// Document title extracted from the Qdrant point payload.
     pub title: String,
-    /// Document body / chunk extracted from the Qdrant point payload.
     pub content: String,
-    /// Cosine similarity score returned by Qdrant (higher = more relevant).
     pub score: f64,
 }
 
-/// Search the Qdrant knowledge base for documents relevant to a query.
-///
-/// The store is injected at construction time by `agent.rs` so that the tool
-/// shares the same embedding model and collection as the [`dynamic_context`]
-/// RAG pipeline.
 pub struct SearchKnowledgeBase<M: EmbeddingModel>(pub QdrantVectorStore<M>);
 
 impl<M> Tool for SearchKnowledgeBase<M>

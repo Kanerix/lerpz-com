@@ -5,6 +5,7 @@ use crate::state::AppState;
 use axum::Json;
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
+use http::Method;
 use lerpz_axum::shutdown_signal;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -44,8 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState::new(agent);
 
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
+        .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers(Any);
 
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
@@ -55,14 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .fallback(redirect)
         .split_for_parts();
 
-    let scalar_html = include_str!("../scalar.html")
-        .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
-        .replace("$scope", &CONFIG.ENTRA_ID_SCOPE);
-
     let openapi_json = api.clone();
     let app = router
         .route("/api/openapi.json", get(|| async { Json(openapi_json) }))
-        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
+        .merge(Scalar::with_url("/scalar", api));
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
     tracing::info!("server started listening on {}", CONFIG.ADDR);

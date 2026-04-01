@@ -5,21 +5,15 @@ use tracing::instrument;
 
 use crate::tools::ToolError;
 
-/// Arguments accepted by the [`GetUserProfile`] tool.
-///
-/// This tool takes no parameters — the empty object schema signals to the LLM
-/// that it should call the tool without any arguments.
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct GetUserProfileArgs {}
 
-/// The user profile returned by [`GetUserProfile`].
 #[derive(Debug, Serialize)]
 pub struct UserProfile {
     pub name: String,
     pub email: String,
 }
 
-/// Retrieve the current authenticated user's profile information.
 pub struct GetUserProfile;
 
 impl Tool for GetUserProfile {

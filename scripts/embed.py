@@ -132,8 +132,6 @@ def ingest_pdf(config: dict, pdf_path: str):
     chunk_size = int(config.get("CHUNK_SIZE", DEFAULT_CHUNK_SIZE))
     chunk_overlap = int(config.get("CHUNK_OVERLAP", DEFAULT_CHUNK_OVERLAP))
 
-    print(config["QDRANT_URL_HTTPS"])
-
     # 1. Connect to Qdrant
     qdrant = QdrantClient(
         url=config["QDRANT_URL_HTTPS"],

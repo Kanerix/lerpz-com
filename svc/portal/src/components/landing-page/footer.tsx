@@ -37,8 +37,21 @@ export default function Footer() {
               href="/"
               className="flex items-center gap-2 font-semibold text-foreground transition-opacity hover:opacity-75"
             >
+<<<<<<< Updated upstream
               <Image src="/lerpz.svg" alt="Lerpz Logo" width={22} height={22} />
               <span className="text-sm tracking-tight">Lerpz AI</span>
+||||||| Stash base
+              <Image
+                src="/lerpz.svg"
+                alt="Lerpz Logo"
+                width={24}
+                height={24}
+              />
+              <span className="text-base tracking-tight">Lerpz AI</span>
+=======
+              <Image src="/lerpz.svg" alt="Lerpz Logo" width={24} height={24} />
+              <span className="text-base tracking-tight">Lerpz AI</span>
+>>>>>>> Stashed changes
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
               The AI portal for your organisation. Maintained centrally so
@@ -78,10 +91,32 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
+<<<<<<< Updated upstream
         <div className="mt-10 flex flex-col items-start justify-between gap-2 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center">
           <p>© 2026 Lerpz. All rights reserved.</p>
           <p>
             Internal use only — access is restricted to organisation members.
+||||||| Stash base
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row">
+          <p>© {year} Lerpz AI. All rights reserved.</p>
+          <p className="flex items-center gap-1">
+            Made with{" "}
+            <MdFavorite
+              className="size-3.5 text-destructive"
+              aria-label="love"
+            />{" "}
+            by the Lerpz team
+=======
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row">
+          <p>© 2026 Lerpz AI. All rights reserved.</p>
+          <p className="flex items-center gap-1">
+            Made with{" "}
+            <MdFavorite
+              className="size-3.5 text-destructive"
+              aria-label="love"
+            />{" "}
+            by the Lerpz team
+>>>>>>> Stashed changes
           </p>
         </div>
       </div>

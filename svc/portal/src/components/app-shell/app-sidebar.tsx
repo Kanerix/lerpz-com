@@ -8,8 +8,8 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@lerpz/ui/components/sidebar";
-import { MdImage, MdChatBubble, MdVideocam } from "react-icons/md";
 import type { ComponentProps } from "react";
+import { MdChatBubble, MdImage, MdVideocam } from "react-icons/md";
 import ModeSwitcher, { type ModeSwitcherProps } from "./mode-switcher";
 // import { NavMain } from "./nav-main";
 // import { NavProjects } from "./nav-projects";
@@ -22,7 +22,7 @@ const modes: ModeSwitcherProps["modes"] = [
     name: "Chat",
     logo: MdChatBubble,
     plan: "Free",
-    href: "/chats",
+    href: "/ai/chats",
     target: "_self",
   },
   {
@@ -30,7 +30,7 @@ const modes: ModeSwitcherProps["modes"] = [
     name: "Image",
     logo: MdImage,
     plan: "Free",
-    href: "/images",
+    href: "/ai/images",
     target: "_self",
   },
   {
@@ -38,7 +38,7 @@ const modes: ModeSwitcherProps["modes"] = [
     name: "Video",
     logo: MdVideocam,
     plan: "Enterprise",
-    href: "/videos",
+    href: "/ai/videos",
     target: "_self",
   },
 ];
