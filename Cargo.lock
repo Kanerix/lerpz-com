@@ -35,8 +35,10 @@ name = "ai-agent"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "axum 0.8.8",
  "dotenvy",
  "http",
+ "lerpz-axum",
  "lerpz-utils",
  "qdrant-client",
  "rig-core",
@@ -48,8 +50,12 @@ dependencies = [
  "strum",
  "thiserror 2.0.18",
  "tokio",
+ "tower-http",
  "tracing",
  "tracing-subscriber",
+ "utoipa",
+ "utoipa-axum",
+ "utoipa-scalar",
 ]
 
 [[package]]

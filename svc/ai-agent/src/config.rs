@@ -1,10 +1,14 @@
 //! Configuration module for the agent.
 
-use std::sync::{Arc, LazyLock};
+use std::{
+    net::SocketAddr,
+    sync::{Arc, LazyLock},
+};
 
+use http::HeaderValue;
 use lerpz_utils::{
     env::{get_env_from, get_env_parse},
-    generate_config,
+    generate_config, get_env,
 };
 use secrecy::SecretString;
 
@@ -27,6 +31,11 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::from_env().unwrap
 
 generate_config!(
     ENV: Env = get_env_parse,
+    ADDR: SocketAddr = get_env_parse,
+    ALLOWED_ORIGINS: HeaderValue = get_env_parse,
+    ENTRA_ID_TENANT_ID: String = get_env,   // TODO: Change to Arc<str> in future
+    ENTRA_ID_CLIENT_ID: String = get_env,   // TODO: Change to Arc<str> in future
+    ENTRA_ID_SCOPE: String = get_env,       // TODO: Change to Arc<str> in future
     PORTKEY_BASE_URL: Arc<str> = get_env_from,
     PORTKEY_PROVIDER: Arc<str> = get_env_from,
     PORTKEY_API_KEY: SecretString = get_env_from,

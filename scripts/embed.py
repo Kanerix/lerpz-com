@@ -9,7 +9,7 @@ Required .env keys:
     PORTKEY_PROVIDER          - Provider name, e.g. "openai"
     PORTKEY_API_KEY           - Portkey API key
     DEFAULT_EMBEDDING_MODEL   - Embedding model name, e.g. "text-embedding-3-small"
-    QDRANT_URL                - Qdrant instance URL
+    QDRANT_URL_HTTPS          - Qdrant instance URL
     QDRANT_COLLECTION         - Qdrant collection name
 
 Optional .env keys:
@@ -37,7 +37,7 @@ REQUIRED_KEYS = [
     "PORTKEY_PROVIDER",
     "PORTKEY_API_KEY",
     "DEFAULT_EMBEDDING_MODEL",
-    "QDRANT_URL",
+    "QDRANT_URL_HTTPS",
     "QDRANT_COLLECTION",
 ]
 
@@ -132,11 +132,11 @@ def ingest_pdf(config: dict, pdf_path: str):
     chunk_size = int(config.get("CHUNK_SIZE", DEFAULT_CHUNK_SIZE))
     chunk_overlap = int(config.get("CHUNK_OVERLAP", DEFAULT_CHUNK_OVERLAP))
 
-    print(config["QDRANT_URL"])
+    print(config["QDRANT_URL_HTTPS"])
 
     # 1. Connect to Qdrant
     qdrant = QdrantClient(
-        url=config["QDRANT_URL"],
+        url=config["QDRANT_URL_HTTPS"],
         api_key=config.get("QDRANT_API_KEY"),
     )
 

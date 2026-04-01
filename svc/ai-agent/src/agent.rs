@@ -1,18 +1,4 @@
 //! Agent construction and execution.
-//!
-//! This module wires together:
-//!
-//! - A single [`openai::Client`] pointed at the **Portkey** gateway, used for
-//!   both chat-completion inference and embedding generation.
-//! - Two [`QdrantVectorStore`] instances sharing the same collection, embedding
-//!   model, and Qdrant connection:
-//!   - `context_store` → passed to [`AgentBuilder::dynamic_context`] so rig
-//!     automatically injects the top-N most relevant documents before every
-//!     prompt.
-//!   - `tool_store` → injected into [`SearchKnowledgeBase`] so the LLM can
-//!     also trigger an explicit search at any point during a conversation.
-//! - Static tools ([`SearchKnowledgeBase`], [`GetUserProfile`]) registered on
-//!   the [`AgentBuilder`].
 
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
@@ -20,7 +6,7 @@ use rig::agent::AgentBuilder;
 use rig::client::CompletionClient;
 use rig::client::EmbeddingsClient;
 use rig::completion::Prompt;
-use rig::providers::openai;
+use rig::providers::openai::responses_api::ResponsesCompletionModel;
 use rig_qdrant::QdrantVectorStore;
 use tracing::instrument;
 
@@ -31,8 +17,8 @@ use crate::tools::{GetUserProfile, SearchKnowledgeBase};
 
 /// How many documents to retrieve from the knowledge base for RAG context.
 ///
-/// Increase for broader recall at the cost of a larger context window.
-/// Decrease to reduce latency and token usage.
+/// Increase for broader recall at the cost of a larger context window. Decrease
+/// to reduce latency and token usage.
 const RAG_TOP_N: usize = 5;
 
 /// A fully configured, ready-to-use rig [`rig::agent::Agent`].
@@ -42,7 +28,7 @@ const RAG_TOP_N: usize = 5;
 /// Uses the OpenAI Responses API completion model, which is what the default
 /// `openai::Client` (and any Portkey-proxied variant of it) exposes via
 /// [`CompletionClient::completion_model`].
-pub type Agent = rig::agent::Agent<openai::responses_api::ResponsesCompletionModel>;
+pub type Agent = rig::agent::Agent<ResponsesCompletionModel>;
 
 /// Build a production-ready [`Agent`] from the provided [`Config`].
 ///

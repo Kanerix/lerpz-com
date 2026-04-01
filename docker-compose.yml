@@ -15,6 +15,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     networks:
       lerpz-network:
         aliases:
@@ -63,7 +64,13 @@ services:
         aliases:
           - qdrant.lerpz.local
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/6333 && echo -e 'GET /healthz HTTP/1.1\r\nHost: localhost\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "exec 3<>/dev/tcp/localhost/6333 && echo -e 'GET /healthz HTTP/1.1\r\nHost: localhost\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,18 +97,56 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/traefik/certs:ro
     configs:
       - source: traefik-dynamic
         target: /etc/traefik/dynamic.yml
-    secrets:
-      - cert.pem
-      - key.pem
     networks:
       - lerpz-network
 
-  # ---------------------------------------------------------------------------
-  # Containerized services (only started with: docker compose --profile full up)
-  # ---------------------------------------------------------------------------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: on-failure
+    hostname: n8n
+    domainname: n8n.lerpz.local
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres.lerpz.local
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=lerpz
+      - DB_POSTGRESDB_PASSWORD=Password123
+      - N8N_HOST=n8n.lerpz.local
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.lerpz.local/
+      - GENERIC_TIMEZONE=UTC
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n-http.rule=Host(`n8n.lerpz.local`)"
+      - "traefik.http.routers.n8n-http.entrypoints=web"
+      - "traefik.http.routers.n8n-https.rule=Host(`n8n.lerpz.local`)"
+      - "traefik.http.routers.n8n-https.entrypoints=websecure"
+      - "traefik.http.routers.n8n-https.tls=true"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    expose:
+      - "5678"
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      lerpz-network:
+        aliases:
+          - n8n.lerpz.local
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   portal:
     container_name: portal
@@ -169,33 +214,18 @@ services:
         aliases:
           - portal-api.lerpz.local
 
-# -----------------------------------------------------------------------------
-# Dynamic Traefik configuration
-#
-# Default mode (docker compose up):
-#   Only infra services start (postgres, dragonfly, traefik).
-#   Traefik routes to apps running on the host via host.docker.internal.
-#   Start your apps locally:
-#     - Portal:     pnpm dev:portal          (localhost:3000)
-#     - Portal API: cargo run -p portal-api  (localhost:3001)
-#
-# Full mode (docker compose --profile full up --build):
-#   All services run in containers. The container labels override the
-#   file-based routes below (Docker provider takes priority by default).
-# -----------------------------------------------------------------------------
-
 configs:
   traefik-dynamic:
     content: |
       tls:
         certificates:
-          - certFile: /run/secrets/cert.pem
-            keyFile: /run/secrets/key.pem
+          - certFile: /etc/traefik/certs/cert.pem
+            keyFile: /etc/traefik/certs/key.pem
         stores:
           default:
             defaultCertificate:
-              certFile: /run/secrets/cert.pem
-              keyFile: /run/secrets/key.pem
+              certFile: /etc/traefik/certs/cert.pem
+              keyFile: /etc/traefik/certs/key.pem
 
       http:
         routers:
@@ -240,16 +270,11 @@ configs:
               servers:
                 - url: "http://host.docker.internal:3001"
 
-secrets:
-  cert.pem:
-    file: ./certs/cert.pem
-  key.pem:
-    file: ./certs/key.pem
-
 volumes:
   postgres_data:
   dragonfly_data:
   qdrant_data:
+  n8n_data:
 
 networks:
   lerpz-network:

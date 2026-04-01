@@ -1,30 +1,3 @@
-//! Tool definitions for the AI agent.
-//!
-//! Each tool implements the [`rig::tool::Tool`] trait. The agent will
-//! automatically serialize/deserialize arguments and dispatch calls to the
-//! correct [`Tool::call`] implementation.
-//!
-//! # Adding a new tool
-//!
-//! 1. Define an `Args` struct deriving [`serde::Deserialize`] and
-//!    [`schemars::JsonSchema`]. Doc-comments on fields become the JSON Schema
-//!    `description` the LLM uses to understand each parameter.
-//! 2. Define an error type that implements `std::error::Error` (use `thiserror`).
-//! 3. Implement [`rig::tool::Tool`] on a unit struct (or a struct holding any
-//!    shared state the tool needs), setting `NAME`, `Args`, `Output`, `Error`,
-//!    and the async `call` method.
-//! 4. Register the tool on the `AgentBuilder` in `agent.rs` via `.tool(MyTool)`.
-//!
-//! # Why `VectorStoreIndexDyn` for Qdrant searches?
-//!
-//! `rig-qdrant` uses an internal `QdrantFilter` type for its
-//! [`VectorStoreIndex::Filter`] associated type. That type is not publicly
-//! exported from the crate, so we cannot construct a
-//! `VectorSearchRequest<QdrantFilter>` here. Instead we use the
-//! [`VectorStoreIndexDyn`] blanket impl, whose `top_n` method accepts the
-//! fully-public `Filter<serde_json::Value>` and handles the conversion to
-//! `QdrantFilter` internally.
-
 use rig::completion::ToolDefinition;
 use rig::embeddings::EmbeddingModel;
 use rig::tool::Tool;
@@ -34,6 +7,7 @@ use rig::vector_store::request::Filter;
 use rig_qdrant::QdrantVectorStore;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tracing::instrument;
 
 use crate::tools::ToolError;
@@ -43,7 +17,6 @@ use crate::tools::ToolError;
 pub struct SearchKnowledgeBaseArgs {
     /// The natural-language query used to find relevant documents.
     pub query: String,
-
     /// Maximum number of results to return. Defaults to `5` when omitted.
     pub top_k: Option<u32>,
 }
@@ -115,7 +88,7 @@ where
 
         tracing::debug!(query = %args.query, top_k, "searching knowledge base");
 
-        let req = VectorSearchRequest::<Filter<serde_json::Value>>::builder()
+        let req = VectorSearchRequest::<Filter<Value>>::builder()
             .query(args.query)
             .samples(top_k as u64)
             .build()

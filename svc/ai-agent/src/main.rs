@@ -1,20 +1,28 @@
-use std::io::BufRead;
-
-use rig::completion::Prompt;
-use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
-
-use crate::agent::build_agent;
 use crate::config::CONFIG;
-use crate::error::Result;
+use crate::oapi::ApiDoc;
+use crate::state::AppState;
+
+use axum::Json;
+use axum::response::{IntoResponse, Redirect};
+use axum::routing::get;
+use lerpz_axum::shutdown_signal;
+use tower_http::cors::{Any, CorsLayer};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use utoipa::OpenApi;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_scalar::{Scalar, Servable};
 
 mod agent;
+mod api;
 mod config;
 mod error;
+mod oapi;
 mod portkey;
+mod state;
 mod tools;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(debug_assertions)]
     {
         use std::path::PathBuf;
@@ -32,22 +40,42 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let agent = build_agent().await?;
+    let agent = agent::build_agent().await?;
+    let state = AppState::new(agent);
 
-    let stdin = std::io::stdin();
-    let mut input = String::new();
-    stdin.lock().read_line(&mut input).unwrap();
-    let input = input.trim();
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
 
-    if input.is_empty() {
-        eprintln!("No input provided.");
-        return Ok(());
-    }
+    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .nest("/api/v1", api::router(state.clone()))
+        .with_state(state)
+        .layer(cors)
+        .fallback(redirect)
+        .split_for_parts();
 
-    tracing::debug!(%input, "Running agent");
+    let scalar_html = include_str!("../scalar.html")
+        .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
+        .replace("$scope", &CONFIG.ENTRA_ID_SCOPE);
 
-    let response = agent.prompt(input).await?;
-    println!("Agent response:\n{response}");
+    let openapi_json = api.clone();
+    let app = router
+        .route("/api/openapi.json", get(|| async { Json(openapi_json) }))
+        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
+
+    let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
+    tracing::info!("server started listening on {}", CONFIG.ADDR);
+
+    let service = app.into_make_service();
+    axum::serve(listener, service)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
 
     Ok(())
+}
+
+#[axum::debug_handler]
+pub async fn redirect() -> impl IntoResponse {
+    Redirect::to("/scalar")
 }
