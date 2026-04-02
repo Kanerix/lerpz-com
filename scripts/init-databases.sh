@@ -1,14 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# This script runs automatically on first Postgres startup via
-# /docker-entrypoint-initdb.d/. It creates additional databases
-# beyond the default POSTGRES_DB.
-#
-# Add database names to the array below as needed.
-
 EXTRA_DATABASES=(
   "n8n"
+  "dagster"
 )
 
 for db in "${EXTRA_DATABASES[@]}"; do

@@ -11,6 +11,7 @@ use utoipa::ToSchema;
 
 use crate::agent::Agent;
 use crate::oapi::AGENT_TAG;
+use crate::state::AppState;
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ChatRequest {
@@ -36,7 +37,7 @@ pub struct ChatResponse {
         (status = 500, description = "Internal server error"),
     )
 )]
-#[axum::debug_handler(state = crate::state::AppState)]
+#[axum::debug_handler(state = AppState)]
 pub async fn handler(
     State(agent): State<Arc<Agent>>,
     Json(payload): Json<ChatRequest>,

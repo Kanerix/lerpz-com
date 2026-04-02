@@ -148,6 +148,73 @@ services:
       timeout: 5s
       retries: 5
 
+  dagster-webserver:
+    container_name: dagster-webserver
+    restart: on-failure
+    hostname: dagster-webserver
+    domainname: dagster.lerpz.local
+    build:
+      context: .
+      dockerfile: svc/dagster/Dockerfile
+    environment:
+      - DAGSTER_POSTGRES_URL=postgresql://lerpz:Password123@postgres.lerpz.local:5432/dagster
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dagster-http.rule=Host(`dagster.lerpz.local`)"
+      - "traefik.http.routers.dagster-http.entrypoints=web"
+      - "traefik.http.routers.dagster-https.rule=Host(`dagster.lerpz.local`)"
+      - "traefik.http.routers.dagster-https.entrypoints=websecure"
+      - "traefik.http.routers.dagster-https.tls=true"
+      - "traefik.http.services.dagster.loadbalancer.server.port=3000"
+    expose:
+      - "3000"
+    ports:
+      - "3009:3000"
+    volumes:
+      - dagster_storage:/opt/dagster/dagster_home/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      lerpz-network:
+        aliases:
+          - dagster.lerpz.local
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dagster-daemon:
+    container_name: dagster-daemon
+    restart: on-failure
+    hostname: dagster-daemon
+    build:
+      context: .
+      dockerfile: svc/dagster/Dockerfile
+    environment:
+      - DAGSTER_POSTGRES_URL=postgresql://lerpz:Password123@postgres.lerpz.local:5432/dagster
+    entrypoint:
+      - dagster-daemon
+      - run
+    volumes:
+      - dagster_storage:/opt/dagster/dagster_home/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-webserver:
+        condition: service_healthy
+    networks:
+      - lerpz-network
+
   portal:
     container_name: portal
     restart: on-failure
@@ -275,6 +342,7 @@ volumes:
   dragonfly_data:
   qdrant_data:
   n8n_data:
+  dagster_storage:
 
 networks:
   lerpz-network:
