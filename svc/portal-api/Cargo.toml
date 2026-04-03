@@ -8,7 +8,7 @@ authors.workspace = true
 
 [dependencies]
 # Internal
-lerpz-axum = { workspace = true, features = ["azure"] }
+lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
 lerpz-model = { workspace = true }
 lerpz-utils = { workspace = true }
 # Database
@@ -33,7 +33,7 @@ tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true }
 tower-http = { workspace = true, features = ["cors"] }
 async-stream = { workspace = true }
-utoipa = { workspace = true, features = ["macros"] }
+utoipa = { workspace = true, features = ["macros", "chrono", "uuid"] }
 utoipa-axum  = { workspace = true }
 utoipa-scalar = { workspace = true, features = ["axum"] }
 # Tracing

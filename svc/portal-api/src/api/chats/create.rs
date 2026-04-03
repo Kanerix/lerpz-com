@@ -8,9 +8,13 @@ use axum::{
     extract::State,
     response::{Sse, sse::Event},
 };
-use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
+use lerpz_axum::{
+    error::{HandlerErrorSchema, HandlerResult},
+    middleware::azure::AzureAccessToken,
+};
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
+use utoipa::ToSchema;
 
 use crate::{
     config::CONFIG,
@@ -18,10 +22,13 @@ use crate::{
     state::{AppState, DatabasePool, OpenAI},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct ChatRequest {
+    /// Optional model override (uses the configured default when omitted)
     model: Option<String>,
+    /// The user's first message / opening prompt
     prompt: String,
+    /// Optional conversation title; auto-generated from the prompt when omitted
     title: Option<String>,
 }
 
@@ -30,6 +37,48 @@ pub struct ChatRequest {
     path = "/",
     tag = CHATS_TAG,
     summary = "Create a new chat",
+    description = "Creates a new conversation, streams the AI reply back via Server-Sent Events. \
+        The first event is `conversation_created` with the new conversation ID; \
+        subsequent `message` events carry incremental token chunks; \
+        a `done` event signals the final chunk; \
+        `saved` confirms the reply was persisted; \
+        `error` is emitted on failures.",
+    request_body(
+        content = ChatRequest,
+        description = "Chat creation parameters",
+        content_type = "application/json",
+    ),
+    responses(
+        (
+            status = OK,
+            description = "SSE stream of AI response chunks. Events: \
+                conversation_created (conversation UUID), \
+                message (token chunk), \
+                done (final token chunk), \
+                saved (conversation UUID), \
+                error (error message)",
+            content_type = "text/event-stream",
+            body = String,
+        ),
+        (
+            status = BAD_REQUEST,
+            description = "Invalid request body",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json",
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication token",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json",
+        ),
+        (
+            status = INTERNAL_SERVER_ERROR,
+            description = "Unexpected server error",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json",
+        ),
+    ),
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
@@ -107,6 +156,7 @@ pub async fn handler(
                 if let Some(ref delta) = choice.delta.content {
                     buf.push_str(delta);
                 }
+
                 if let Some(finish_reason) = choice.finish_reason {
                     match finish_reason {
                         FinishReason::Stop => {

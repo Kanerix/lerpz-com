@@ -1947,9 +1947,11 @@ dependencies = [
  "regex",
  "reqwest 0.12.28",
  "serde",
+ "serde_json",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
+ "utoipa",
  "uuid",
  "validator",
 ]
@@ -4660,6 +4662,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+ "uuid",
 ]
 
 [[package]]

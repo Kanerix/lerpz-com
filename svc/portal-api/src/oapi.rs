@@ -23,16 +23,18 @@ pub(crate) const HEALTH_TAG: &str = "health";
     ),
     modifiers(&EntraAuth),
     tags(
-        (name = CHATS_TAG, description = "Chat API endpoints"),
-        (name = IMAGES_TAG, description = "Image API endpoints"),
-        (name = MODELS_TAG, description = "Models API endpoints"),
-        (name = GROUPS_TAG, description = "Groups API endpoints"),
-        (name = ORGS_TAG, description = "Orgs API endpoints"),
-        (name = HEALTH_TAG, description = "Health API endpoints"),
+        (name = CHATS_TAG, description = "Manage AI conversations and stream responses via Server-Sent Events."),
+        (name = IMAGES_TAG, description = "Generate and edit images using AI models with real-time streaming previews."),
+        (name = MODELS_TAG, description = "Discover and manage the AI models available to your organization."),
+        (name = GROUPS_TAG, description = "Manage user groups and their access to organizational resources."),
+        (name = ORGS_TAG, description = "Manage organizations, their members, and top-level settings."),
+        (name = HEALTH_TAG, description = "Monitor API health and verify connectivity to backing services."),
     )
 )]
 pub(crate) struct ApiDoc;
 
+/// Injects the Microsoft Entra ID OAuth2 authorization-code security scheme
+/// into the generated OpenAPI document and marks every operation as requiring it.
 struct EntraAuth;
 
 impl Modify for EntraAuth {
@@ -49,20 +51,14 @@ impl Modify for EntraAuth {
             AuthorizationCode::new(
                 auth_url,
                 token_url,
-                Scopes::from_iter([(
-                    String::from(client_scope),
-                    String::from("Default API access"),
-                )]),
+                Scopes::from_iter([(client_scope.as_str(), "Default API access")]),
             ),
         )]));
 
-        if let Some(components) = openapi.components.as_mut() {
-            components.add_security_scheme("oauth2", oauth2_scheme);
-        } else {
-            let mut components = utoipa::openapi::Components::new();
-            components.add_security_scheme("oauth2", oauth2_scheme);
-            openapi.components = Some(components);
-        }
+        openapi
+            .components
+            .get_or_insert_with(utoipa::openapi::Components::new)
+            .add_security_scheme("oauth2", oauth2_scheme);
 
         openapi
             .security

@@ -278,6 +278,63 @@ where
     }
 }
 
+/// A structured error response following [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457).
+///
+/// All error responses from this API use this shape with
+/// `Content-Type: application/problem+json`.
+///
+/// ## Example
+///
+/// ```json
+/// {
+///   "type": "about:blank",
+///   "title": "Unauthorized",
+///   "detail": "You are not authorized to access this resource.",
+///   "instance": "/api/v1/chats",
+///   "log_id": "01948a62-f94e-7d36-b5ef-70a9b764b2e0"
+/// }
+/// ```
+#[cfg(feature = "oapi")]
+#[derive(utoipa::ToSchema)]
+#[allow(dead_code)]
+pub struct HandlerErrorSchema<D = ()>
+where
+    D: utoipa::ToSchema,
+{
+    /// A URI that identifies the problem type.
+    ///
+    /// Dereferences to human-readable documentation when available.
+    /// Defaults to `about:blank` when no specific documentation exists.
+    #[schema(rename = "type", example = "about:blank")]
+    kind: String,
+    /// A short, stable summary of the problem type.
+    ///
+    /// Does not change between occurrences of the same error kind.
+    #[schema(example = "Unauthorized")]
+    title: String,
+    /// A human-readable explanation of this specific occurrence of the problem.
+    #[schema(example = "You are not authorized to access this resource.")]
+    detail: String,
+    /// The URI of the endpoint where the problem occurred.
+    ///
+    /// Included when the server can identify the specific resource that caused
+    /// the error. Omitted otherwise.
+    #[schema(nullable, example = "/api/v1/chats")]
+    instance: Option<String>,
+    /// Additional structured data specific to this error type.
+    ///
+    /// Only present on errors that carry extra context beyond the standard
+    /// fields. Omitted on all standard error responses.
+    #[schema(nullable, value_type = serde_json::Value)]
+    extension: Option<D>,
+    /// A server-side log reference for this error occurrence.
+    ///
+    /// When present, include this ID in any support request so the error
+    /// can be located in server logs. Only set for unexpected server errors.
+    #[schema(nullable, example = "01948a62-f94e-7d36-b5ef-70a9b764b2e0")]
+    log_id: Option<String>,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

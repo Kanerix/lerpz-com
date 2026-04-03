@@ -9,7 +9,7 @@ use axum::{
     extract::State,
     response::{Sse, sse::Event},
 };
-use lerpz_axum::{error::HandlerResult, middleware::azure::AzureAccessToken};
+use lerpz_axum::{error::{HandlerErrorSchema, HandlerResult}, middleware::azure::AzureAccessToken};
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
 
@@ -36,6 +36,34 @@ pub struct ImageRequest {
     path = "/",
     tag = IMAGES_TAG,
     summary = "Create a new image",
+    responses(
+        (
+            status = OK,
+            description = "SSE stream of image generation events. Events: \
+                partial_image (base64 partial render), \
+                completed_image (base64 final image), \
+                error (error message)",
+            content_type = "text/event-stream"
+        ),
+        (
+            status = BAD_REQUEST,
+            description = "Invalid request body",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication token",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = INTERNAL_SERVER_ERROR,
+            description = "Unexpected server error",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+    ),
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(

@@ -11,11 +11,12 @@ use axum::{
     response::{Sse, sse::Event},
 };
 use lerpz_axum::{
-    error::{HandlerError, HandlerResult},
+    error::{HandlerError, HandlerErrorSchema, HandlerResult},
     middleware::azure::AzureAccessToken,
 };
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
@@ -23,8 +24,9 @@ use crate::{
     state::{AppState, DatabasePool, OpenAI},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct MessageRequest {
+    /// The user's message text
     prompt: String,
 }
 
@@ -32,7 +34,52 @@ pub struct MessageRequest {
     method(post),
     path = "/{id}",
     tag = CHATS_TAG,
-    summary = "Send a message to an existing chat",
+    summary = "Send a message in an existing chat",
+    description = "Appends a new user message to the conversation and streams the AI reply back via Server-Sent Events. Requires the conversation to belong to the authenticated user. SSE events emitted: `message` (token chunk), `done` (final token chunk), `saved` (conversation UUID confirming persistence), `error` (error message).",
+    params(
+        ("id" = Uuid, Path, description = "Conversation ID"),
+    ),
+    request_body(
+        content = MessageRequest,
+        description = "Message parameters",
+        content_type = "application/json"
+    ),
+    responses(
+        (
+            status = OK,
+            description = "SSE stream of AI response chunks. Events: \
+                           message (token chunk), \
+                           done (final token chunk), \
+                           saved (conversation UUID), \
+                           error (error message)",
+            content_type = "text/event-stream",
+            body = String
+        ),
+        (
+            status = BAD_REQUEST,
+            description = "Invalid request body",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication token",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = NOT_FOUND,
+            description = "Conversation not found or does not belong to the authenticated user",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = INTERNAL_SERVER_ERROR,
+            description = "Unexpected server error",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+    ),
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(

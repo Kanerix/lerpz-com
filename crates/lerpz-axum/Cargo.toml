@@ -13,11 +13,14 @@ tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
 regex = { workspace = true, optional = true }
 serde = { workspace = true }
+utoipa = { workspace = true, features = ["macros"], optional = true }
+serde_json = { workspace = true, optional = true }
 uuid = { workspace = true, features = ["v4"] }
 validator = { workspace = true, features = ["derive"] }
 
 [features]
 azure = ["dep:jsonwebtoken", "dep:reqwest", "dep:regex"]
+oapi  = ["dep:utoipa", "dep:serde_json"]
 
 [lints]
 workspace = true

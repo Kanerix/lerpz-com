@@ -1,4 +1,4 @@
-use lerpz_axum::error::HandlerResult;
+use lerpz_axum::error::{HandlerErrorSchema, HandlerResult};
 
 use crate::oapi::MODELS_TAG;
 
@@ -6,7 +6,25 @@ use crate::oapi::MODELS_TAG;
     method(post),
     path = "/",
     tag = MODELS_TAG,
-    summary = "Create a new model"
+    summary = "Create a new model",
+    responses(
+        (
+            status = OK,
+            description = "Not yet implemented"
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication token",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = INTERNAL_SERVER_ERROR,
+            description = "Unexpected server error",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+    ),
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler() -> HandlerResult<()> {

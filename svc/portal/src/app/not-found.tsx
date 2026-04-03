@@ -29,10 +29,10 @@ export default function NotFound() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="default" size="lg" render={<Link href="/" />}>
+          <Button variant="default" size="lg" nativeButton={false} render={<Link href="/" />}>
             Go home
           </Button>
-          <Button variant="outline" size="lg" render={<Link href="/login" />}>
+          <Button variant="outline" size="lg" nativeButton={false} render={<Link href="/login" />}>
             Sign in
           </Button>
         </div>

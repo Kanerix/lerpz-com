@@ -55,7 +55,7 @@ export default function HeroSection() {
           Sign in
           <MdArrowForward className="size-4" />
         </LoginButton>
-        <Button variant="ghost" size="lg" render={<Link href="/docs" />}>
+        <Button variant="ghost" size="lg" nativeButton={false} render={<Link href="/docs" />}>
           Documentation
         </Button>
       </motion.div>

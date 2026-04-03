@@ -7,7 +7,8 @@
     "build:portal": "pnpm --filter portal build",
     "start:portal": "pnpm --filter portal start",
     "lint:portal": "pnpm --filter portal lint",
-    "format:portal": "pnpm --filter portal format"
+    "format:portal": "pnpm --filter portal format",
+    "generate:api:portal": "pnpm --filter portal generate:api"
   },
   "engines": {
     "node": ">=22"

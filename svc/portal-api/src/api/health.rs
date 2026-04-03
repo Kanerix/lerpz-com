@@ -1,16 +1,18 @@
 use axum::Json;
 use axum::extract::State;
 use bb8_redis::RedisConnectionManager;
-use lerpz_axum::error::HandlerResult;
+use lerpz_axum::error::{HandlerErrorSchema, HandlerResult};
 use serde::Serialize;
 use utoipa::ToSchema;
 
 use crate::oapi::HEALTH_TAG;
 use crate::state::AppState;
 
-#[derive(Serialize, ToSchema)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct HealthCheck {
+    /// Whether the database connection is healthy
     database: bool,
+    /// Whether the Redis connection is healthy
     redis: bool,
 }
 
@@ -20,6 +22,25 @@ pub struct HealthCheck {
     tag = HEALTH_TAG,
     summary = "Get API health status",
     description = "Verifies connectivity, always returns 200 if health check succeeds.",
+    responses(
+        (
+            status = OK,
+            description = "Service is healthy",
+            body = HealthCheck
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication token",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = INTERNAL_SERVER_ERROR,
+            description = "Unexpected server error",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+    ),
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(

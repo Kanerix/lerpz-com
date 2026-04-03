@@ -1,7 +1,6 @@
 "use client";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+import { env } from "@/lib/env";
 
 class ApiService {
   private baseURL: string;
@@ -15,4 +14,4 @@ class ApiService {
   }
 }
 
-export const apiService = new ApiService(API_BASE_URL);
+export const apiService = new ApiService(env.NEXT_PUBLIC_API_URL);
