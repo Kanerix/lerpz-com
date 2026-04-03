@@ -1,5 +1,6 @@
 //! Agent construction and execution.
 
+use lerpz_axum::error::HandlerResult;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
 use rig::agent::AgentBuilder;
@@ -11,7 +12,6 @@ use rig_qdrant::QdrantVectorStore;
 use tracing::instrument;
 
 use crate::config::CONFIG;
-use crate::error::{Error, Result};
 use crate::portkey::build_portkey_client;
 use crate::tools::{GetUserProfile, SearchKnowledgeBase};
 
@@ -20,31 +20,21 @@ const RAG_TOP_N: usize = 5;
 pub type Agent = rig::agent::Agent<ResponsesCompletionModel>;
 
 #[instrument()]
-pub async fn build_agent() -> Result<Agent> {
+pub async fn build_agent() -> anyhow::Result<Agent> {
     let portkey_client = build_portkey_client(
         &CONFIG.PORTKEY_BASE_URL,
         &CONFIG.PORTKEY_API_KEY,
         &CONFIG.PORTKEY_PROVIDER,
     )?;
 
+    let qdrant = Qdrant::from_url(CONFIG.QDRANT_URL_GRPC.as_ref()).build()?;
     let embed_model = portkey_client.embedding_model(CONFIG.DEFAULT_EMBEDDING_MODEL.as_ref());
-
-    let qdrant = Qdrant::from_url(CONFIG.QDRANT_URL_GRPC.as_ref())
-        .build()
-        .map_err(|e| {
-            Error::Agent(format!(
-                "failed to connect to Qdrant at {}: {e}",
-                CONFIG.QDRANT_URL_GRPC
-            ))
-        })?;
-
     let query_params = QueryPointsBuilder::new(CONFIG.QDRANT_COLLECTION.as_ref())
         .with_payload(true)
         .build();
 
-    let tool_store =
-        QdrantVectorStore::new(qdrant.clone(), embed_model.clone(), query_params.clone());
-    let context_store = QdrantVectorStore::new(qdrant, embed_model, query_params);
+    let tool = QdrantVectorStore::new(qdrant.clone(), embed_model.clone(), query_params.clone());
+    let context = QdrantVectorStore::new(qdrant, embed_model, query_params);
 
     let completion_model = portkey_client.completion_model(CONFIG.DEFAULT_MODEL.as_ref());
 
@@ -58,8 +48,8 @@ pub async fn build_agent() -> Result<Agent> {
              Use the get_user_profile tool when the user asks about their \
              account, name, or email.",
         )
-        .dynamic_context(RAG_TOP_N, context_store)
-        .tool(SearchKnowledgeBase(tool_store))
+        .dynamic_context(RAG_TOP_N, context)
+        .tool(SearchKnowledgeBase(tool))
         .tool(GetUserProfile)
         .build();
 

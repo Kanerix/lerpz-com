@@ -30,13 +30,11 @@ use rig::providers::openai;
 use secrecy::ExposeSecret;
 use secrecy::SecretString;
 
-use crate::error::Result;
-
 pub fn build_portkey_client(
     api_base: &Arc<str>,
     api_key: &SecretString,
     provider: &Arc<str>,
-) -> Result<openai::Client> {
+) -> anyhow::Result<openai::Client> {
     let mut headers = HeaderMap::new();
 
     headers.insert(

@@ -16,7 +16,6 @@ use utoipa_scalar::{Scalar, Servable};
 mod agent;
 mod api;
 mod config;
-mod error;
 mod oapi;
 mod portkey;
 mod state;
