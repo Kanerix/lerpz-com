@@ -6,6 +6,7 @@ use crate::oapi::MODELS_TAG;
 #[utoipa::path(
     method(delete),
     path = "/{id}",
+    operation_id = "delete_model",
     tag = MODELS_TAG,
     summary = "Delete a model",
     params(

@@ -6,6 +6,7 @@ use crate::oapi::MODELS_TAG;
 #[utoipa::path(
     method(patch),
     path = "/{id}",
+    operation_id = "update_model",
     tag = MODELS_TAG,
     summary = "Update a specific model",
     params(

@@ -6,6 +6,7 @@ use crate::oapi::GROUPS_TAG;
 #[utoipa::path(
     method(get),
     path = "/{id}",
+    operation_id = "get_group",
     tag = GROUPS_TAG,
     summary = "Get a specific group",
     params(

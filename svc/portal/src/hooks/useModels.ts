@@ -1,11 +1,11 @@
+import { useCallback, useState } from "react";
 import type { IconType } from "react-icons";
 import {
-  MdInsertDriveFile,
   MdCollections,
-  MdPhotoSizeSelectLarge,
   MdCropSquare,
+  MdInsertDriveFile,
+  MdPhotoSizeSelectLarge,
 } from "react-icons/md";
-import { useCallback, useState } from "react";
 
 export type Model = {
   label: string;

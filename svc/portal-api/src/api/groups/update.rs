@@ -6,6 +6,7 @@ use crate::oapi::GROUPS_TAG;
 #[utoipa::path(
     method(patch),
     path = "/{id}",
+    operation_id = "update_group",
     tag = GROUPS_TAG,
     summary = "Update a specific group",
     params(

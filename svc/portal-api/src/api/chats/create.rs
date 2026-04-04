@@ -35,6 +35,7 @@ pub struct ChatRequest {
 #[utoipa::path(
     method(post),
     path = "/",
+    operation_id = "create_chat",
     tag = CHATS_TAG,
     summary = "Create a new chat",
     description = "Creates a new conversation, streams the AI reply back via Server-Sent Events. \

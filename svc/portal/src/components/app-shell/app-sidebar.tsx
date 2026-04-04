@@ -14,6 +14,7 @@ import ModeSwitcher, { type ModeSwitcherProps } from "./mode-switcher";
 // import { NavMain } from "./nav-main";
 // import { NavProjects } from "./nav-projects";
 import NavSecondary from "./nav-secondary";
+import SidebarChats from "./chats";
 import SidebarUserInfo from "./user-info";
 
 const modes: ModeSwitcherProps["modes"] = [
@@ -61,6 +62,7 @@ export default function AppSidebar({
       <SidebarContent>
         {/*<NavMain items={data.navMain} />*/}
         {/*<NavProjects projects={data.projects} />*/}
+        <SidebarChats />
         <NavSecondary className="mt-auto" />
       </SidebarContent>
       <Separator />

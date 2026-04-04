@@ -7,6 +7,7 @@ use crate::oapi::IMAGES_TAG;
     method(delete),
     path = "/{id}",
     tag = IMAGES_TAG,
+    operation_id = "delete_image",
     summary = "Delete a specific image",
     params(
         ("id" = Uuid, Path, description = "Image ID"),

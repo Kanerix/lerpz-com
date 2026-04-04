@@ -5,6 +5,7 @@ use crate::oapi::HEALTH_TAG;
 #[utoipa::path(
     method(get),
     path = "/failure",
+    operation_id = "trigger_failure",
     tag = HEALTH_TAG,
     summary = "Force an API failure",
     description = "This is only inlcuded in debug builds",

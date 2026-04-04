@@ -5,6 +5,7 @@ use crate::oapi::ORGS_TAG;
 #[utoipa::path(
     method(get),
     path = "/",
+    operation_id = "list_orgs",
     tag = ORGS_TAG,
     summary = "Get a list of organization",
     responses(

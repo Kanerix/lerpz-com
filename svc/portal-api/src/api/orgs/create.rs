@@ -5,6 +5,7 @@ use crate::oapi::ORGS_TAG;
 #[utoipa::path(
     method(post),
     path = "/",
+    operation_id = "create_org",
     tag = ORGS_TAG,
     summary = "Create a new organization",
     responses(

@@ -8,7 +8,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { setMode } = useChatbox();
 
   useEffect(() => {
-    console.log("Test");
     toast("Event has been created.");
   }, []);
 

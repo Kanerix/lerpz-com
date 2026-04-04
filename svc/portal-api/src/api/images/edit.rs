@@ -5,6 +5,7 @@ use crate::oapi::IMAGES_TAG;
 #[utoipa::path(
     method(post),
     path = "/edit",
+    operation_id = "edit_image",
     tag = IMAGES_TAG,
     summary = "Create a new image from existing images",
     responses(

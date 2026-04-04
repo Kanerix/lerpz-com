@@ -5,6 +5,7 @@ use crate::oapi::GROUPS_TAG;
 #[utoipa::path(
     method(post),
     path = "/",
+    operation_id = "create_group",
     tag = GROUPS_TAG,
     summary = "Create a new group",
     responses(

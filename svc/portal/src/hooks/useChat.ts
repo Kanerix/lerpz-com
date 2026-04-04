@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSseConnection } from "@/lib/sse";
-import { apiService } from "@/services/api/client";
 
 export const apiKeys = {
-  chatStream: () => apiService.getUrl("/chats"),
+  chatStream: () => "/api/v1/chats",
 };
 
 export type ChatMessage = {

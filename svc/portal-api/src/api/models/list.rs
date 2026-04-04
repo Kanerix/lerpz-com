@@ -24,6 +24,7 @@ pub struct Model {
 #[utoipa::path(
     method(get),
     path = "/",
+    operation_id = "list_models",
     tag = MODELS_TAG,
     summary = "Get available models",
     description = "Returns the list of AI models available to the authenticated user. \

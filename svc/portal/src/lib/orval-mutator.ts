@@ -1,27 +1,10 @@
 "use client";
 
 import { getAccessToken } from "@/lib/msal-auth";
+import { env } from "./env";
 
-// The base URL for the portal API. Falls back to localhost for local dev.
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
-/**
- * The shape Orval passes to the mutator when using `client: "react-query"`.
- */
-export type MutatorArgs = {
-  url: string;
-  method: string;
-  headers?: Record<string, string>;
-  params?: Record<string, string | number | boolean>;
-  data?: unknown;
-  signal?: AbortSignal;
-};
-
-/**
- * Error shape thrown by the mutator on non-2xx responses.
- * Orval uses `ErrorType<E>` in its generated hook typings.
- */
 export type ErrorType<TError> = TError & {
   status: number;
 };
@@ -29,43 +12,28 @@ export type ErrorType<TError> = TError & {
 /**
  * Custom fetch mutator used by all Orval-generated hooks.
  *
- * Responsibilities:
- *  - Acquires a fresh MSAL access token silently (redirects to login if needed)
- *  - Builds the full URL from the API base + path + query params
- *  - Forwards the AbortSignal so TanStack Query can cancel in-flight requests
- *  - Throws a typed error on non-2xx responses that includes the HTTP status
+ * Orval calls this as: customFetch<TResponse>(url: string, options: RequestInit)
+ * The generated code already handles method, Content-Type, body serialization,
+ * and forwarding the AbortSignal — this mutator only needs to:
+ *  - Acquire a fresh MSAL access token silently (redirects to login if needed)
+ *  - Prepend the API base URL to the path
+ *  - Inject the Authorization header
+ *  - Throw a typed error on non-2xx responses that includes the HTTP status
  */
 export async function customFetch<TResponse>(
-  args: MutatorArgs,
+  url: string,
+  options: RequestInit,
 ): Promise<TResponse> {
-  const { url, method, headers, params, data, signal } = args;
-
   const accessToken = await getAccessToken();
 
-  const queryString =
-    params && Object.keys(params).length > 0
-      ? `?${new URLSearchParams(
-          Object.entries(params).reduce<Record<string, string>>(
-            (acc, [k, v]) => {
-              acc[k] = String(v);
-              return acc;
-            },
-            {},
-          ),
-        ).toString()}`
-      : "";
-
-  const fullUrl = `${API_BASE_URL}${url}${queryString}`;
+  const fullUrl = `${API_BASE_URL}${url}`;
 
   const response = await fetch(fullUrl, {
-    method,
+    ...options,
     headers: {
-      "Content-Type": "application/json",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...headers,
+      ...(options.headers as Record<string, string> | undefined),
     },
-    ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
-    signal,
   });
 
   if (!response.ok) {
@@ -86,9 +54,11 @@ export async function customFetch<TResponse>(
 
   // Handle empty responses (e.g. 204 No Content)
   const text = await response.text();
-  if (!text) {
-    return undefined as TResponse;
-  }
+  const data = text ? JSON.parse(text) : undefined;
 
-  return JSON.parse(text) as TResponse;
+  return {
+    data,
+    status: response.status,
+    headers: response.headers,
+  } as TResponse;
 }

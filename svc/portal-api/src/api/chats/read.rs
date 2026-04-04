@@ -1,13 +1,21 @@
-use axum::Json;
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use chrono::NaiveDateTime;
-use lerpz_axum::error::{HandlerErrorSchema, HandlerResult};
+use lerpz_axum::{
+    error::{HandlerError, HandlerErrorSchema, HandlerResult},
+    middleware::azure::AzureAccessToken,
+};
 use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::oapi::CHATS_TAG;
-
-use crate::state::AppState;
+use crate::{
+    oapi::CHATS_TAG,
+    state::{AppState, DatabasePool},
+};
 
 /// A single message within a conversation.
 #[derive(Debug, Serialize, ToSchema)]
@@ -42,6 +50,7 @@ pub struct ConversationDetail {
 #[utoipa::path(
     method(get),
     path = "/{id}",
+    operation_id = "get_chat",
     tag = CHATS_TAG,
     summary = "Get a specific chat",
     description = "Returns a conversation and all its messages for the authenticated user.",
@@ -75,6 +84,60 @@ pub struct ConversationDetail {
     ),
 )]
 #[axum::debug_handler(state = AppState)]
-pub async fn handler() -> HandlerResult<()> {
-    Ok(())
+pub async fn handler(
+    token: AzureAccessToken,
+    Path(conv_id): Path<Uuid>,
+    State(database): State<DatabasePool>,
+) -> HandlerResult<Json<ConversationDetail>> {
+    let user_id = token.sub;
+
+    let conversation = sqlx::query!(
+        "SELECT id, title, model, created_at, updated_at
+        FROM conversations
+        WHERE id = $1 AND user_id = $2",
+        &conv_id,
+        &user_id,
+    )
+    .fetch_optional(&database)
+    .await?;
+
+    let conversation = match conversation {
+        Some(c) => c,
+        None => {
+            return Err(HandlerError::new(
+                StatusCode::NOT_FOUND,
+                "Not Found",
+                "The requested conversation was not found.",
+            ));
+        }
+    };
+
+    let message_rows = sqlx::query!(
+        "SELECT id, role AS \"role: String\", content, created_at
+        FROM messages
+        WHERE conversation_id = $1
+        ORDER BY created_at ASC",
+        &conv_id,
+    )
+    .fetch_all(&database)
+    .await?;
+
+    let messages = message_rows
+        .into_iter()
+        .map(|r| ConversationMessage {
+            id: r.id,
+            role: r.role,
+            content: r.content,
+            created_at: r.created_at.unwrap_or_default(),
+        })
+        .collect();
+
+    Ok(Json(ConversationDetail {
+        id: conversation.id,
+        title: conversation.title,
+        model: conversation.model,
+        messages,
+        created_at: conversation.created_at.unwrap_or_default(),
+        updated_at: conversation.updated_at.unwrap_or_default(),
+    }))
 }

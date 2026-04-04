@@ -33,9 +33,14 @@ pub struct MessageRequest {
 #[utoipa::path(
     method(post),
     path = "/{id}",
+    operation_id = "send_chat_message",
     tag = CHATS_TAG,
     summary = "Send a message in an existing chat",
-    description = "Appends a new user message to the conversation and streams the AI reply back via Server-Sent Events. Requires the conversation to belong to the authenticated user. SSE events emitted: `message` (token chunk), `done` (final token chunk), `saved` (conversation UUID confirming persistence), `error` (error message).",
+    description = "Appends a new user message to the conversation and streams \
+    the AI reply back via Server-Sent Events. Requires the conversation to \
+    belong to the authenticated user. SSE events emitted: `message` (token \
+    chunk), `done` (final token chunk), `saved` (conversation UUID confirming \
+    persistence), `error` (error message).",
     params(
         ("id" = Uuid, Path, description = "Conversation ID"),
     ),

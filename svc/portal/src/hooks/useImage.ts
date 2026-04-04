@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSseConnection } from "@/lib/sse";
-import { apiService } from "@/services/api/client";
 
 export const apiKeys = {
-  imageStream: () => apiService.getUrl("/images"),
+  imageStream: () => "/api/v1/images",
 };
 
 type ImageStreamState = {

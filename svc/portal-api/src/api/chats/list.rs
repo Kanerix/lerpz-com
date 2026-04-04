@@ -1,6 +1,9 @@
 use axum::{Json, extract::State};
 use chrono::NaiveDateTime;
-use lerpz_axum::{error::{HandlerErrorSchema, HandlerResult}, middleware::azure::AzureAccessToken};
+use lerpz_axum::{
+    error::{HandlerErrorSchema, HandlerResult},
+    middleware::azure::AzureAccessToken,
+};
 use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -9,7 +12,6 @@ use crate::{
     oapi::CHATS_TAG,
     state::{AppState, DatabasePool},
 };
-
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct Conversation {
@@ -28,6 +30,7 @@ pub struct Conversation {
 #[utoipa::path(
     method(get),
     path = "/",
+    operation_id = "list_chats",
     tag = CHATS_TAG,
     summary = "Get a list of chats",
     description = "Returns a list of the authenticated user's conversations ordered by most recently updated.",

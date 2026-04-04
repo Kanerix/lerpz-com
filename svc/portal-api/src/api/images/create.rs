@@ -34,6 +34,7 @@ pub struct ImageRequest {
 #[utoipa::path(
     method(post),
     path = "/",
+    operation_id = "create_image",
     tag = IMAGES_TAG,
     summary = "Create a new image",
     responses(

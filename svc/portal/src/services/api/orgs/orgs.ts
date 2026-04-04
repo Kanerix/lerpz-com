@@ -32,51 +32,48 @@ import { customFetch } from '../../../lib/orval-mutator';
 import type { ErrorType } from '../../../lib/orval-mutator';
 
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 
 
 /**
- * @summary Get a specific organization
+ * @summary Get a list of organization
  */
-export type handlerResponse200 = {
+export type listOrgsResponse200 = {
   data: void
   status: 200
 }
 
-export type handlerResponse401 = {
+export type listOrgsResponse401 = {
   data: HandlerErrorSchema
   status: 401
 }
 
-export type handlerResponse404 = {
-  data: HandlerErrorSchema
-  status: 404
-}
-
-export type handlerResponse500 = {
+export type listOrgsResponse500 = {
   data: HandlerErrorSchema
   status: 500
 }
 
-export type handlerResponseSuccess = (handlerResponse200) & {
+export type listOrgsResponseSuccess = (listOrgsResponse200) & {
   headers: Headers;
 };
-export type handlerResponseError = (handlerResponse401 | handlerResponse404 | handlerResponse500) & {
+export type listOrgsResponseError = (listOrgsResponse401 | listOrgsResponse500) & {
   headers: Headers;
 };
 
-export type handlerResponse = (handlerResponseSuccess | handlerResponseError)
+export type listOrgsResponse = (listOrgsResponseSuccess | listOrgsResponseError)
 
-export const getHandlerUrl = (id: string,) => {
-
-
+export const getListOrgsUrl = () => {
 
 
-  return `/api/v1/orgs/${id}`
+
+
+  return `/api/v1/orgs`
 }
 
-export const handler = async (id: string, options?: RequestInit): Promise<handlerResponse> => {
+export const listOrgs = async ( options?: RequestInit): Promise<listOrgsResponse> => {
 
-  return customFetch<handlerResponse>(getHandlerUrl(id),
+  return customFetch<listOrgsResponse>(getListOrgsUrl(),
   {
     ...options,
     method: 'GET'
@@ -89,69 +86,289 @@ export const handler = async (id: string, options?: RequestInit): Promise<handle
 
 
 
-export const getHandlerQueryKey = (id: string,) => {
+export const getListOrgsQueryKey = () => {
+    return [
+    `/api/v1/orgs`
+    ] as const;
+    }
+
+
+export const getListOrgsQueryOptions = <TData = Awaited<ReturnType<typeof listOrgs>>, TError = ErrorType<HandlerErrorSchema>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrgs>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrgsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrgs>>> = ({ signal }) => listOrgs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrgs>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListOrgsQueryResult = NonNullable<Awaited<ReturnType<typeof listOrgs>>>
+export type ListOrgsQueryError = ErrorType<HandlerErrorSchema>
+
+
+export function useListOrgs<TData = Awaited<ReturnType<typeof listOrgs>>, TError = ErrorType<HandlerErrorSchema>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrgs>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrgs>>,
+          TError,
+          Awaited<ReturnType<typeof listOrgs>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrgs<TData = Awaited<ReturnType<typeof listOrgs>>, TError = ErrorType<HandlerErrorSchema>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrgs>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrgs>>,
+          TError,
+          Awaited<ReturnType<typeof listOrgs>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrgs<TData = Awaited<ReturnType<typeof listOrgs>>, TError = ErrorType<HandlerErrorSchema>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrgs>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get a list of organization
+ */
+
+export function useListOrgs<TData = Awaited<ReturnType<typeof listOrgs>>, TError = ErrorType<HandlerErrorSchema>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrgs>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListOrgsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+/**
+ * @summary Create a new organization
+ */
+export type createOrgResponse200 = {
+  data: void
+  status: 200
+}
+
+export type createOrgResponse401 = {
+  data: HandlerErrorSchema
+  status: 401
+}
+
+export type createOrgResponse500 = {
+  data: HandlerErrorSchema
+  status: 500
+}
+
+export type createOrgResponseSuccess = (createOrgResponse200) & {
+  headers: Headers;
+};
+export type createOrgResponseError = (createOrgResponse401 | createOrgResponse500) & {
+  headers: Headers;
+};
+
+export type createOrgResponse = (createOrgResponseSuccess | createOrgResponseError)
+
+export const getCreateOrgUrl = () => {
+
+
+
+
+  return `/api/v1/orgs`
+}
+
+export const createOrg = async ( options?: RequestInit): Promise<createOrgResponse> => {
+
+  return customFetch<createOrgResponse>(getCreateOrgUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCreateOrgMutationOptions = <TError = ErrorType<HandlerErrorSchema>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrg>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOrg>>, TError,void, TContext> => {
+
+const mutationKey = ['createOrg'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrg>>, void> = () => {
+
+
+          return  createOrg(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOrgMutationResult = NonNullable<Awaited<ReturnType<typeof createOrg>>>
+
+    export type CreateOrgMutationError = ErrorType<HandlerErrorSchema>
+
+    /**
+ * @summary Create a new organization
+ */
+export const useCreateOrg = <TError = ErrorType<HandlerErrorSchema>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrg>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createOrg>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCreateOrgMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Get a specific organization
+ */
+export type getOrgResponse200 = {
+  data: void
+  status: 200
+}
+
+export type getOrgResponse401 = {
+  data: HandlerErrorSchema
+  status: 401
+}
+
+export type getOrgResponse404 = {
+  data: HandlerErrorSchema
+  status: 404
+}
+
+export type getOrgResponse500 = {
+  data: HandlerErrorSchema
+  status: 500
+}
+
+export type getOrgResponseSuccess = (getOrgResponse200) & {
+  headers: Headers;
+};
+export type getOrgResponseError = (getOrgResponse401 | getOrgResponse404 | getOrgResponse500) & {
+  headers: Headers;
+};
+
+export type getOrgResponse = (getOrgResponseSuccess | getOrgResponseError)
+
+export const getGetOrgUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orgs/${id}`
+}
+
+export const getOrg = async (id: string, options?: RequestInit): Promise<getOrgResponse> => {
+
+  return customFetch<getOrgResponse>(getGetOrgUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOrgQueryKey = (id: string,) => {
     return [
     `/api/v1/orgs/${id}`
     ] as const;
     }
 
 
-export const getHandlerQueryOptions = <TData = Awaited<ReturnType<typeof handler>>, TError = ErrorType<HandlerErrorSchema>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof handler>>, TError, TData>>, }
+export const getGetOrgQueryOptions = <TData = Awaited<ReturnType<typeof getOrg>>, TError = ErrorType<HandlerErrorSchema>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrg>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getHandlerQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof handler>>> = ({ signal }) => handler(id, { signal });
+  const queryKey =  queryOptions?.queryKey ?? getGetOrgQueryKey(id);
 
 
 
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrg>>> = ({ signal }) => getOrg(id, { signal, ...requestOptions });
 
 
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof handler>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrg>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type HandlerQueryResult = NonNullable<Awaited<ReturnType<typeof handler>>>
-export type HandlerQueryError = ErrorType<HandlerErrorSchema>
+export type GetOrgQueryResult = NonNullable<Awaited<ReturnType<typeof getOrg>>>
+export type GetOrgQueryError = ErrorType<HandlerErrorSchema>
 
 
-export function useHandler<TData = Awaited<ReturnType<typeof handler>>, TError = ErrorType<HandlerErrorSchema>>(
- id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof handler>>, TError, TData>> & Pick<
+export function useGetOrg<TData = Awaited<ReturnType<typeof getOrg>>, TError = ErrorType<HandlerErrorSchema>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrg>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof handler>>,
+          Awaited<ReturnType<typeof getOrg>>,
           TError,
-          Awaited<ReturnType<typeof handler>>
+          Awaited<ReturnType<typeof getOrg>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useHandler<TData = Awaited<ReturnType<typeof handler>>, TError = ErrorType<HandlerErrorSchema>>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof handler>>, TError, TData>> & Pick<
+export function useGetOrg<TData = Awaited<ReturnType<typeof getOrg>>, TError = ErrorType<HandlerErrorSchema>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrg>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof handler>>,
+          Awaited<ReturnType<typeof getOrg>>,
           TError,
-          Awaited<ReturnType<typeof handler>>
+          Awaited<ReturnType<typeof getOrg>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useHandler<TData = Awaited<ReturnType<typeof handler>>, TError = ErrorType<HandlerErrorSchema>>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof handler>>, TError, TData>>, }
+export function useGetOrg<TData = Awaited<ReturnType<typeof getOrg>>, TError = ErrorType<HandlerErrorSchema>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrg>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get a specific organization
  */
 
-export function useHandler<TData = Awaited<ReturnType<typeof handler>>, TError = ErrorType<HandlerErrorSchema>>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof handler>>, TError, TData>>, }
+export function useGetOrg<TData = Awaited<ReturnType<typeof getOrg>>, TError = ErrorType<HandlerErrorSchema>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrg>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getHandlerQueryOptions(id,options)
+  const queryOptions = getGetOrgQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -164,36 +381,36 @@ export function useHandler<TData = Awaited<ReturnType<typeof handler>>, TError =
 /**
  * @summary Delete a new organization
  */
-export type handlerResponse200 = {
+export type deleteOrgResponse200 = {
   data: void
   status: 200
 }
 
-export type handlerResponse401 = {
+export type deleteOrgResponse401 = {
   data: HandlerErrorSchema
   status: 401
 }
 
-export type handlerResponse404 = {
+export type deleteOrgResponse404 = {
   data: HandlerErrorSchema
   status: 404
 }
 
-export type handlerResponse500 = {
+export type deleteOrgResponse500 = {
   data: HandlerErrorSchema
   status: 500
 }
 
-export type handlerResponseSuccess = (handlerResponse200) & {
+export type deleteOrgResponseSuccess = (deleteOrgResponse200) & {
   headers: Headers;
 };
-export type handlerResponseError = (handlerResponse401 | handlerResponse404 | handlerResponse500) & {
+export type deleteOrgResponseError = (deleteOrgResponse401 | deleteOrgResponse404 | deleteOrgResponse500) & {
   headers: Headers;
 };
 
-export type handlerResponse = (handlerResponseSuccess | handlerResponseError)
+export type deleteOrgResponse = (deleteOrgResponseSuccess | deleteOrgResponseError)
 
-export const getHandlerUrl = (id: string,) => {
+export const getDeleteOrgUrl = (id: string,) => {
 
 
 
@@ -201,9 +418,9 @@ export const getHandlerUrl = (id: string,) => {
   return `/api/v1/orgs/${id}`
 }
 
-export const handler = async (id: string, options?: RequestInit): Promise<handlerResponse> => {
+export const deleteOrg = async (id: string, options?: RequestInit): Promise<deleteOrgResponse> => {
 
-  return customFetch<handlerResponse>(getHandlerUrl(id),
+  return customFetch<deleteOrgResponse>(getDeleteOrgUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -215,24 +432,24 @@ export const handler = async (id: string, options?: RequestInit): Promise<handle
 
 
 
-export const getHandlerMutationOptions = <TError = ErrorType<HandlerErrorSchema>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof handler>>, TError,{id: string}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof handler>>, TError,{id: string}, TContext> => {
+export const getDeleteOrgMutationOptions = <TError = ErrorType<HandlerErrorSchema>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOrg>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteOrg>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['handler'];
-const {mutation: mutationOptions} = options ?
+const mutationKey = ['deleteOrg'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof handler>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteOrg>>, {id: string}> = (props) => {
           const {id} = props ?? {};
 
-          return  handler(id,)
+          return  deleteOrg(id,requestOptions)
         }
 
 
@@ -242,56 +459,56 @@ const {mutation: mutationOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type HandlerMutationResult = NonNullable<Awaited<ReturnType<typeof handler>>>
+    export type DeleteOrgMutationResult = NonNullable<Awaited<ReturnType<typeof deleteOrg>>>
 
-    export type HandlerMutationError = ErrorType<HandlerErrorSchema>
+    export type DeleteOrgMutationError = ErrorType<HandlerErrorSchema>
 
     /**
  * @summary Delete a new organization
  */
-export const useHandler = <TError = ErrorType<HandlerErrorSchema>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof handler>>, TError,{id: string}, TContext>, }
+export const useDeleteOrg = <TError = ErrorType<HandlerErrorSchema>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOrg>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof handler>>,
+        Awaited<ReturnType<typeof deleteOrg>>,
         TError,
         {id: string},
         TContext
       > => {
-      return useMutation(getHandlerMutationOptions(options), queryClient);
+      return useMutation(getDeleteOrgMutationOptions(options), queryClient);
     }
     /**
  * @summary Update a specific organization
  */
-export type handlerResponse200 = {
+export type updateOrgResponse200 = {
   data: void
   status: 200
 }
 
-export type handlerResponse401 = {
+export type updateOrgResponse401 = {
   data: HandlerErrorSchema
   status: 401
 }
 
-export type handlerResponse404 = {
+export type updateOrgResponse404 = {
   data: HandlerErrorSchema
   status: 404
 }
 
-export type handlerResponse500 = {
+export type updateOrgResponse500 = {
   data: HandlerErrorSchema
   status: 500
 }
 
-export type handlerResponseSuccess = (handlerResponse200) & {
+export type updateOrgResponseSuccess = (updateOrgResponse200) & {
   headers: Headers;
 };
-export type handlerResponseError = (handlerResponse401 | handlerResponse404 | handlerResponse500) & {
+export type updateOrgResponseError = (updateOrgResponse401 | updateOrgResponse404 | updateOrgResponse500) & {
   headers: Headers;
 };
 
-export type handlerResponse = (handlerResponseSuccess | handlerResponseError)
+export type updateOrgResponse = (updateOrgResponseSuccess | updateOrgResponseError)
 
-export const getHandlerUrl = (id: string,) => {
+export const getUpdateOrgUrl = (id: string,) => {
 
 
 
@@ -299,9 +516,9 @@ export const getHandlerUrl = (id: string,) => {
   return `/api/v1/orgs/${id}`
 }
 
-export const handler = async (id: string, options?: RequestInit): Promise<handlerResponse> => {
+export const updateOrg = async (id: string, options?: RequestInit): Promise<updateOrgResponse> => {
 
-  return customFetch<handlerResponse>(getHandlerUrl(id),
+  return customFetch<updateOrgResponse>(getUpdateOrgUrl(id),
   {
     ...options,
     method: 'PATCH'
@@ -313,24 +530,24 @@ export const handler = async (id: string, options?: RequestInit): Promise<handle
 
 
 
-export const getHandlerMutationOptions = <TError = ErrorType<HandlerErrorSchema>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof handler>>, TError,{id: string}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof handler>>, TError,{id: string}, TContext> => {
+export const getUpdateOrgMutationOptions = <TError = ErrorType<HandlerErrorSchema>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrg>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrg>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['handler'];
-const {mutation: mutationOptions} = options ?
+const mutationKey = ['updateOrg'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof handler>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrg>>, {id: string}> = (props) => {
           const {id} = props ?? {};
 
-          return  handler(id,)
+          return  updateOrg(id,requestOptions)
         }
 
 
@@ -340,20 +557,20 @@ const {mutation: mutationOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type HandlerMutationResult = NonNullable<Awaited<ReturnType<typeof handler>>>
+    export type UpdateOrgMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrg>>>
 
-    export type HandlerMutationError = ErrorType<HandlerErrorSchema>
+    export type UpdateOrgMutationError = ErrorType<HandlerErrorSchema>
 
     /**
  * @summary Update a specific organization
  */
-export const useHandler = <TError = ErrorType<HandlerErrorSchema>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof handler>>, TError,{id: string}, TContext>, }
+export const useUpdateOrg = <TError = ErrorType<HandlerErrorSchema>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrg>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof handler>>,
+        Awaited<ReturnType<typeof updateOrg>>,
         TError,
         {id: string},
         TContext
       > => {
-      return useMutation(getHandlerMutationOptions(options), queryClient);
+      return useMutation(getUpdateOrgMutationOptions(options), queryClient);
     }

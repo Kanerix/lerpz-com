@@ -6,6 +6,7 @@ use crate::oapi::ORGS_TAG;
 #[utoipa::path(
     method(get),
     path = "/{id}",
+    operation_id = "get_org",
     tag = ORGS_TAG,
     summary = "Get a specific organization",
     params(

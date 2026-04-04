@@ -7,6 +7,7 @@ use crate::oapi::MODELS_TAG;
     method(get),
     path = "/{id}",
     tag = MODELS_TAG,
+    operation_id = "get_model",
     summary = "Get a specific model",
     params(
         ("id" = Uuid, Path, description = "Model ID"),

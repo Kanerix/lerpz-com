@@ -6,6 +6,7 @@ use crate::oapi::ORGS_TAG;
 #[utoipa::path(
     method(delete),
     path = "/{id}",
+    operation_id = "delete_org",
     tag = ORGS_TAG,
     summary = "Delete a new organization",
     params(

@@ -6,6 +6,7 @@ use crate::oapi::GROUPS_TAG;
 #[utoipa::path(
     method(delete),
     path = "/{id}",
+    operation_id = "delete_group",
     tag = GROUPS_TAG,
     summary = "Delete a group",
     params(

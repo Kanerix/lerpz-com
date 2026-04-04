@@ -15,6 +15,7 @@ use lerpz_axum::shutdown_signal;
 use secrecy::{ExposeSecret, SecretString};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
@@ -98,7 +99,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let openapi_json = api.clone();
     let app = router
         .route("/api/openapi.json", get(|| async { Json(openapi_json) }))
-        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html));
+        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html))
+        .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
     tracing::info!("server started listening on {}", CONFIG.ADDR);

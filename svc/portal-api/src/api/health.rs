@@ -19,6 +19,7 @@ pub struct HealthCheck {
 #[utoipa::path(
     method(get),
     path = "/health",
+    operation_id = "health_check",
     tag = HEALTH_TAG,
     summary = "Get API health status",
     description = "Verifies connectivity, always returns 200 if health check succeeds.",

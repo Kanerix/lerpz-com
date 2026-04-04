@@ -5,6 +5,7 @@ use crate::oapi::MODELS_TAG;
 #[utoipa::path(
     method(post),
     path = "/",
+    operation_id = "create_model",
     tag = MODELS_TAG,
     summary = "Create a new model",
     responses(
