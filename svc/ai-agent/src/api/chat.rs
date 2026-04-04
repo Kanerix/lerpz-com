@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use axum::{Json, extract::State};
 use http::StatusCode;
-use lerpz_axum::error::{HandlerError, HandlerResult};
+use lerpz_axum::error::{HandlerError, HandlerErrorSchema, HandlerResult};
+use lerpz_axum::middleware::azure::AzureAccessToken;
 use rig::completion::Prompt;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -28,17 +29,32 @@ pub struct ChatResponse {
     path = "/chat",
     tag = AGENT_TAG,
     summary = "Chat with the AI agent",
-    description = "Send a plain-text message to the AI agent and receive a response. \
-                   The agent will automatically retrieve relevant context from the \
-                   knowledge base and invoke tools as needed.",
+    description = "Send a plain-text message to the AI agent and receive a \
+        response. The agent will automatically retrieve relevant context from the \
+        knowledge base and invoke tools as needed.",
     request_body = ChatRequest,
     responses(
-        (status = 200, description = "Agent replied successfully", body = ChatResponse),
-        (status = 500, description = "Internal server error"),
+        (
+            status = 200,
+            description = "Agent replied successfully",
+            body = ChatResponse
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication token",
+            body = HandlerErrorSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = 500,
+            description = "Internal server error",
+            body = HandlerErrorSchema
+        ),
     )
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
+    _token: AzureAccessToken,
     State(agent): State<Arc<Agent>>,
     Json(payload): Json<ChatRequest>,
 ) -> HandlerResult<Json<ChatResponse>> {

@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use axum::extract::FromRef;
+use lerpz_axum::middleware::azure::AzureConfig;
 
 use crate::agent::Agent;
 
@@ -12,14 +13,22 @@ use crate::agent::Agent;
 /// request without duplicating the underlying model configuration.
 #[derive(Clone)]
 pub struct AppState {
+    pub azure_config: AzureConfig,
     pub agent: Arc<Agent>,
 }
 
 impl AppState {
-    pub fn new(agent: Agent) -> Self {
+    pub fn new(azure_config: AzureConfig, agent: Agent) -> Self {
         Self {
+            azure_config,
             agent: Arc::new(agent),
         }
+    }
+}
+
+impl FromRef<AppState> for AzureConfig {
+    fn from_ref(state: &AppState) -> Self {
+        state.azure_config.clone()
     }
 }
 

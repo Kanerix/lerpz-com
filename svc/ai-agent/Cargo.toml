@@ -8,7 +8,7 @@ authors.workspace = true
 
 [dependencies]
 # Internal
-lerpz-axum = { workspace = true }
+lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
 lerpz-utils = { workspace = true }
 # AI & async
 rig-core = { workspace = true }
@@ -20,7 +20,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 qdrant-client = { workspace = true }
 # Axum, Tokio and Tower
 axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
-tower-http = { workspace = true, features = ["cors"] }
+tower-http = { workspace = true, features = ["cors", "trace"] }
 utoipa = { workspace = true, features = ["macros"] }
 utoipa-axum = { workspace = true }
 utoipa-scalar = { workspace = true, features = ["axum"] }
