@@ -1,8 +1,8 @@
 "use client";
 
 import { Skeleton } from "@lerpz/ui/components/skeleton";
-import { use } from "react";
-import type { ChatMessage } from "@/hooks/useChat";
+import { use, useEffect } from "react";
+
 import { useGetChat } from "@/services/api/chats/chats";
 import { useAi } from "../../layout";
 import ChatView from "../chat-view";
@@ -13,26 +13,40 @@ interface ChatPageProps {
 
 export default function ChatPage({ params }: ChatPageProps) {
   const { id } = use(params);
-  const { chatMessages, isChatStreaming, chatError, conversationId } = useAi();
+  const {
+    chatMessages,
+    isChatStreaming,
+    chatError,
+    conversationId,
+    enterConversation,
+  } = useAi();
 
-  // Use the live in-memory stream only when this exact conversation is active.
-  // This covers the case where the user just created a new chat and was
-  // redirected here via router.replace — chatMessages is still populated.
-  const isLive = conversationId === id;
+  // "Live" means the hook is actively holding data for this specific
+  // conversation — either because we just created it (and were redirected
+  // here) or because the user already sent a message during this session.
+  const isLive = conversationId === id && chatMessages.length > 0;
 
   const { data: response, isLoading } = useGetChat(id, {
     query: {
-      // Skip the network request while the SSE stream is still live; the
-      // stream already has the full message history in chatMessages.
+      // Skip fetching while the SSE stream already has the full history.
       enabled: !isLive,
     },
   });
+
+  // Once the API returns data and we are not yet in "live" mode for this
+  // conversation, seed the hook so that the next send() continues it.
+  useEffect(() => {
+    if (isLive || conversationId === id) return;
+    if (response?.status !== 200 || !response.data) return;
+
+    enterConversation(id, response.data.messages);
+  }, [id, isLive, conversationId, response, enterConversation]);
 
   if (!isLive && isLoading) {
     return <ChatLoadingSkeleton />;
   }
 
-  if (response?.status !== 200) {
+  if (!isLive && response?.status !== 200) {
     return (
       <p className="text-muted-foreground px-2 py-4 text-center text-xs">
         Error: {response?.status}
@@ -40,13 +54,10 @@ export default function ChatPage({ params }: ChatPageProps) {
     );
   }
 
-  const messages: ChatMessage[] = isLive
+  const messages = isLive
     ? chatMessages
-    : response.data
-      ? response.data.messages.map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        }))
+    : response?.status === 200 && response.data
+      ? response.data.messages
       : [];
 
   return (

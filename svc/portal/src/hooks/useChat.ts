@@ -1,20 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  ChatRequest,
+  ConversationMessage,
+  MessageRequest,
+} from "@/services/api/models";
+import {
+  getCreateChatUrl,
+  getSendChatMessageUrl,
+} from "@/services/api/chats/chats";
 import { createSseConnection } from "@/lib/sse";
 
-export const apiKeys = {
-  chatStream: () => "/api/v1/chats",
-};
+// Re-export under the legacy name so all existing consumers keep working.
+export type { ConversationMessage as ChatMessage };
 
-export type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
+// Monotonically-increasing counter used to give streaming messages a stable,
+// locally-unique ID before the server assigns a real UUID.
+let _nextTempId = 0;
+function tempId(): string {
+  return `__temp_${++_nextTempId}`;
+}
 
 type ChatStreamState = {
   conversationId: string | null;
-  messages: ChatMessage[];
+  messages: ConversationMessage[];
   isLoading: boolean;
   isStreaming: boolean;
   isSaved: boolean;
@@ -43,12 +53,15 @@ export function useChat(options: UseChatOptions = {}) {
   const [state, setState] = useState<ChatStreamState>(initialState);
   const closeRef = useRef<null | (() => void)>(null);
   const assistantBufRef = useRef<string>("");
+  // Shadow ref so the memoised `send` callback always reads the latest
+  // conversationId without declaring it as a dependency.
+  const conversationIdRef = useRef<string | null>(null);
+  // Stable ID for the assistant message that is currently being streamed.
+  const assistantMsgIdRef = useRef<string>(tempId());
 
   useEffect(() => {
     return () => {
-      if (closeRef.current) {
-        closeRef.current();
-      }
+      closeRef.current?.();
     };
   }, []);
 
@@ -59,29 +72,56 @@ export function useChat(options: UseChatOptions = {}) {
         closeRef.current = null;
       }
 
-      const url = apiKeys.chatStream();
-
       assistantBufRef.current = "";
+      // Allocate a fresh ID for the assistant reply we are about to receive.
+      assistantMsgIdRef.current = tempId();
 
-      setState({
-        ...initialState,
-        messages: [{ role: "user", content: prompt }],
-        isLoading: true,
-        isStreaming: true,
-      });
+      const convId = conversationIdRef.current;
+      const isNew = convId === null;
+
+      const url = isNew ? getCreateChatUrl() : getSendChatMessageUrl(convId);
+
+      const body = isNew
+        ? JSON.stringify({
+            prompt,
+            model: options.model ?? null,
+            title: options.title ?? null,
+          } satisfies ChatRequest)
+        : JSON.stringify({ prompt } satisfies MessageRequest);
+
+      const userMsg: ConversationMessage = {
+        id: tempId(),
+        role: "user",
+        content: prompt,
+        created_at: new Date().toISOString(),
+      };
+
+      if (isNew) {
+        // Fresh conversation — reset all state.
+        setState({
+          ...initialState,
+          messages: [userMsg],
+          isLoading: true,
+          isStreaming: true,
+        });
+      } else {
+        // Continuing — append the new user message to the existing history.
+        setState((prev) => ({
+          ...prev,
+          messages: [...prev.messages, userMsg],
+          isLoading: true,
+          isStreaming: true,
+          isSaved: false,
+          error: null,
+        }));
+      }
 
       const { close } = createSseConnection(
-        url.toString(),
+        url,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            prompt,
-            model: options.model ?? undefined,
-            title: options.title ?? undefined,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body,
         },
         {
           doneSignal: null,
@@ -91,7 +131,9 @@ export function useChat(options: UseChatOptions = {}) {
           onMessage: (data, event) => {
             switch (event) {
               case "conversation_created": {
+                // Only emitted by the create endpoint.
                 const conversationId = data;
+                conversationIdRef.current = conversationId;
                 setState((prev) => ({ ...prev, conversationId }));
                 options.onConversationCreated?.(conversationId);
                 break;
@@ -100,18 +142,22 @@ export function useChat(options: UseChatOptions = {}) {
               case "message": {
                 assistantBufRef.current += data;
                 const content = assistantBufRef.current;
+                const assistantId = assistantMsgIdRef.current;
 
                 setState((prev) => {
                   const messages = [...prev.messages];
-                  const lastMsg = messages[messages.length - 1];
+                  const last = messages[messages.length - 1];
 
-                  if (lastMsg && lastMsg.role === "assistant") {
-                    messages[messages.length - 1] = {
+                  if (last?.role === "assistant") {
+                    messages[messages.length - 1] = { ...last, content };
+                  } else {
+                    messages.push({
+
+                      id: assistantId,
                       role: "assistant",
                       content,
-                    };
-                  } else {
-                    messages.push({ role: "assistant", content });
+                      created_at: new Date().toISOString(),
+                    });
                   }
 
                   return { ...prev, messages };
@@ -122,18 +168,21 @@ export function useChat(options: UseChatOptions = {}) {
               case "done": {
                 assistantBufRef.current += data;
                 const content = assistantBufRef.current;
+                const assistantId = assistantMsgIdRef.current;
 
                 setState((prev) => {
                   const messages = [...prev.messages];
-                  const lastMsg = messages[messages.length - 1];
+                  const last = messages[messages.length - 1];
 
-                  if (lastMsg && lastMsg.role === "assistant") {
-                    messages[messages.length - 1] = {
+                  if (last?.role === "assistant") {
+                    messages[messages.length - 1] = { ...last, content };
+                  } else {
+                    messages.push({
+                      id: assistantId,
                       role: "assistant",
                       content,
-                    };
-                  } else {
-                    messages.push({ role: "assistant", content });
+                      created_at: new Date().toISOString(),
+                    });
                   }
 
                   return { ...prev, messages, isStreaming: false };
@@ -194,6 +243,9 @@ export function useChat(options: UseChatOptions = {}) {
 
       closeRef.current = close;
     },
+    // Intentionally omits callback options — they are captured by closure and
+    // are stable in practice (toast / router.replace calls).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [options.model, options.title],
   );
 
@@ -201,11 +253,7 @@ export function useChat(options: UseChatOptions = {}) {
     if (closeRef.current) {
       closeRef.current();
       closeRef.current = null;
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        isStreaming: false,
-      }));
+      setState((prev) => ({ ...prev, isLoading: false, isStreaming: false }));
     }
   }, []);
 
@@ -215,13 +263,40 @@ export function useChat(options: UseChatOptions = {}) {
       closeRef.current = null;
     }
     assistantBufRef.current = "";
+    conversationIdRef.current = null;
     setState(initialState);
   }, []);
+
+  /**
+   * Load an existing conversation into the hook so that the next `send` call
+   * continues it rather than creating a new one. Typically called when the
+   * user navigates to `/ai/chats/[id]` from the sidebar.
+   */
+  const enterConversation = useCallback(
+    (id: string, messages: ConversationMessage[] = []) => {
+      if (closeRef.current) {
+        closeRef.current();
+        closeRef.current = null;
+      }
+      assistantBufRef.current = "";
+      conversationIdRef.current = id;
+      setState({
+        conversationId: id,
+        messages,
+        isLoading: false,
+        isStreaming: false,
+        isSaved: true,
+        error: null,
+      });
+    },
+    [],
+  );
 
   return {
     ...state,
     send,
     stop,
     reset,
+    enterConversation,
   };
 }

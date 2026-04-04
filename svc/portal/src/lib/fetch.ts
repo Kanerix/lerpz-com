@@ -1,6 +1,9 @@
 "use client";
 
 import { getAccessToken } from "@/lib/msal-auth";
+import { env } from "./env";
+
+const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 export async function authenticatedFetch(
   url: string,
@@ -13,7 +16,9 @@ export async function authenticatedFetch(
     Authorization: `Bearer ${accessToken}`,
   };
 
-  const response = await fetch(url, {
+  const fullUrl = `${API_BASE_URL}${url}`;
+
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
   });

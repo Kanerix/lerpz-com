@@ -28,6 +28,7 @@ interface AiContextValue {
   isChatSaved: boolean;
   stopChat: () => void;
   resetChat: () => void;
+  enterConversation: (id: string, messages?: ChatMessage[]) => void;
 
   // Image
   generatedImage: string | null;
@@ -113,6 +114,7 @@ export default function Layout({ children }: LayoutProps) {
       isChatSaved: chat.isSaved,
       stopChat: chat.stop,
       resetChat: chat.reset,
+      enterConversation: chat.enterConversation,
 
       generatedImage: image.image,
       isImageLoading: image.isLoading,
@@ -130,6 +132,7 @@ export default function Layout({ children }: LayoutProps) {
       chat.isSaved,
       chat.stop,
       chat.reset,
+      chat.enterConversation,
       image.image,
       image.isLoading,
       image.isDone,
