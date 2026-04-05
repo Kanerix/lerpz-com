@@ -40,12 +40,12 @@ export default function ChatView({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               className={cn(
-                "flex gap-3",
+                "flex items-end gap-3",
                 message.role === "user" ? "justify-end" : "justify-start",
               )}
             >
               {message.role === "assistant" && (
-                <Avatar size="sm" className="mt-1 shrink-0">
+                <Avatar size="sm" className="shrink-0">
                   <AvatarFallback>
                     <MdSmartToy className="size-3.5" />
                   </AvatarFallback>
@@ -69,7 +69,7 @@ export default function ChatView({
               </div>
 
               {message.role === "user" && (
-                <Avatar size="sm" className="mt-1 shrink-0">
+                <Avatar size="sm" className="shrink-0">
                   <AvatarFallback>
                     <MdPerson className="size-3.5" />
                   </AvatarFallback>
@@ -85,7 +85,7 @@ export default function ChatView({
             animate={{ opacity: 1, y: 0 }}
             className="flex gap-3 justify-start"
           >
-            <Avatar size="sm" className="mt-1 shrink-0">
+            <Avatar size="sm" className="shrink-0">
               <AvatarFallback>
                 <MdSmartToy className="size-3.5" />
               </AvatarFallback>
