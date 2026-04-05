@@ -66,6 +66,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 
+    sqlx::migrate!("../../migrations")
+        .run(&database)
+        .await
+        .unwrap_or_else(|err| panic!("can't run database migrations: {err}"));
+
     let redis_manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
         .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
     let redis = bb8::Pool::builder()
