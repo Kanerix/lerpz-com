@@ -5,23 +5,20 @@ use std::sync::Arc;
 use axum::extract::FromRef;
 use lerpz_axum::middleware::azure::AzureConfig;
 
-use crate::agent::Agent;
+use crate::factory::AgentFactory;
 
-/// Shared application state injected into every axum handler via [`State`].
-///
-/// Wrapping the agent in an [`Arc`] allows it to be cheaply cloned for each
-/// request without duplicating the underlying model configuration.
+/// Shared application that can by injected into axum handlers via [`State`].
 #[derive(Clone)]
 pub struct AppState {
     pub azure_config: AzureConfig,
-    pub agent: Arc<Agent>,
+    pub factory: Arc<AgentFactory>,
 }
 
 impl AppState {
-    pub fn new(azure_config: AzureConfig, agent: Agent) -> Self {
+    pub fn new(azure_config: AzureConfig, factory: AgentFactory) -> Self {
         Self {
             azure_config,
-            agent: Arc::new(agent),
+            factory: Arc::new(factory),
         }
     }
 }
@@ -32,8 +29,8 @@ impl FromRef<AppState> for AzureConfig {
     }
 }
 
-impl FromRef<AppState> for Arc<Agent> {
+impl FromRef<AppState> for Arc<AgentFactory> {
     fn from_ref(state: &AppState) -> Self {
-        state.agent.clone()
+        state.factory.clone()
     }
 }

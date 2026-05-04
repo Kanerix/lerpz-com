@@ -25,8 +25,6 @@ pub(crate) const AGENT_TAG: &str = "agent";
 )]
 pub(crate) struct ApiDoc;
 
-/// Injects the Microsoft Entra ID OAuth2 authorization-code security scheme
-/// into the generated OpenAPI document and marks every operation as requiring it.
 struct EntraAuth;
 
 impl Modify for EntraAuth {

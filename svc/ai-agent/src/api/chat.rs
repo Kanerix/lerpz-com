@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use axum::http::HeaderMap;
 use axum::{Json, extract::State};
 use http::StatusCode;
 use lerpz_axum::error::{HandlerError, HandlerErrorSchema, HandlerResult};
@@ -10,7 +11,7 @@ use rig::completion::Prompt;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::agent::Agent;
+use crate::factory::AgentFactory;
 use crate::oapi::AGENT_TAG;
 use crate::state::AppState;
 
@@ -54,8 +55,9 @@ pub struct ChatResponse {
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
-    State(agent): State<Arc<Agent>>,
+    _: AzureAccessToken,
+    headers: HeaderMap,
+    State(factory): State<Arc<AgentFactory>>,
     Json(payload): Json<ChatRequest>,
 ) -> HandlerResult<Json<ChatResponse>> {
     if payload.message.is_empty() {
@@ -65,6 +67,15 @@ pub async fn handler(
             "Please provide a message to send to the AI agent",
         ));
     }
+
+    let bearer = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .unwrap_or_default()
+        .to_owned();
+
+    let agent = factory.build(bearer)?;
 
     let response = agent.prompt(payload.message.as_str()).await?;
 

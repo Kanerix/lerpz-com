@@ -1,25 +1,26 @@
 use crate::config::CONFIG;
+use crate::factory::AgentFactory;
 use crate::oapi::ApiDoc;
 use crate::state::AppState;
 
 use axum::Json;
-use axum::response::{IntoResponse, Redirect};
+use axum::response::{Html, IntoResponse, Redirect};
 use axum::routing::get;
 use http::Method;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
+use scalar_api_reference::scalar_html;
+use serde_json::json;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
-use utoipa_scalar::{Scalar, Servable};
 
-mod agent;
 mod api;
 mod config;
 mod oapi;
-mod portkey;
+mod factory;
 mod state;
 mod tools;
 
@@ -48,8 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let agent = agent::build_agent().await?;
-    let state = AppState::new(azure_config, agent);
+    let factory = AgentFactory::new().await?;
+    let state = AppState::new(azure_config, factory);
 
     let cors = CorsLayer::new()
         .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())
@@ -63,14 +64,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .fallback(redirect)
         .split_for_parts();
 
-    let scalar_html = include_str!("../scalar.html")
-        .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
-        .replace("$scope", &CONFIG.ENTRA_ID_SCOPE);
+    let scalar_config = json!({
+        "spec": {
+            "url": "/api/openapi.json"
+        },
+        "authentication": {
+            "preferredSecurityScheme": "oauth2",
+            "securitySchemes": {
+                "oauth2": {
+                    "flows": {
+                        "authorizationCode": {
+                            "x-scalar-client-id": CONFIG.ENTRA_ID_CLIENT_ID,
+                            "x-usePkce": "SHA-256",
+                            "selectedScopes": [CONFIG.ENTRA_ID_SCOPE]
+                        }
+                    }
+                }
+            }
+        }
+    });
 
-    let openapi_json = api.clone();
+    let html = scalar_html(&scalar_config, None);
+
     let app = router
-        .route("/api/openapi.json", get(|| async { Json(openapi_json) }))
-        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html))
+        .route("/api/openapi.json", get(|| async { Json(api) }))
+        .route("/scalar", get(move || async move { Html(html) }))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;

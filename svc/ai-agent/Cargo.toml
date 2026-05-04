@@ -8,6 +8,7 @@ authors.workspace = true
 
 [dependencies]
 # Internal
+lerpz-agent = { workspace = true, features = ["portkey"] }
 lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
 lerpz-utils = { workspace = true }
 # AI & async
@@ -20,10 +21,10 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 qdrant-client = { workspace = true }
 # Axum, Tokio and Tower
 axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
+scalar_api_reference = { workspace = true }
 tower-http = { workspace = true, features = ["cors", "trace"] }
 utoipa = { workspace = true, features = ["macros"] }
 utoipa-axum = { workspace = true }
-utoipa-scalar = { workspace = true, features = ["axum"] }
 # Serde
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -32,6 +33,7 @@ schemars = { workspace = true }
 anyhow = { workspace = true }
 dotenvy = { workspace = true }
 http = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }

@@ -78,8 +78,7 @@ where
         let req = VectorSearchRequest::<Filter<Value>>::builder()
             .query(args.query)
             .samples(top_k as u64)
-            .build()
-            .map_err(|e| ToolError::SearchFailed(e.to_string()))?;
+            .build();
 
         let hits = VectorStoreIndexDyn::top_n(&self.0, req)
             .await
