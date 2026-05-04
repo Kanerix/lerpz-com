@@ -36,7 +36,8 @@ tower-http = { workspace = true, features = ["cors", "trace"] }
 async-stream = { workspace = true }
 utoipa = { workspace = true, features = ["macros", "chrono", "uuid"] }
 utoipa-axum  = { workspace = true }
-utoipa-scalar = { workspace = true, features = ["axum"] }
+scalar_api_reference = { workspace = true }
+serde_json = { workspace = true }
 # Tracing
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }

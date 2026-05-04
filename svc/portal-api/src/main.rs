@@ -7,19 +7,20 @@ use std::time::Duration;
 
 use async_openai::Client;
 use axum::http::Method;
-use axum::response::{IntoResponse, Redirect};
+use axum::response::{Html, IntoResponse, Redirect};
 use axum::{Json, routing::get};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
+use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
+use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
-use utoipa_scalar::{Scalar, Servable};
 
 mod api;
 mod config;
@@ -64,19 +65,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .acquire_timeout(Duration::from_secs(3))
         .connect(CONFIG.DATABASE_URL.expose_secret())
         .await
-        .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
+        .unwrap_or_else(|err| panic!("can'''t connect to database: {err}"));
 
     sqlx::migrate!("../../migrations")
         .run(&database)
         .await
-        .unwrap_or_else(|err| panic!("can't run database migrations: {err}"));
+        .unwrap_or_else(|err| panic!("can'''t run database migrations: {err}"));
 
     let redis_manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
-        .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
+        .unwrap_or_else(|err| panic!("can'''t connect to redis: {err}"));
     let redis = bb8::Pool::builder()
         .build(redis_manager)
         .await
-        .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
+        .unwrap_or_else(|err| panic!("can'''t create redis pool: {err}"));
 
     let state = AppState {
         azure_config,
@@ -97,14 +98,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .fallback(redirect)
         .split_for_parts();
 
-    let scalar_html = include_str!("../scalar.html")
-        .replace("$client_id", &CONFIG.ENTRA_ID_CLIENT_ID)
-        .replace("$scope", &CONFIG.ENTRA_ID_SCOPE);
+    let scalar_config = json!({
+        "spec": {
+            "url": "/api/openapi.json"
+        },
+        "authentication": {
+            "preferredSecurityScheme": "oauth2",
+            "securitySchemes": {
+                "oauth2": {
+                    "flows": {
+                        "authorizationCode": {
+                            "x-scalar-client-id": CONFIG.ENTRA_ID_CLIENT_ID,
+                            "x-usePkce": "SHA-256",
+                            "selectedScopes": [CONFIG.ENTRA_ID_SCOPE]
+                        }
+                    }
+                }
+            }
+        }
+    });
 
-    let openapi_json = api.clone();
+    let html = scalar_html(&scalar_config, None);
+
     let app = router
-        .route("/api/openapi.json", get(|| async { Json(openapi_json) }))
-        .merge(Scalar::with_url("/scalar", api).custom_html(scalar_html))
+        .route("/api/openapi.json", get(|| async { Json(api) }))
+        .route("/scalar", get(move || async move { Html(html) }))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
