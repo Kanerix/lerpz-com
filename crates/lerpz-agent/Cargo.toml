@@ -1,0 +1,26 @@
+[package]
+name = "lerpz-agent"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+# AI
+rig-core = { workspace = true }
+rig-qdrant = { workspace = true }
+qdrant-client = { workspace = true }
+# HTTP & secrets
+reqwest = { workspace = true, features = ["json"] }
+secrecy = { workspace = true }
+http = { workspace = true }
+# Serde
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+# Error handling & utils
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+portkey = []
