@@ -104,53 +104,10 @@ services:
     networks:
       - lerpz-network
 
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    restart: on-failure
-    hostname: n8n
-    domainname: n8n.lerpz.local
-    environment:
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres.lerpz.local
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=n8n
-      - DB_POSTGRESDB_USER=lerpz
-      - DB_POSTGRESDB_PASSWORD=Password123
-      - N8N_HOST=n8n.lerpz.local
-      - N8N_PROTOCOL=https
-      - WEBHOOK_URL=https://n8n.lerpz.local/
-      - GENERIC_TIMEZONE=UTC
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.n8n-http.rule=Host(`n8n.lerpz.local`)"
-      - "traefik.http.routers.n8n-http.entrypoints=web"
-      - "traefik.http.routers.n8n-https.rule=Host(`n8n.lerpz.local`)"
-      - "traefik.http.routers.n8n-https.entrypoints=websecure"
-      - "traefik.http.routers.n8n-https.tls=true"
-      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
-    expose:
-      - "5678"
-    ports:
-      - "5678:5678"
-    volumes:
-      - n8n_data:/home/node/.n8n
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      lerpz-network:
-        aliases:
-          - n8n.lerpz.local
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   dagster-webserver:
     container_name: dagster-webserver
     restart: on-failure
+    profiles: ["dagster", "full"]
     hostname: dagster-webserver
     domainname: dagster.lerpz.local
     build:
@@ -188,7 +145,11 @@ services:
         aliases:
           - dagster.lerpz.local
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/')\" || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'python3 -c "import urllib.request; urllib.request.urlopen(''http://localhost:3000/'')" || exit 1',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -196,6 +157,7 @@ services:
   dagster-daemon:
     container_name: dagster-daemon
     restart: on-failure
+    profiles: ["dagster", "full"]
     hostname: dagster-daemon
     build:
       context: .
@@ -341,7 +303,6 @@ volumes:
   postgres_data:
   dragonfly_data:
   qdrant_data:
-  n8n_data:
   dagster_storage:
 
 networks:
