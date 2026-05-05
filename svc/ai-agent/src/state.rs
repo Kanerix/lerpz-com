@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use axum::extract::FromRef;
 use lerpz_axum::middleware::azure::AzureConfig;
+use rig::agent::{Agent, AgentBuilder};
 
 use crate::factory::AgentFactory;
 
@@ -11,14 +12,14 @@ use crate::factory::AgentFactory;
 #[derive(Clone)]
 pub struct AppState {
     pub azure_config: AzureConfig,
-    pub factory: Arc<AgentFactory>,
+    pub agent_factory: Arc<AgentFactory>,
 }
 
 impl AppState {
-    pub fn new(azure_config: AzureConfig, factory: AgentFactory) -> Self {
+    pub fn new(azure_config: AzureConfig, agent_factory: AgentFactory) -> Self {
         Self {
             azure_config,
-            factory: Arc::new(factory),
+            agent_factory: Arc::new(agent_factory),
         }
     }
 }
@@ -31,6 +32,6 @@ impl FromRef<AppState> for AzureConfig {
 
 impl FromRef<AppState> for Arc<AgentFactory> {
     fn from_ref(state: &AppState) -> Self {
-        state.factory.clone()
+        state.agent_factory.clone()
     }
 }

@@ -30,42 +30,36 @@
 
 use std::sync::Arc;
 
-use http::HeaderMap;
 use rig::providers::openai;
 use secrecy::{ExposeSecret, SecretString};
 
+use http::HeaderMap;
+
 pub fn build_client(
-    api_base: &Arc<str>,
+    base_url: &str,
     api_key: &SecretString,
-    #[cfg(feature = "portkey")] provider: &Arc<str>,
-) -> crate::Result<openai::Client> {
+    provider: &str,
+) -> anyhow::Result<openai::Client> {
     let mut headers = HeaderMap::new();
 
-    #[cfg(feature = "portkey")]
-    {
-        headers.insert(
-            "x-portkey-api-key",
-            api_key.expose_secret().parse().map_err(|e| {
-                crate::Error::ClientBuild(format!("invalid x-portkey-api-key header value: {e}"))
-            })?,
-        );
+    headers.insert(
+        "x-portkey-api-key",
+        api_key
+            .expose_secret()
+            .parse()
+            .map_err(|e| anyhow::anyhow!(format!("invalid x-portkey-api-key header value: {e}")))?,
+    );
+    headers.insert(
+        "x-portkey-provider",
+        provider.parse().map_err(|e| {
+            anyhow::anyhow!(format!("invalid x-portkey-provider header value: {e}"))
+        })?,
+    );
 
-        headers.insert(
-            "x-portkey-provider",
-            provider.parse().map_err(|e| {
-                crate::Error::ClientBuild(format!("invalid x-portkey-provider header value: {e}"))
-            })?,
-        );
-    }
-
-    let client = openai::Client::builder()
+    openai::Client::builder()
         .api_key(api_key.expose_secret())
-        .base_url(api_base.as_ref())
+        .base_url(base_url)
         .http_headers(headers)
         .build()
-        .map_err(|e| {
-            crate::Error::ClientBuild(format!("failed to build Portkey/rig client: {e}"))
-        })?;
-
-    Ok(client)
+        .map_err(|e| anyhow::anyhow!(format!("failed to build Agent client: {e}")))
 }

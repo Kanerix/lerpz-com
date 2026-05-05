@@ -1,14 +1,12 @@
-use crate::config::CONFIG;
-use crate::factory::AgentFactory;
-use crate::oapi::ApiDoc;
-use crate::state::AppState;
-
 use axum::Json;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::routing::get;
 use http::Method;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
+use qdrant_client::Qdrant;
+use qdrant_client::qdrant::QueryPointsBuilder;
+use rig::client::EmbeddingsClient;
 use scalar_api_reference::scalar_html;
 use serde_json::json;
 use tower_http::cors::{Any, CorsLayer};
@@ -17,10 +15,17 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 
+use crate::client::build_client;
+use crate::config::CONFIG;
+use crate::factory::AgentFactory;
+use crate::oapi::ApiDoc;
+use crate::state::AppState;
+
 mod api;
+mod client;
 mod config;
-mod oapi;
 mod factory;
+mod oapi;
 mod state;
 mod tools;
 
@@ -49,8 +54,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let factory = AgentFactory::new().await?;
-    let state = AppState::new(azure_config, factory);
+    let agent_client = build_client(
+        &CONFIG.PORTKEY_BASE_URL,
+        &CONFIG.PORTKEY_API_KEY,
+        &CONFIG.PORTKEY_PROVIDER,
+    )?;
+
+    let default_model = CONFIG.DEFAULT_MODEL.as_ref();
+
+    let qdrant = Qdrant::from_url(&CONFIG.QDRANT_URL_GRPC)
+        .build()
+        .map_err(|e| anyhow::anyhow!("failed to build Qdrant client: {e}"))?;
+    let embedding_model = agent_client.embedding_model(&*CONFIG.DEFAULT_EMBEDDING_MODEL);
+    let query_params = QueryPointsBuilder::new(&*CONFIG.QDRANT_COLLECTION).build();
+
+    let http_client = reqwest::Client::new();
+
+    let agent_factory = AgentFactory::new(
+        agent_client,
+        default_model,
+        qdrant,
+        query_params,
+        embedding_model,
+        http_client,
+    );
+
+    let state = AppState::new(azure_config, agent_factory);
 
     let cors = CorsLayer::new()
         .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())

@@ -7,6 +7,7 @@ use axum::{Json, extract::State};
 use http::StatusCode;
 use lerpz_axum::error::{HandlerError, HandlerErrorSchema, HandlerResult};
 use lerpz_axum::middleware::azure::AzureAccessToken;
+use rig::agent::Agent;
 use rig::completion::Prompt;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -31,12 +32,12 @@ pub struct ChatResponse {
     tag = AGENT_TAG,
     summary = "Chat with the AI agent",
     description = "Send a plain-text message to the AI agent and receive a \
-        response. The agent will automatically retrieve relevant context from the \
-        knowledge base and invoke tools as needed.",
+        response. The agent will automatically retrieve relevant context from \
+        the knowledge base and invoke tools as needed.",
     request_body = ChatRequest,
     responses(
         (
-            status = 200,
+            status = OK,
             description = "Agent replied successfully",
             body = ChatResponse
         ),
@@ -47,7 +48,7 @@ pub struct ChatResponse {
             content_type = "application/problem+json"
         ),
         (
-            status = 500,
+            status = INTERNAL_SERVER_ERROR,
             description = "Internal server error",
             body = HandlerErrorSchema
         ),
@@ -57,7 +58,7 @@ pub struct ChatResponse {
 pub async fn handler(
     _: AzureAccessToken,
     headers: HeaderMap,
-    State(factory): State<Arc<AgentFactory>>,
+    State(agent_factory): State<Arc<AgentFactory>>,
     Json(payload): Json<ChatRequest>,
 ) -> HandlerResult<Json<ChatResponse>> {
     if payload.message.is_empty() {
@@ -75,9 +76,9 @@ pub async fn handler(
         .unwrap_or_default()
         .to_owned();
 
-    let agent = factory.build(bearer)?;
-
-    let response = agent.prompt(payload.message.as_str()).await?;
+    let agent = agent_factory.create(bearer);
+    let message = payload.message.as_str();
+    let response = agent.prompt(message).await?;
 
     Ok(Json(ChatResponse { response }))
 }

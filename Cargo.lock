@@ -38,7 +38,6 @@ dependencies = [
  "axum 0.8.9",
  "dotenvy",
  "http",
- "lerpz-agent",
  "lerpz-axum",
  "lerpz-utils",
  "qdrant-client",
@@ -1938,22 +1937,6 @@ name = "leb128fmt"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
-
-[[package]]
-name = "lerpz-agent"
-version = "0.1.0"
-dependencies = [
- "http",
- "qdrant-client",
- "reqwest 0.12.28",
- "rig-core",
- "rig-qdrant",
- "secrecy",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tracing",
-]
 
 [[package]]
 name = "lerpz-axum"

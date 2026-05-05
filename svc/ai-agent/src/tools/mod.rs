@@ -5,10 +5,10 @@
 //! correct [`Tool::call`] implementation.
 
 pub mod error;
-pub mod knowledge_base;
+pub mod knowledge;
 pub mod profile;
 
 pub use error::ToolError;
 
-pub use knowledge_base::SearchKnowledgeBase;
+pub use knowledge::SearchKnowledgeBase;
 pub use profile::GetUserProfile;

@@ -11,7 +11,6 @@ authors = ["Kasper Jønsson <kas@lerpz.com>"]
 
 [workspace.dependencies]
 # Internal
-lerpz-agent = { path = "crates/lerpz-agent" }
 lerpz-axum = { path = "crates/lerpz-axum" }
 lerpz-jwt = { path = "crates/lerpz-jwt" }
 lerpz-macros = { path = "crates/lerpz-macros" }
