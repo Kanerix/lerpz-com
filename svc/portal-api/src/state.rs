@@ -6,6 +6,8 @@ use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use secrecy::{ExposeSecret, SecretString};
 
+use crate::portkey::PortkeyConfig;
+
 pub(crate) type OpenAI = Arc<Client<PortkeyConfig>>;
 
 pub(crate) type DatabasePool = sqlx::PgPool;
@@ -18,57 +20,6 @@ pub(crate) struct AppState {
     pub openai: OpenAI,
     pub database: DatabasePool,
     pub redis: RedisPool,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct PortkeyConfig {
-    pub api_base: Arc<str>,
-    pub api_key: SecretString,
-    pub api_provider: Arc<str>,
-}
-
-impl Config for PortkeyConfig {
-    fn headers(&self) -> HeaderMap {
-        let mut headers = HeaderMap::new();
-
-        headers.insert(
-            "Content-Type",
-            "application/json"
-                .parse()
-                .expect("Invalid Content-Type header value for PortkeyConfig"),
-        );
-        headers.insert(
-            "x-portkey-api-key",
-            self.api_key
-                .expose_secret()
-                .parse()
-                .expect("Invalid x-portkey-api-key header value for PortkeyConfig"),
-        );
-        headers.insert(
-            "x-portkey-provider",
-            self.api_provider
-                .parse()
-                .expect("Invalid x-portkey-config header value for PortkeyConfig"),
-        );
-
-        headers
-    }
-
-    fn api_key(&self) -> &SecretString {
-        &self.api_key
-    }
-
-    fn api_base(&self) -> &str {
-        &self.api_base
-    }
-
-    fn url(&self, path: &str) -> String {
-        format!("{}{}", self.api_base, path)
-    }
-
-    fn query(&self) -> Vec<(&str, &str)> {
-        vec![]
-    }
 }
 
 impl FromRef<AppState> for AzureConfig {

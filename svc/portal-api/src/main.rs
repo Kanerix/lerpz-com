@@ -1,6 +1,7 @@
+use crate::config::CONFIG;
 use crate::oapi::ApiDoc;
+use crate::portkey::PortkeyConfig;
 use crate::state::AppState;
-use crate::{config::CONFIG, state::PortkeyConfig};
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -26,6 +27,7 @@ use utoipa_axum::router::OpenApiRouter;
 mod api;
 mod config;
 mod oapi;
+mod portkey;
 mod state;
 mod utils;
 
@@ -49,15 +51,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let azure_config = AzureConfig::new(
-        CONFIG.ENTRA_ID_TENANT_ID.clone(),
-        CONFIG.ENTRA_ID_CLIENT_ID.clone(),
+        CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
+        CONFIG.ENTRA_ID_CLIENT_ID.as_ref(),
     )
     .await?;
 
     let portkey_config = PortkeyConfig {
-        api_base: CONFIG.PORTKEY_BASE_URL.clone(),
+        api_base: CONFIG.PORTKEY_BASE_URL.to_string(),
         api_key: SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
-        api_provider: CONFIG.PORTKEY_PROVIDER.clone(),
+        api_provider: CONFIG.PORTKEY_PROVIDER.to_string(),
     };
     let openai = Arc::new(Client::with_config(portkey_config));
 

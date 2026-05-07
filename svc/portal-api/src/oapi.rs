@@ -39,9 +39,9 @@ struct EntraAuth;
 
 impl Modify for EntraAuth {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let tenant_id = &CONFIG.ENTRA_ID_TENANT_ID;
-        let client_id = &CONFIG.ENTRA_ID_CLIENT_ID;
-        let client_scope = &CONFIG.ENTRA_ID_SCOPE;
+        let tenant_id = CONFIG.ENTRA_ID_TENANT_ID.as_ref();
+        let client_id = CONFIG.ENTRA_ID_CLIENT_ID.as_ref();
+        let client_scope = CONFIG.ENTRA_ID_SCOPE.as_ref();
 
         let ms_url = "https://login.microsoftonline.com";
         let auth_url = format!("{ms_url}/{tenant_id}/oauth2/v2.0/authorize");
@@ -51,7 +51,7 @@ impl Modify for EntraAuth {
             AuthorizationCode::new(
                 auth_url,
                 token_url,
-                Scopes::from_iter([(client_scope.as_str(), "Default API access")]),
+                Scopes::from_iter([(client_scope, "Default API access")]),
             ),
         )]));
 
