@@ -44,127 +44,103 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+
 :root {
-  /* All light-mode surfaces use the Sand family (hue ~90) */
+    --background: oklch(0.97 0.016 90);
+    --foreground: oklch(0.26 0.075 255);
 
-  /* Background: lightest Sand */
-  --background: oklch(0.97 0.01 90);
-  --foreground: oklch(0.306 0.054 255.492);
+    --card: oklch(0.95 0.022 90);
+    --card-foreground: oklch(0.26 0.075 255);
 
-  /* Card: slightly warmer than background */
-  --card: oklch(0.955 0.015 90);
-  --card-foreground: oklch(0.306 0.054 255.492);
+    --popover: oklch(0.95 0.022 90);
+    --popover-foreground: oklch(0.26 0.075 255);
 
-  /* Popover: same as card */
-  --popover: oklch(0.955 0.015 90);
-  --popover-foreground: oklch(0.306 0.054 255.492);
+    --primary: oklch(0.5 0.22 261);
+    --primary-foreground: oklch(1 0 0);
 
-  /* Primary: Kobolt / Hvid */
-  --primary: oklch(0.556 0.177 261.237);
-  --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.905 0.038 90);
+    --secondary-foreground: oklch(0.42 0.04 82);
 
-  /* Secondary: Sand */
-  --secondary: oklch(0.916 0.022 90);
-  --secondary-foreground: oklch(0.459 0.019 82.747);
+    --muted: oklch(0.905 0.038 90);
+    --muted-foreground: oklch(0.44 0.035 82);
 
-  /* Muted: Sand, slightly muted text */
-  --muted: oklch(0.916 0.022 90);
-  --muted-foreground: oklch(0.459 0.019 82.747);
+    --accent: oklch(0.78 0.13 267);
+    --accent-foreground: oklch(0.2 0.07 255);
 
-  /* Accent: Kornblomstblå / Marineblå */
-  --accent: oklch(0.813 0.077 267.553);
-  --accent-foreground: oklch(0.306 0.054 255.492);
+    --destructive: oklch(0.62 0.24 27);
+    --destructive-foreground: oklch(1 0 0);
 
-  /* Destructive: Valmue / Hvid */
-  --destructive: oklch(0.688 0.201 27.158);
-  --destructive-foreground: oklch(1 0 0);
+    --border: oklch(0.862 0.03 90);
+    --input: oklch(0.862 0.03 90);
+    --border: oklch(0.845 0.042 90);
+    --input: oklch(0.845 0.042 90);
 
-  /* Border / Input: Sand-family border */
-  --border: oklch(0.88 0.025 90);
-  --input: oklch(0.88 0.025 90);
+    --ring: oklch(0.5 0.22 261);
 
-  /* Ring: Kobolt */
-  --ring: oklch(0.556 0.177 261.237);
+    --chart-1: oklch(0.5 0.22 261);
+    --chart-2: oklch(0.52 0.15 173);
+    --chart-3: oklch(0.62 0.24 27);
+    --chart-4: oklch(0.82 0.18 116);
+    --chart-5: oklch(0.48 0.18 334);
 
-  /* Charts: spread across brand colours */
-  --chart-1: oklch(0.556 0.177 261.237);
-  --chart-2: oklch(0.435 0.042 173.195);
-  --chart-3: oklch(0.688 0.201 27.158);
-  --chart-4: oklch(0.945 0.16 116.261);
-  --chart-5: oklch(0.302 0.038 334.186);
+    --radius: 0.625rem;
 
-  --radius: 0.625rem;
-
-  /* Sidebar: darker Sand-family surface */
-  --sidebar: oklch(0.94 0.018 90);
-  --sidebar-foreground: oklch(0.306 0.054 255.492);
-  --sidebar-primary: oklch(0.556 0.177 261.237);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.916 0.022 90);
-  --sidebar-accent-foreground: oklch(0.306 0.054 255.492);
-  --sidebar-border: oklch(0.88 0.025 90);
-  --sidebar-ring: oklch(0.556 0.177 261.237);
+    --sidebar: oklch(0.93 0.025 90);
+    --sidebar-foreground: oklch(0.26 0.075 255);
+    --sidebar-primary: oklch(0.5 0.22 261);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.905 0.038 90);
+    --sidebar-accent-foreground: oklch(0.26 0.075 255);
+    --sidebar-border: oklch(0.845 0.042 90);
+    --sidebar-ring: oklch(0.5 0.22 261);
 }
 
 .dark {
-  /* All dark-mode surfaces use the Marineblå family (hue ~255) */
+    --background: oklch(0.21 0.055 255.5);
+    --foreground: oklch(0.93 0.028 90);
 
-  /* Background: deepest Marineblå */
-  --background: oklch(0.25 0.045 255.5);
-  --foreground: oklch(0.916 0.022 90);
+    --card: oklch(0.26 0.065 255.5);
+    --card-foreground: oklch(0.93 0.028 90);
 
-  /* Card: slightly lifted from background */
-  --card: oklch(0.29 0.05 255.5);
-  --card-foreground: oklch(0.916 0.022 90);
+    --popover: oklch(0.26 0.065 255.5);
+    --popover-foreground: oklch(0.93 0.028 90);
 
-  /* Popover: same as card */
-  --popover: oklch(0.29 0.05 255.5);
-  --popover-foreground: oklch(0.916 0.022 90);
+    --primary: oklch(0.72 0.16 267);
+    --primary-foreground: oklch(0.18 0.05 255.5);
 
-  /* Primary: Kornblomstblå / Marineblå */
-  --primary: oklch(0.813 0.077 267.553);
-  --primary-foreground: oklch(0.25 0.045 255.5);
+    --secondary: oklch(0.32 0.075 255.5);
+    --secondary-foreground: oklch(0.93 0.028 90);
 
-  /* Secondary: mid-tone Marineblå */
-  --secondary: oklch(0.34 0.04 255.5);
-  --secondary-foreground: oklch(0.916 0.022 90);
+    --muted: oklch(0.32 0.075 255.5);
+    --muted-foreground: oklch(0.72 0.07 255.5);
 
-  /* Muted: mid-tone Marineblå, softer text */
-  --muted: oklch(0.34 0.04 255.5);
-  --muted-foreground: oklch(0.7 0.04 255.5);
+    --accent: oklch(0.32 0.075 255.5);
+    --accent-foreground: oklch(0.72 0.16 267);
 
-  /* Accent: Kornblomstblå / Marineblå */
-  --accent: oklch(0.34 0.04 255.5);
-  --accent-foreground: oklch(0.813 0.077 267.553);
+    --destructive: oklch(0.65 0.26 27);
+    --destructive-foreground: oklch(0.97 0.005 90);
 
-  /* Destructive: Bourgogne bg, Valmue text */
-  --destructive: oklch(0.708 0.261 26.35);
-  --destructive-foreground: oklch(0.688 0.201 27.158);
+    --border: oklch(0.38 0.075 255.5);
+    --input: oklch(0.38 0.075 255.5);
 
-  /* Border / Input: Marineblå-family border */
-  --border: oklch(0.38 0.035 255.5);
-  --input: oklch(0.38 0.035 255.5);
+    --ring: oklch(0.72 0.16 267);
 
-  /* Ring: Kornblomstblå */
-  --ring: oklch(0.813 0.077 267.553);
+    --chart-1: oklch(0.72 0.16 267);
+    --chart-2: oklch(0.9 0.19 116);
+    --chart-3: oklch(0.68 0.25 27);
+    --chart-4: oklch(0.58 0.15 173);
+    --chart-5: oklch(0.8 0.14 24);
 
-  /* Charts: brand colours adjusted for dark */
-  --chart-1: oklch(0.813 0.077 267.553);
-  --chart-2: oklch(0.945 0.16 116.261);
-  --chart-3: oklch(0.688 0.201 27.158);
-  --chart-4: oklch(0.435 0.042 173.195);
-  --chart-5: oklch(0.884 0.036 24.217);
-
-  /* Sidebar: darker Marineblå surface */
-  --sidebar: oklch(0.23 0.04 255.5);
-  --sidebar-foreground: oklch(0.916 0.022 90);
-  --sidebar-primary: oklch(0.813 0.077 267.553);
-  --sidebar-primary-foreground: oklch(0.25 0.045 255.5);
-  --sidebar-accent: oklch(0.34 0.04 255.5);
-  --sidebar-accent-foreground: oklch(0.916 0.022 90);
-  --sidebar-border: oklch(0.38 0.035 255.5);
-  --sidebar-ring: oklch(0.813 0.077 267.553);
+    --sidebar: oklch(0.19 0.05 255.5);
+    --sidebar-foreground: oklch(0.93 0.028 90);
+    --sidebar-primary: oklch(0.72 0.16 267);
+    --sidebar-primary-foreground: oklch(0.18 0.05 255.5);
+    --sidebar-accent: oklch(0.32 0.075 255.5);
+    --sidebar-accent-foreground: oklch(0.93 0.028 90);
+    --sidebar-border: oklch(0.38 0.075 255.5);
+    --sidebar-ring: oklch(0.72 0.16 267);
 }
+
 
 @layer base {
   * {
