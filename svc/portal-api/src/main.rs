@@ -13,7 +13,6 @@ use axum::{Json, routing::get};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
-use scalar_api_reference::axum::router as scalar_router;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
 use serde_json::json;
@@ -68,19 +67,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .acquire_timeout(Duration::from_secs(3))
         .connect(CONFIG.DATABASE_URL.expose_secret())
         .await
-        .unwrap_or_else(|err| panic!("can'''t connect to database: {err}"));
-
-    sqlx::migrate!("../../migrations")
-        .run(&database)
-        .await
-        .unwrap_or_else(|err| panic!("can'''t run database migrations: {err}"));
+        .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 
     let redis_manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
-        .unwrap_or_else(|err| panic!("can'''t connect to redis: {err}"));
+        .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
     let redis = bb8::Pool::builder()
         .build(redis_manager)
         .await
-        .unwrap_or_else(|err| panic!("can'''t create redis pool: {err}"));
+        .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
 
     let state = AppState {
         azure_config,
@@ -102,9 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .split_for_parts();
 
     let scalar_config = json!({
-        "spec": {
-            "url": "/api/openapi.json"
-        },
+        "url": "/api/openapi.json",
         "authentication": {
             "preferredSecurityScheme": "oauth2",
             "securitySchemes": {
@@ -125,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = router
         .route("/api/openapi.json", get(|| async { Json(api) }))
-        .merge(scalar_router("/scalar", &scalar_config))
+        .route("/scalar", get(move || async move { Html(html) }))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
@@ -139,6 +131,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Redirects to the Scalar API reference.
+///
+/// This is used as a fallback route to redirect to the Scalar API reference.
 #[axum::debug_handler]
 pub async fn redirect() -> impl IntoResponse {
     Redirect::to("/scalar")

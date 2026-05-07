@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use axum::Json;
+use axum::response::Html;
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
 use http::Method;
@@ -9,7 +10,7 @@ use lerpz_axum::shutdown_signal;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
 use rig::client::EmbeddingsClient;
-use scalar_api_reference::axum::router as scalar_router;
+use scalar_api_reference::scalar_html;
 
 use secrecy::ExposeSecret;
 use serde_json::json;
@@ -124,9 +125,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    let html = scalar_html(&scalar_config, None);
+
     let app = router
         .route("/api/openapi.json", get(|| async { Json(api) }))
-        .merge(scalar_router("/scalar", &scalar_config))
+        .route("/scalar", get(move || async move { Html(html) }))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
@@ -140,6 +143,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Redirects to the Scalar API reference.
+///
+/// This is used as a fallback route to redirect to the Scalar API reference.
 #[axum::debug_handler]
 pub async fn redirect() -> impl IntoResponse {
     Redirect::to("/scalar")
