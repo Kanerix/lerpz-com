@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use axum::http::HeaderMap;
+use axum::response::Sse;
 use axum::{Json, extract::State};
 use http::StatusCode;
 use lerpz_axum::error::{HandlerError, HandlerErrorSchema, HandlerResult};
@@ -14,7 +15,8 @@ use utoipa::ToSchema;
 
 use crate::factory::AgentFactory;
 use crate::oapi::AGENT_TAG;
-use crate::state::AppState;
+use crate::state::{AppState, DatabasePool};
+use crate::stream::AgentStream;
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ChatRequest {
@@ -58,9 +60,10 @@ pub struct ChatResponse {
 pub async fn handler(
     _: AzureAccessToken,
     headers: HeaderMap,
+    State(db): State<DatabasePool>,
     State(agent_factory): State<Arc<AgentFactory>>,
     Json(payload): Json<ChatRequest>,
-) -> HandlerResult<Json<ChatResponse>> {
+) -> HandlerResult<Sse<AgentStream>> {
     if payload.message.is_empty() {
         return Err(HandlerError::new(
             StatusCode::BAD_REQUEST,
@@ -73,12 +76,13 @@ pub async fn handler(
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|s| s.strip_prefix("Bearer "))
-        .unwrap_or_default()
-        .to_owned();
+        .ok_or(HandlerError::unauthorized())?;
 
     let agent = agent_factory.create(bearer);
     let message = payload.message.as_str();
     let response = agent.prompt(message).await?;
 
-    Ok(Json(ChatResponse { response }))
+    let agent_stream = AgentStream::new(db);
+
+    Ok(Sse::new(agent_stream))
 }

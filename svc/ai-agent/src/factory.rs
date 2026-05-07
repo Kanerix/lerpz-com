@@ -55,7 +55,7 @@ impl AgentFactory {
     ///
     /// `token` is the caller's Bearer access token. It is forwarded to the
     /// [`GetUserProfile`] tool and **never** sent to the language model.
-    pub fn create(&self, token: impl Into<String>) -> Agent<ResponsesCompletionModel> {
+    pub fn create(&self, token: &str) -> Agent<ResponsesCompletionModel> {
         let store = QdrantVectorStore::new(
             self.qdrant.clone(),
             self.embedding_model.clone(),

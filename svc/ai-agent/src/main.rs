@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use axum::Json;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::routing::get;
@@ -9,7 +11,9 @@ use qdrant_client::qdrant::QueryPointsBuilder;
 use rig::client::EmbeddingsClient;
 use scalar_api_reference::axum::router as scalar_router;
 use scalar_api_reference::scalar_html;
+use secrecy::ExposeSecret;
 use serde_json::json;
+use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -28,6 +32,7 @@ mod config;
 mod factory;
 mod oapi;
 mod state;
+mod stream;
 mod tools;
 
 #[tokio::main]
@@ -50,8 +55,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let azure_config = AzureConfig::new(
-        CONFIG.ENTRA_ID_TENANT_ID.clone(),
-        CONFIG.ENTRA_ID_CLIENT_ID.clone(),
+        CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
+        CONFIG.ENTRA_ID_CLIENT_ID.as_ref(),
     )
     .await?;
 
@@ -80,7 +85,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         http_client,
     );
 
-    let state = AppState::new(azure_config, agent_factory);
+    let database = PgPoolOptions::new()
+        .max_connections(5)
+        .acquire_timeout(Duration::from_secs(3))
+        .connect(CONFIG.DATABASE_URL.expose_secret())
+        .await
+        .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
+
+    let state = AppState::new(azure_config, agent_factory, database);
 
     let cors = CorsLayer::new()
         .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())

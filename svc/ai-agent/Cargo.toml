@@ -12,18 +12,28 @@ lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
 lerpz-utils = { workspace = true }
 # AI & async
 rig-core = { workspace = true }
-rig-qdrant = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tokio-stream = { workspace = true }
 # Database
 qdrant-client = { workspace = true }
+rig-qdrant = { workspace = true }
+sqlx = { workspace = true, features = [
+    "chrono",
+    "macros",
+    "migrate",
+    "postgres",
+    "runtime-tokio-native-tls",
+    "uuid",
+] }
 # Axum, Tokio and Tower
 axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
 scalar_api_reference = { workspace = true, features = ["axum"] }
 tower-http = { workspace = true, features = ["cors", "trace"] }
 utoipa = { workspace = true, features = ["macros"] }
 utoipa-axum = { workspace = true }
+# Tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 # Serde
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -36,6 +46,7 @@ reqwest = { workspace = true, features = ["json"] }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
+uuid = { workspace = true }
 
 [lints]
 workspace = true

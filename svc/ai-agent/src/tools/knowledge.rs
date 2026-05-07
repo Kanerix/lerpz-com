@@ -46,8 +46,8 @@ where
         ToolDefinition {
             name: Self::NAME.to_string(),
             description: "Search the knowledge base for documents relevant to the given query. \
-                          Always call this tool before answering factual questions so that \
-                          answers are grounded in retrieved sources."
+                Always call this tool before answering factual questions so that \
+                answers are grounded in retrieved sources."
                 .to_string(),
             parameters: serde_json::json!({
                 "type": "object",

@@ -8,18 +8,25 @@ use rig::agent::{Agent, AgentBuilder};
 
 use crate::factory::AgentFactory;
 
-/// Shared application that can by injected into axum handlers via [`State`].
+pub type DatabasePool = sqlx::PgPool;
+
 #[derive(Clone)]
 pub struct AppState {
     pub azure_config: AzureConfig,
     pub agent_factory: Arc<AgentFactory>,
+    pub database: DatabasePool,
 }
 
 impl AppState {
-    pub fn new(azure_config: AzureConfig, agent_factory: AgentFactory) -> Self {
+    pub fn new(
+        azure_config: AzureConfig,
+        agent_factory: AgentFactory,
+        database: sqlx::PgPool,
+    ) -> Self {
         Self {
             azure_config,
             agent_factory: Arc::new(agent_factory),
+            database,
         }
     }
 }
@@ -33,5 +40,11 @@ impl FromRef<AppState> for AzureConfig {
 impl FromRef<AppState> for Arc<AgentFactory> {
     fn from_ref(state: &AppState) -> Self {
         state.agent_factory.clone()
+    }
+}
+
+impl FromRef<AppState> for DatabasePool {
+    fn from_ref(state: &AppState) -> Self {
+        state.database.clone()
     }
 }
