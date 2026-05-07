@@ -20,5 +20,10 @@ next-env.d.ts
 # Gitkeep
 !**/.gitkeep
 
+# Python3
+**/.venv/
+**/__pycache__/
+/ruff_cache/
+
 # Junk
 .DS_Store
