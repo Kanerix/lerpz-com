@@ -1,4 +1,4 @@
-# Database
+# Database (OUTDATED)
 
 This document describes the layout of the database.
 
