@@ -1,9 +1,10 @@
-use criterion::{Criterion, criterion_group, criterion_main};
 use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
 
 use lerpz_pwd::validate_pwd;
 
-fn criterion_benchmark(c: &mut Criterion) {
+fn bench_validate_pwd(c: &mut Criterion) {
     c.bench_function("validate_pwd", |b| {
         b.iter(|| {
             validate_pwd(
@@ -15,5 +16,5 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, bench_validate_pwd);
 criterion_main!(benches);

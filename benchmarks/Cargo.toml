@@ -6,10 +6,19 @@ publish = false
 
 [dependencies]
 lerpz-utils = { workspace = true, features = ["upn"] }
+lerpz-pwd = { workspace = true }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = { workspace = true, features = ["html_reports"] }
 
 [[bench]]
 name = "upn"
+harness = false
+
+[[bench]]
+name = "hash_pwd"
+harness = false
+
+[[bench]]
+name = "validate_pwd"
 harness = false
