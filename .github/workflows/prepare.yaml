@@ -1,0 +1,55 @@
+name: "Prepare the pipeline"
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  # -----------------------------------------------------------------------
+  # Detect which services have changed and produce a JSON matrix so that
+  # the deploy workflow only builds what actually changed.
+  # -----------------------------------------------------------------------
+  detect-changes:
+    name: "Detect changed services"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+      any-changed: ${{ steps.build-matrix.outputs.any-changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths per service
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            portal:
+              - 'svc/portal/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'tsconfig.json'
+            portal-api:
+              - 'svc/portal-api/**'
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+            ai-agent:
+              - 'svc/ai-agent/**'
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+
+      - name: Print changed services
+        run: |
+          echo "## Changed Services" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| portal | ${{ steps.filter.outputs.portal }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| portal-api | ${{ steps.filter.outputs.portal-api }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ai-agent | ${{ steps.filter.outputs.ai-agent }} |" >> $GITHUB_STEP_SUMMARY
