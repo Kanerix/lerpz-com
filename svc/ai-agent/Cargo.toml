@@ -20,7 +20,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 qdrant-client = { workspace = true }
 # Axum, Tokio and Tower
 axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
-scalar_api_reference = { workspace = true }
+scalar_api_reference = { workspace = true, features = ["axum"] }
 tower-http = { workspace = true, features = ["cors", "trace"] }
 utoipa = { workspace = true, features = ["macros"] }
 utoipa-axum = { workspace = true }

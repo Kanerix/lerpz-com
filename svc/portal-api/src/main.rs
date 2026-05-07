@@ -12,6 +12,7 @@ use axum::{Json, routing::get};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
+use scalar_api_reference::axum::router as scalar_router;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
 use serde_json::json;
@@ -122,7 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = router
         .route("/api/openapi.json", get(|| async { Json(api) }))
-        .route("/scalar", get(move || async move { Html(html) }))
+        .merge(scalar_router("/scalar", &scalar_config))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
