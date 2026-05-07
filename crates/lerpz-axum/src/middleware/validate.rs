@@ -8,7 +8,7 @@ use axum::{
 use serde::{Serialize, de::DeserializeOwned};
 use validator::{Validate, ValidationErrors, ValidationErrorsKind};
 
-use crate::error::{HandlerError, HandlerResult};
+use crate::problem::{HandlerResult, Problem};
 
 /// Validator that validates the inner value.
 ///
@@ -58,7 +58,7 @@ where
     S: Send + Sync,
     T: DeserializeOwned + Validate,
 {
-    type Rejection = HandlerError<ErrorResponse>;
+    type Rejection = Problem<ErrorResponse>;
 
     async fn from_request(r: Request, s: &S) -> Result<Self, Self::Rejection> {
         let json = Json::<T>::from_request(r, s).await.map_err(unparseable)?;
@@ -72,7 +72,7 @@ where
     S: Send + Sync,
     T: DeserializeOwned + Validate,
 {
-    type Rejection = HandlerError<ErrorResponse>;
+    type Rejection = Problem<ErrorResponse>;
 
     async fn from_request(r: Request, s: &S) -> Result<Self, Self::Rejection> {
         let form = Form::<T>::from_request(r, s).await.map_err(unparseable)?;
@@ -85,7 +85,7 @@ where
 #[inline]
 fn validate<T: Validate>(data: T) -> HandlerResult<(), ErrorResponse> {
     data.validate().map_err(|err| {
-        HandlerError::new(
+        Problem::new(
             StatusCode::BAD_REQUEST,
             "Validation failed",
             "Couldn't validate request body.",
@@ -96,8 +96,8 @@ fn validate<T: Validate>(data: T) -> HandlerResult<(), ErrorResponse> {
 
 /// Returns a `HandlerError` for a unparseable requests.
 #[inline]
-fn unparseable<T: std::error::Error>(_: T) -> HandlerError<ErrorResponse> {
-    HandlerError::new(
+fn unparseable<T: std::error::Error>(_: T) -> Problem<ErrorResponse> {
+    Problem::new(
         StatusCode::BAD_REQUEST,
         "Unparseable request",
         "Couldn't parse request body.",

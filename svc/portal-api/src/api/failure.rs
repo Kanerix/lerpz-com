@@ -1,4 +1,4 @@
-use lerpz_axum::error::{HandlerErrorSchema, HandlerResult};
+use lerpz_axum::problem::{ProblemSchema, HandlerResult};
 
 use crate::oapi::HEALTH_TAG;
 
@@ -13,7 +13,7 @@ use crate::oapi::HEALTH_TAG;
         (
             status = INTERNAL_SERVER_ERROR,
             description = "Unexpected server error",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
     ),

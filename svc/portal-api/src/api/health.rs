@@ -1,7 +1,7 @@
 use axum::Json;
 use axum::extract::State;
 use bb8_redis::RedisConnectionManager;
-use lerpz_axum::error::{HandlerErrorSchema, HandlerResult};
+use lerpz_axum::problem::{ProblemSchema, HandlerResult};
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -32,13 +32,13 @@ pub struct HealthCheck {
         (
             status = UNAUTHORIZED,
             description = "Missing or invalid authentication token",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = INTERNAL_SERVER_ERROR,
             description = "Unexpected server error",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
     ),

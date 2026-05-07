@@ -9,7 +9,7 @@ use axum::{
     extract::State,
     response::{Sse, sse::Event},
 };
-use lerpz_axum::{error::{HandlerErrorSchema, HandlerResult}, middleware::azure::AzureAccessToken};
+use lerpz_axum::{problem::{ProblemSchema, HandlerResult}, middleware::azure::AzureAccessToken};
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
 
@@ -49,19 +49,19 @@ pub struct ImageRequest {
         (
             status = BAD_REQUEST,
             description = "Invalid request body",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = UNAUTHORIZED,
             description = "Missing or invalid authentication token",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = INTERNAL_SERVER_ERROR,
             description = "Unexpected server error",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
     ),

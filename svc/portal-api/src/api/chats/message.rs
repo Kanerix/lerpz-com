@@ -11,7 +11,7 @@ use axum::{
     response::{Sse, sse::Event},
 };
 use lerpz_axum::{
-    error::{HandlerError, HandlerErrorSchema, HandlerResult},
+    problem::{Problem, ProblemSchema, HandlerResult},
     middleware::azure::AzureAccessToken,
 };
 use serde::Deserialize;
@@ -63,25 +63,25 @@ pub struct MessageRequest {
         (
             status = BAD_REQUEST,
             description = "Invalid request body",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = UNAUTHORIZED,
             description = "Missing or invalid authentication token",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = NOT_FOUND,
             description = "Conversation not found or does not belong to the authenticated user",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = INTERNAL_SERVER_ERROR,
             description = "Unexpected server error",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
     ),
@@ -108,7 +108,7 @@ pub async fn handler(
     let conversation = match conversation {
         Some(c) => c,
         None => {
-            return Err(HandlerError::new(
+            return Err(Problem::new(
                 StatusCode::NOT_FOUND,
                 "Not Found",
                 "The requested conversation was not found.",

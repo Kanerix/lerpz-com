@@ -1,4 +1,4 @@
-pub mod error;
+pub mod problem;
 pub mod middleware;
 pub mod shutdown;
 

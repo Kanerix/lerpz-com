@@ -42,7 +42,7 @@ use axum::{
 use jsonwebtoken::{decode, decode_header};
 use serde::{Deserialize, Deserializer};
 
-use crate::error::HandlerError;
+use crate::problem::Problem;
 
 pub use config::*;
 pub use validation::*;
@@ -182,19 +182,19 @@ impl AzureAccessToken {
     /// Check if the token has scope.
     ///
     /// This will return [`HandlerError::unauthorized()`] if scope is not found.
-    pub fn require_scope(&self, scope: impl AsRef<str>) -> Result<(), HandlerError> {
+    pub fn require_scope(&self, scope: impl AsRef<str>) -> Result<(), Problem> {
         self.has_scope(scope)
             .then_some(())
-            .ok_or(HandlerError::unauthorized())
+            .ok_or(Problem::unauthorized())
     }
 
     /// Check if the token has any of scopes.
     ///
     /// This will return [`HandlerError::unauthorized()`] if all scopes are not found.
-    pub fn require_any_scope<T: AsRef<str>>(&self, scopes: &[T]) -> Result<(), HandlerError> {
+    pub fn require_any_scope<T: AsRef<str>>(&self, scopes: &[T]) -> Result<(), Problem> {
         self.has_any_scope(scopes)
             .then_some(())
-            .ok_or(HandlerError::unauthorized())
+            .ok_or(Problem::unauthorized())
     }
 
     /// Check if the token has role.
@@ -211,19 +211,19 @@ impl AzureAccessToken {
     /// Check if the token has role.
     ///
     /// This will return [`HandlerError::unauthorized()`] if role is not found.
-    pub fn require_role(&self, role: impl AsRef<str>) -> Result<(), HandlerError> {
+    pub fn require_role(&self, role: impl AsRef<str>) -> Result<(), Problem> {
         self.has_role(role)
             .then_some(())
-            .ok_or(HandlerError::unauthorized())
+            .ok_or(Problem::unauthorized())
     }
 
     /// Check if the token has any of roles.
     ///
     /// This will return [`HandlerError::unauthorized()`] if all roles are not found.
-    pub fn require_any_role<T: AsRef<str>>(&self, roles: &[T]) -> Result<(), HandlerError> {
+    pub fn require_any_role<T: AsRef<str>>(&self, roles: &[T]) -> Result<(), Problem> {
         self.has_any_role(roles)
             .then_some(())
-            .ok_or(HandlerError::unauthorized())
+            .ok_or(Problem::unauthorized())
     }
 }
 
@@ -232,7 +232,7 @@ where
     AzureConfig: FromRef<S>,
     S: Send + Sync,
 {
-    type Rejection = HandlerError;
+    type Rejection = Problem;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let token = parts
@@ -240,20 +240,20 @@ where
             .get("Authorization")
             .and_then(|h| h.to_str().ok())
             .and_then(|h| h.strip_prefix("Bearer "))
-            .ok_or_else(HandlerError::unauthorized)?;
+            .ok_or_else(Problem::unauthorized)?;
 
         let header = match decode_header(token) {
             Ok(header) => header,
             Err(err) => {
                 tracing::debug!("failed to decode JWT token header: {err}");
-                return Err(HandlerError::unauthorized());
+                return Err(Problem::unauthorized());
             }
         };
         let kid = match header.kid {
             Some(kid) => kid,
             None => {
                 tracing::debug!("JWT token did not provide a 'kid' in header");
-                return Err(HandlerError::unauthorized());
+                return Err(Problem::unauthorized());
             }
         };
 
@@ -262,11 +262,11 @@ where
             Ok(Some(key)) => key,
             Ok(None) => {
                 tracing::warn!("unknown key ID: {}", kid);
-                return Err(HandlerError::unauthorized());
+                return Err(Problem::unauthorized());
             }
             Err(err) => {
                 tracing::error!("failed to find JWK: {err}");
-                return Err(HandlerError::from(err));
+                return Err(Problem::from(err));
             }
         };
 
@@ -275,13 +275,13 @@ where
             Ok(token) => token,
             Err(err) => {
                 tracing::trace!("validation of JWT claims failed: {err}");
-                return Err(HandlerError::unauthorized());
+                return Err(Problem::unauthorized());
             }
         };
 
         if !config.validate_azure_claims(&token_data.claims) {
             tracing::trace!("validation of azure claims failed");
-            return Err(HandlerError::unauthorized());
+            return Err(Problem::unauthorized());
         }
 
         Ok(token_data.claims)

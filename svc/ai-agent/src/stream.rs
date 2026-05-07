@@ -1,17 +1,21 @@
 use std::{convert::Infallible, pin::Pin, task::Context};
 
 use axum::response::sse::Event;
-use lerpz_axum::error::HandlerError;
+use lerpz_axum::problem::Problem;
+use rig::tool::Tool;
 use tokio_stream::Stream;
 use uuid::Uuid;
 
-pub enum AgentEvent {
+pub enum AgentEvent<T>
+where
+    T: Tool,
+{
     /// The agent has been initialized.
     Init(Uuid),
     /// A message from the agent.
     Message(String),
     /// A tool call from the agent.
-    ToolCall(String),
+    ToolCall(T),
     /// A tool result from the agent.
     ToolResult(String),
     /// Conversation state has been saved.
@@ -20,12 +24,15 @@ pub enum AgentEvent {
     Error(String),
 }
 
-impl From<AgentEvent> for Event {
-    fn from(event: AgentEvent) -> Self {
+impl<T> From<AgentEvent<T>> for Event
+where
+    T: Tool,
+{
+    fn from(event: AgentEvent<T>) -> Self {
         match event {
             AgentEvent::Init(id) => Event::default().event("init").data(id.to_string()),
             AgentEvent::Message(text) => Event::default().event("message").data(text),
-            AgentEvent::ToolCall(name) => Event::default().event("tool_call").data(name),
+            AgentEvent::ToolCall(tool) => Event::default().event("tool_call").data(tool.name()),
             AgentEvent::ToolResult(result) => Event::default().event("tool_result").data(result),
             AgentEvent::Saved => Event::default().event("saved"),
             AgentEvent::Error(error) => Event::default().event("error").data(error),
@@ -42,7 +49,7 @@ impl AgentStream {
         Self { db }
     }
 
-    pub fn init(&self) -> AgentEvent {
+    pub fn init<T: Tool>(&self) -> AgentEvent<T> {
         AgentEvent::Init(Uuid::new_v4())
     }
 }

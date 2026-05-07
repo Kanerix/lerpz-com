@@ -33,7 +33,6 @@ generate_config!(
     ENV: Env = get_env_parse,
     ADDR: SocketAddr = get_env_parse,
     ALLOWED_ORIGINS: HeaderValue = get_env_parse,
-    DATABASE_URL: SecretString = get_env_from,
     ENTRA_ID_TENANT_ID: Arc<str> = get_env_from,
     ENTRA_ID_CLIENT_ID: Arc<str> = get_env_from,
     ENTRA_ID_SCOPE: Arc<str> = get_env_from,
@@ -42,6 +41,7 @@ generate_config!(
     PORTKEY_API_KEY: SecretString = get_env_from,
     DEFAULT_MODEL: Arc<str> = get_env_from,
     DEFAULT_EMBEDDING_MODEL: Arc<str> = get_env_from,
+    DATABASE_URL: SecretString = get_env_from,
     QDRANT_URL_GRPC: Arc<str> = get_env_from,
     QDRANT_COLLECTION: Arc<str> = get_env_from
 );

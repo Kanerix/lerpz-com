@@ -6,7 +6,7 @@ use axum::http::HeaderMap;
 use axum::response::Sse;
 use axum::{Json, extract::State};
 use http::StatusCode;
-use lerpz_axum::error::{HandlerError, HandlerErrorSchema, HandlerResult};
+use lerpz_axum::problem::{Problem, ProblemSchema, HandlerResult};
 use lerpz_axum::middleware::azure::AzureAccessToken;
 use rig::agent::Agent;
 use rig::completion::Prompt;
@@ -46,13 +46,13 @@ pub struct ChatResponse {
         (
             status = UNAUTHORIZED,
             description = "Missing or invalid authentication token",
-            body = HandlerErrorSchema,
+            body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = INTERNAL_SERVER_ERROR,
             description = "Internal server error",
-            body = HandlerErrorSchema
+            body = ProblemSchema
         ),
     )
 )]
@@ -65,7 +65,7 @@ pub async fn handler(
     Json(payload): Json<ChatRequest>,
 ) -> HandlerResult<Sse<AgentStream>> {
     if payload.message.is_empty() {
-        return Err(HandlerError::new(
+        return Err(Problem::new(
             StatusCode::BAD_REQUEST,
             "Message cannot be empty",
             "Please provide a message to send to the AI agent",
@@ -76,7 +76,7 @@ pub async fn handler(
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|s| s.strip_prefix("Bearer "))
-        .ok_or(HandlerError::unauthorized())?;
+        .ok_or(Problem::unauthorized())?;
 
     let agent = agent_factory.create(bearer);
     let message = payload.message.as_str();
