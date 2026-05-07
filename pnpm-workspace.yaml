@@ -1,6 +1,17 @@
 packages:
   - "packages/*"
-  - "svc/lerpz-ai"
   - "svc/portal"
 
+allowBuilds:
+  esbuild: true
+  sharp: true
+
 catalog:
+  # Core framework
+  next: "16.2.4"
+  react: "19.2.1"
+  react-dom: "19.2.1"
+
+  # Shared tooling
+  typescript: "5"
+  tailwindcss: "4"
