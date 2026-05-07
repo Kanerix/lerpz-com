@@ -1,10 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-EXTRA_DATABASES=(
-  "n8n"
-  "dagster"
-)
+EXTRA_DATABASES=()
 
 for db in "${EXTRA_DATABASES[@]}"; do
   echo "Creating database: $db"

@@ -1,4 +1,0 @@
-# Dagster workspace configuration.
-# Add code locations here as you build out pipelines and assets.
-# See: https://docs.dagster.io/concepts/code-locations/workspace-files
-load_from: []
