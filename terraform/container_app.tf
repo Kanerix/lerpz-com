@@ -1,28 +1,8 @@
-# Runtime Managed Identity
-#
-# A dedicated User-Assigned identity for the container app at runtime.
-# Kept separate from the deployer identity so runtime and deployment
-# concerns have distinct, minimal permission sets.
-
-resource "azurerm_user_assigned_identity" "runtime" {
-  name                = "lerpz-runtime"
-  resource_group_name = azurerm_resource_group.lerpz.name
-  location            = azurerm_resource_group.lerpz.location
-}
-
-resource "azurerm_role_assignment" "acr_pull" {
-  scope                = azurerm_container_registry.lerpz.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.runtime.principal_id
-}
-
-# Container App Environment
-
 resource "azurerm_container_app_environment" "lerpz" {
-  name                               = "lerpz-env"
+  name                               = local.container_env_name
   resource_group_name                = azurerm_resource_group.lerpz.name
   location                           = azurerm_resource_group.lerpz.location
-  infrastructure_resource_group_name = "lerpz-rg-infra"
+  infrastructure_resource_group_name = "lerpz-${var.environment}-rg-infra"
 
   workload_profile {
     name                  = "Consumption"
@@ -32,10 +12,8 @@ resource "azurerm_container_app_environment" "lerpz" {
   }
 }
 
-# Container App
-
 resource "azurerm_container_app" "lerpz_website" {
-  name                         = "lerpz-website"
+  name                         = local.container_app_name
   resource_group_name          = azurerm_resource_group.lerpz.name
   container_app_environment_id = azurerm_container_app_environment.lerpz.id
   revision_mode                = "Single"
@@ -46,7 +24,7 @@ resource "azurerm_container_app" "lerpz_website" {
   }
 
   registry {
-    server   = azurerm_container_registry.lerpz.login_server
+    server   = local.acr.login_server
     identity = azurerm_user_assigned_identity.runtime.id
   }
 
@@ -65,50 +43,67 @@ resource "azurerm_container_app" "lerpz_website" {
     max_replicas = 1
 
     container {
-      name   = "lerpz-website"
+      name   = local.container_app_name
       image  = var.container_image
       cpu    = 0.25
       memory = "0.5Gi"
     }
   }
-
-  # The role assignment and runtime identity are created before the container
-  # app (no dependency cycle), so no depends_on is needed.
 }
 
 # Custom domain — lerpz.com
 #
-# IMPORTANT — two-phase DNS setup:
+# IMPORTANT — three-phase setup (Azure requires the hostname to be registered
+# on the container app *before* a managed certificate can be issued):
 #
-#  Phase 1 (before managed certificate):
-#    After the first `terraform apply`, retrieve the environment's static IP
-#    from the `container_app_environment_static_ip` output and create an
-#    A record at your registrar:
+#  Phase 1 — DNS records:
+#    After the very first `terraform apply`, retrieve the environment's static
+#    IP from the `container_app_environment_static_ip` output and create:
 #
-#      lerpz.com  →  A  →  <static_ip>
+#      lerpz.com        A      <static_ip>
+#      asuid.lerpz.com  TXT    <domain_verification_id output>
 #
-#    Also add the TXT verification record shown in the Azure Portal / CLI for
-#    the custom domain (asuid.<hostname> TXT record) if required by Azure.
+#  Phase 2 — register the hostname (no cert yet):
+#    Once DNS has propagated, the `azurerm_container_app_custom_domain`
+#    resource below registers `lerpz.com` on the container app with
+#    certificate_binding_type = "Disabled".  Run `terraform apply`.
 #
-#  Phase 2 (certificate provisioning):
-#    Once the DNS A record has propagated, run `terraform apply` again.
-#    Azure will perform HTTP-01 validation and issue a free managed TLS cert.
-#    The `azurerm_container_app_custom_domain` resource will then bind it.
+#  Phase 3 — issue the managed certificate:
+#    With the hostname registered, Azure can now validate ownership via
+#    HTTP-01 and issue a free managed TLS certificate.  Update
+#    certificate_binding_type to "SniEnabled" and set
+#    container_app_environment_certificate_id, then run `terraform apply`
+#    again.
 
-resource "azurerm_container_app_environment_managed_certificate" "lerpz_com" {
-  name                         = "lerpz-com-cert"
-  container_app_environment_id = azurerm_container_app_environment.lerpz.id
-  subject_name                 = "lerpz.com"
-  domain_control_validation    = "HTTP"
+# Step 1: register the hostname on the container app.
+# Start with certificate_binding_type = "Disabled" (Phase 2).
+# Once the managed certificate is provisioned, change to "SniEnabled" and
+# set container_app_environment_certificate_id (Phase 3).
+resource "azurerm_container_app_custom_domain" "lerpz_com" {
+  name                     = local.domain
+  container_app_id         = azurerm_container_app.lerpz_website.id
+  certificate_binding_type = "Disabled"
 }
 
-resource "azurerm_container_app_custom_domain" "lerpz_com" {
-  name                     = "lerpz.com"
-  container_app_id         = azurerm_container_app.lerpz_website.id
-  certificate_binding_type = "SniEnabled"
+# Step 2: request the managed certificate.
+# This can only succeed after the hostname is registered above.
+resource "azurerm_container_app_environment_managed_certificate" "lerpz_com" {
+  name                         = replace(local.domain, ".", "-")
+  container_app_environment_id = azurerm_container_app_environment.lerpz.id
+  subject_name                 = local.domain
+  domain_control_validation    = "HTTP"
 
-  # The managed certificate ID is computed by Azure once it validates the
-  # domain — we cannot set it directly. We depend on the cert resource so
-  # Terraform waits for it to be provisioned before creating this binding.
-  depends_on = [azurerm_container_app_environment_managed_certificate.lerpz_com]
+  depends_on = [azurerm_container_app_custom_domain.lerpz_com]
+}
+
+resource "azurerm_user_assigned_identity" "runtime" {
+  name                = local.runtime_identity_name
+  resource_group_name = azurerm_resource_group.lerpz.name
+  location            = azurerm_resource_group.lerpz.location
+}
+
+resource "azurerm_role_assignment" "acr_pull" {
+  scope                = local.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.runtime.principal_id
 }

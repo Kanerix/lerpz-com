@@ -1,21 +1,20 @@
 # Azure Container Registry (ACR)
 #
-# ACR names must be globally unique, alphanumeric, 5–50 characters.
-# A random 6-character suffix is appended to "lerpz" to satisfy uniqueness.
-
-resource "random_string" "acr_suffix" {
-  length  = 6
-  upper   = false
-  special = false
-}
+# ACR is shared across environments — it is only *created* in the prod state
+# and referenced via a data source in the stag state.
+# The name (var.acr_name) must be globally unique across all of Azure.
 
 resource "azurerm_container_registry" "lerpz" {
-  name                = "lerpz${random_string.acr_suffix.result}"
+  count               = var.environment == "prod" ? 1 : 0
+  name                = var.acr_name
   resource_group_name = azurerm_resource_group.lerpz.name
   location            = azurerm_resource_group.lerpz.location
   sku                 = "Basic"
+  admin_enabled       = false
+}
 
-  # Admin credentials are disabled; the Container App pulls images via its
-  # SystemAssigned managed identity and an AcrPull role assignment instead.
-  admin_enabled = false
+data "azurerm_container_registry" "lerpz" {
+  count               = var.environment == "prod" ? 0 : 1
+  name                = var.acr_name
+  resource_group_name = "lerpz-rg-ext"
 }
