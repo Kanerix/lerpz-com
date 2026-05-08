@@ -19,12 +19,12 @@ authentication.
 - Add the following redirect URI:
 
 ```bash
-https://localhost:3000/api/auth/callback/microsoft-entra-id
+http://localhost:3000/api/auth/callback/microsoft-entra-id
 # or
 https://api.lerpz.local/api/auth/callback/microsoft-entra-id
 ```
 
-### 1.1. Generate TLS certificates (for traefik)
+#### 1.1. Generate TLS certificates (for traefik)
 
 Use mkcert to create local certificates:
 
@@ -32,7 +32,7 @@ Use mkcert to create local certificates:
 mkcert -cert-file certs/cert.pem -key-file certs/key.pem lerpz.local api.lerpz.local
 ```
 
-### 1.2. Update your hosts file (for traefik)
+#### 1.2. Update your hosts file (for traefik)
 
 Add these entries to `/etc/hosts`:
 
