@@ -41,7 +41,7 @@ impl Modify for EntraAuth {
             AuthorizationCode::new(
                 auth_url,
                 token_url,
-                Scopes::from_iter([(client_scope.as_ref(), "Default API access")]),
+                Scopes::from_iter([(client_scope, "Default API access")])
             ),
         )]));
 

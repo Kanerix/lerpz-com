@@ -7,7 +7,7 @@ pub fn with_instance_impl(_attr: TokenStream, item: TokenStream) -> TokenStream 
 
     if input.sig.asyncness.is_none() {
         return syn::Error::new_spanned(
-            &input.sig.fn_token,
+            input.sig.fn_token,
             "#[with_instance] only supports async handler functions",
         )
         .to_compile_error()
@@ -47,8 +47,8 @@ pub fn with_instance_impl(_attr: TokenStream, item: TokenStream) -> TokenStream 
     TokenStream::from(quote!(#input))
 }
 
-fn is_original_uri_type(ty: &Box<Type>) -> bool {
-    let Type::Path(TypePath { path, .. }) = ty.as_ref() else {
+fn is_original_uri_type(ty: &Type) -> bool {
+    let Type::Path(TypePath { path, .. }) = ty else {
         return false;
     };
     path.segments
@@ -57,10 +57,10 @@ fn is_original_uri_type(ty: &Box<Type>) -> bool {
         .unwrap_or(false)
 }
 
-fn extract_pat_ident(pat: &Box<Pat>) -> Option<syn::Ident> {
-    match pat.as_ref() {
+fn extract_pat_ident(pat: &Pat) -> Option<syn::Ident> {
+    match pat {
         Pat::Ident(PatIdent { ident, .. }) => Some(ident.clone()),
-        Pat::Type(PatType { pat, .. }) => extract_pat_ident(pat),
+        Pat::Type(PatType { pat, .. }) => extract_pat_ident(pat.as_ref()),
         _ => None,
     }
 }

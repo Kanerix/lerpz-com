@@ -107,7 +107,7 @@ pub async fn handler(
                 return Ok(Event::default()
                     .event("error")
                     .json_data(err.to_string())
-                    .unwrap());
+                    .expect("failed to serialize error event"));
             }
         };
 
@@ -116,13 +116,13 @@ pub async fn handler(
                 Event::default()
                     .event("partial_image")
                     .json_data(b64_json)
-                    .unwrap()
+                    .expect("failed to serialize partial_image event")
             }
             ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, .. }) => {
                 Event::default()
                     .event("completed_image")
                     .json_data(b64_json)
-                    .unwrap()
+                    .expect("failed to serialize completed_image event")
             }
         };
 

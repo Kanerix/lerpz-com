@@ -5,7 +5,7 @@ use super::{DEFAULT_SCHEME, error::Error};
 
 /// A regex that turns a password hash into its parts.
 static PWD_PARTS_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^#(?<scheme>\w+)#(?<hash>.+)$").unwrap());
+    LazyLock::new(|| Regex::new(r"^#(?<scheme>\w+)#(?<hash>.+)$").expect("invalid pwd parts regex"));
 
 /// All parts a password needs to be hashed.
 pub struct PwdParts {

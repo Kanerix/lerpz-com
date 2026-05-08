@@ -183,7 +183,7 @@ pub async fn fetch_jwks(http_client: &reqwest::Client, jwks_url: &str) -> Result
 }
 
 static CACHE_CONTROL_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?:^|,\s*)max-age=(\d+)").unwrap());
+    LazyLock::new(|| Regex::new(r"(?:^|,\s*)max-age=(\d+)").expect("invalid cache-control regex"));
 
 /// Read the Cache-Control header and return its value.
 ///
