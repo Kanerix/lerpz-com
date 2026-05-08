@@ -1,5 +1,5 @@
 use axum::Json;
-use lerpz_axum::problem::{ProblemSchema, HandlerResult};
+use lerpz_axum::problem::{HandlerResult, ProblemSchema};
 use serde::Serialize;
 use utoipa::ToSchema;
 

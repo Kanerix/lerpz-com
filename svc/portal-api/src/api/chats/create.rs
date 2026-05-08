@@ -9,8 +9,8 @@ use axum::{
     response::{Sse, sse::Event},
 };
 use lerpz_axum::{
-    problem::{ProblemSchema, HandlerResult},
     middleware::azure::AzureAccessToken,
+    problem::{HandlerResult, ProblemSchema},
 };
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};

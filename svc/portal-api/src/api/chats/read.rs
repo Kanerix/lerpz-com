@@ -5,8 +5,8 @@ use axum::{
 };
 use chrono::NaiveDateTime;
 use lerpz_axum::{
-    problem::{Problem, ProblemSchema, HandlerResult},
     middleware::azure::AzureAccessToken,
+    problem::{HandlerResult, Problem, ProblemSchema},
 };
 use serde::Serialize;
 use utoipa::ToSchema;

@@ -5,8 +5,8 @@
 //! ```rust
 //! use axum::extract::FromRef;
 //! use lerpz_axum::{
-//!     error::{HandlerResult, HandlerError},
-//!     middleware::azure::{AzureAccessToken, AzureConfig}
+//!     error::{HandlerError, HandlerResult},
+//!     middleware::azure::{AzureAccessToken, AzureConfig},
 //! };
 //!
 //! #[derive(Clone)]
@@ -20,9 +20,7 @@
 //!     }
 //! }
 //!
-//! async fn example_handler(
-//!   token: AzureAccessToken,
-//! ) -> HandlerResult<String> {
+//! async fn example_handler(token: AzureAccessToken) -> HandlerResult<String> {
 //!     if !token.has_scope("example") {
 //!         return Err(HandlerError::unauthorized());
 //!     }
@@ -62,13 +60,11 @@ mod validation;
 ///
 /// ```rust
 /// use lerpz_axum::{
-///     error::{HandlerResult, HandlerError},
-///     middleware::azure::{AzureAccessToken, AzureConfig}
+///     error::{HandlerError, HandlerResult},
+///     middleware::azure::{AzureAccessToken, AzureConfig},
 /// };
 ///
-/// async fn example_handler(
-///   token: AzureAccessToken,
-/// ) -> HandlerResult<String> {
+/// async fn example_handler(token: AzureAccessToken) -> HandlerResult<String> {
 ///     if !token.has_scope("example") {
 ///         return Err(HandlerError::unauthorized());
 ///     }

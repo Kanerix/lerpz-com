@@ -1,4 +1,4 @@
-use lerpz_axum::problem::{ProblemSchema, HandlerResult};
+use lerpz_axum::problem::{HandlerResult, ProblemSchema};
 
 use crate::oapi::GROUPS_TAG;
 

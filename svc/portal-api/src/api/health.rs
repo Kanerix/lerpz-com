@@ -1,7 +1,7 @@
 use axum::Json;
 use axum::extract::State;
 use bb8_redis::RedisConnectionManager;
-use lerpz_axum::problem::{ProblemSchema, HandlerResult};
+use lerpz_axum::problem::{HandlerResult, ProblemSchema};
 use serde::Serialize;
 use utoipa::ToSchema;
 

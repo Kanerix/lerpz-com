@@ -1,4 +1,4 @@
-use lerpz_axum::problem::{ProblemSchema, HandlerResult};
+use lerpz_axum::problem::{HandlerResult, ProblemSchema};
 
 use crate::oapi::ORGS_TAG;
 

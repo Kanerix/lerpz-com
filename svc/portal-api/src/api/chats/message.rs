@@ -11,8 +11,8 @@ use axum::{
     response::{Sse, sse::Event},
 };
 use lerpz_axum::{
-    problem::{Problem, ProblemSchema, HandlerResult},
     middleware::azure::AzureAccessToken,
+    problem::{HandlerResult, Problem, ProblemSchema},
 };
 use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};

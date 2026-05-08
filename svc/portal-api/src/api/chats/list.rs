@@ -1,8 +1,8 @@
 use axum::{Json, extract::State};
 use chrono::NaiveDateTime;
 use lerpz_axum::{
-    problem::{ProblemSchema, HandlerResult},
     middleware::azure::AzureAccessToken,
+    problem::{HandlerResult, ProblemSchema},
 };
 use serde::Serialize;
 use utoipa::ToSchema;
