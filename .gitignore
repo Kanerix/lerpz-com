@@ -19,6 +19,7 @@ next-env.d.ts
 
 # Gitkeep
 !**/.gitkeep
+!**/README.md
 
 # Python3
 **/.venv/
