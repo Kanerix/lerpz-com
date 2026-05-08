@@ -5,15 +5,15 @@ import { toast } from "sonner";
 import { useChatbox } from "@/components/chatbox/provider";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { setMode } = useChatbox();
+    const { setMode } = useChatbox();
 
-  useEffect(() => {
-    toast("Event has been created.");
-  }, []);
+    useEffect(() => {
+        toast("Event has been created.");
+    }, []);
 
-  useEffect(() => {
-    setMode("chat");
-  }, [setMode]);
+    useEffect(() => {
+        setMode("chat");
+    }, [setMode]);
 
-  return children;
+    return children;
 }

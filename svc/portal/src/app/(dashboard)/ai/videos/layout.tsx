@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { useChatbox } from "@/components/chatbox/provider";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { setMode } = useChatbox();
+    const { setMode } = useChatbox();
 
-  useEffect(() => {
-    setMode("video");
-  }, [setMode]);
+    useEffect(() => {
+        setMode("video");
+    }, [setMode]);
 
-  return children;
+    return children;
 }

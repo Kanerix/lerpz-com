@@ -1,24 +1,24 @@
 {
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "base-maia",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "",
-    "css": "../../packages/ui/src/styles/globals.css",
-    "baseColor": "neutral",
-    "cssVariables": true,
-    "prefix": ""
-  },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@lerpz/ui/lib/utils",
-    "ui": "@lerpz/ui/components",
-    "lib": "@lerpz/ui/lib",
-    "hooks": "@lerpz/ui/hooks"
-  },
-  "iconLibrary": "react-icons/md",
-  "menuColor": "default",
-  "menuAccent": "subtle",
-  "registries": {}
+    "$schema": "https://ui.shadcn.com/schema.json",
+    "style": "base-maia",
+    "rsc": true,
+    "tsx": true,
+    "tailwind": {
+        "config": "",
+        "css": "../../packages/ui/src/styles/globals.css",
+        "baseColor": "neutral",
+        "cssVariables": true,
+        "prefix": ""
+    },
+    "aliases": {
+        "components": "@/components",
+        "utils": "@lerpz/ui/lib/utils",
+        "ui": "@lerpz/ui/components",
+        "lib": "@lerpz/ui/lib",
+        "hooks": "@lerpz/ui/hooks"
+    },
+    "iconLibrary": "react-icons/md",
+    "menuColor": "default",
+    "menuAccent": "subtle",
+    "registries": {}
 }

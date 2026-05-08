@@ -6,7 +6,7 @@ import { env } from "./env";
 const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 export type ErrorType<TError> = TError & {
-  status: number;
+    status: number;
 };
 
 /**
@@ -21,44 +21,44 @@ export type ErrorType<TError> = TError & {
  *  - Throw a typed error on non-2xx responses that includes the HTTP status
  */
 export async function customFetch<TResponse>(
-  url: string,
-  options: RequestInit,
+    url: string,
+    options: RequestInit,
 ): Promise<TResponse> {
-  const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken();
 
-  const fullUrl = `${API_BASE_URL}${url}`;
+    const fullUrl = `${API_BASE_URL}${url}`;
 
-  const response = await fetch(fullUrl, {
-    ...options,
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...(options.headers as Record<string, string> | undefined),
-    },
-  });
+    const response = await fetch(fullUrl, {
+        ...options,
+        headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            ...(options.headers as Record<string, string> | undefined),
+        },
+    });
 
-  if (!response.ok) {
-    let detail: string;
-    try {
-      detail = await response.text();
-    } catch {
-      detail = response.statusText;
+    if (!response.ok) {
+        let detail: string;
+        try {
+            detail = await response.text();
+        } catch {
+            detail = response.statusText;
+        }
+
+        const error = new Error(
+            `HTTP ${response.status}: ${detail || response.statusText}`,
+        ) as ErrorType<Error>;
+        error.status = response.status;
+
+        throw error;
     }
 
-    const error = new Error(
-      `HTTP ${response.status}: ${detail || response.statusText}`,
-    ) as ErrorType<Error>;
-    error.status = response.status;
+    // Handle empty responses (e.g. 204 No Content)
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : undefined;
 
-    throw error;
-  }
-
-  // Handle empty responses (e.g. 204 No Content)
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : undefined;
-
-  return {
-    data,
-    status: response.status,
-    headers: response.headers,
-  } as TResponse;
+    return {
+        data,
+        status: response.status,
+        headers: response.headers,
+    } as TResponse;
 }

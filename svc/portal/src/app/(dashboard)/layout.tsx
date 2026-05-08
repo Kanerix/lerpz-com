@@ -7,16 +7,16 @@ import { AuthGuard } from "@/components/auth-guard";
 import { ChatboxProvider } from "@/components/chatbox";
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
-  return (
-    <AuthGuard>
-      <ChatboxProvider>
-        <div className="overflow-hidden h-screen w-screen">
-          <AppShell>
-            <main className="w-full h-full p-4">{children}</main>
-            <Toaster />
-          </AppShell>
-        </div>
-      </ChatboxProvider>
-    </AuthGuard>
-  );
+    return (
+        <AuthGuard>
+            <ChatboxProvider>
+                <div className="overflow-hidden h-screen w-screen">
+                    <AppShell>
+                        <main className="w-full h-full p-4">{children}</main>
+                        <Toaster />
+                    </AppShell>
+                </div>
+            </ChatboxProvider>
+        </AuthGuard>
+    );
 }

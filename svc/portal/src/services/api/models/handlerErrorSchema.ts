@@ -25,36 +25,36 @@ All error responses from this API use this shape with
 ```
  */
 export interface HandlerErrorSchema {
-  /** A human-readable explanation of this specific occurrence of the problem. */
-  detail: string;
-  /** Additional structured data specific to this error type.
+	/** A human-readable explanation of this specific occurrence of the problem. */
+	detail: string;
+	/** Additional structured data specific to this error type.
 
   Only present on errors that carry extra context beyond the standard
   fields. Omitted on all standard error responses. */
-  extension: unknown;
-  /**
+	extension: unknown;
+	/**
      * The URI of the endpoint where the problem occurred.
 
   Included when the server can identify the specific resource that caused
   the error. Omitted otherwise.
      * @nullable
      */
-  instance?: string | null;
-  /**
+	instance?: string | null;
+	/**
      * A server-side log reference for this error occurrence.
 
   When present, include this ID in any support request so the error
   can be located in server logs. Only set for unexpected server errors.
      * @nullable
      */
-  log_id?: string | null;
-  /** A short, stable summary of the problem type.
+	log_id?: string | null;
+	/** A short, stable summary of the problem type.
 
   Does not change between occurrences of the same error kind. */
-  title: string;
-  /** A URI that identifies the problem type.
+	title: string;
+	/** A URI that identifies the problem type.
 
   Dereferences to human-readable documentation when available.
   Defaults to `about:blank` when no specific documentation exists. */
-  type: string;
+	type: string;
 }

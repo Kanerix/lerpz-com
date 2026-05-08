@@ -5,25 +5,25 @@
  * Lerpz AI backend API
  * OpenAPI spec version: 0.1.0
  */
-import type { ConversationMessage } from './conversationMessage';
+import type { ConversationMessage } from "./conversationMessage";
 
 /**
  * A conversation together with all its messages.
  */
 export interface ConversationDetail {
-  /** Timestamp when the conversation was created. */
-  created_at: string;
-  /** Unique conversation identifier. */
-  id: string;
-  /** All messages in chronological order. */
-  messages: ConversationMessage[];
-  /** AI model used for this conversation. */
-  model: string;
-  /**
-     * Conversation title.
-     * @nullable
-     */
-  title?: string | null;
-  /** Timestamp of the last update. */
-  updated_at: string;
+	/** Timestamp when the conversation was created. */
+	created_at: string;
+	/** Unique conversation identifier. */
+	id: string;
+	/** All messages in chronological order. */
+	messages: ConversationMessage[];
+	/** AI model used for this conversation. */
+	model: string;
+	/**
+	 * Conversation title.
+	 * @nullable
+	 */
+	title?: string | null;
+	/** Timestamp of the last update. */
+	updated_at: string;
 }

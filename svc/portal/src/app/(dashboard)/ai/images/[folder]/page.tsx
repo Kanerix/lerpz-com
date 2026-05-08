@@ -1,3 +1,3 @@
 export default function ImagesFolder() {
-  return <div>test</div>;
+    return <div>test</div>;
 }
