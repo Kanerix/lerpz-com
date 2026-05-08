@@ -1,0 +1,78 @@
+name: "Deploy container"
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Service name (must match the directory under svc)."
+        type: string
+        required: true
+      container-app:
+        description: "Name of the Azure Container App to update."
+        type: string
+        required: true
+      resource-group:
+        description: "Resource group containing the Container App."
+        type: string
+        required: true
+      environment:
+        description: "GitHub environment to deploy to (prod or stag)."
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    name: "Build & deploy ${{ inputs.service }} to ${{ inputs.environment }}"
+    runs-on: ubuntu-latest
+
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ vars.ACR_LOGIN_SERVER }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          BRANCH_TAG=${{ inputs.environment }}
+          BASE=${{ vars.ACR_LOGIN_SERVER }}/${{ inputs.service }}
+          echo "sha=${BASE}:${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "env=${BASE}:${BRANCH_TAG}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build and push image
+        run: |
+          docker build \
+            -t ${{ steps.tags.outputs.sha }} \
+            -t ${{ steps.tags.outputs.env }} \
+            ./svc/${{ inputs.service }}
+          docker push ${{ steps.tags.outputs.sha }}
+          docker push ${{ steps.tags.outputs.env }}
+
+      - name: Deploy to Container App
+        run: |
+          az containerapp update \
+            --name ${{ inputs.container-app }} \
+            --resource-group ${{ inputs.resource-group }} \
+            --image ${{ steps.tags.outputs.sha }}
+
+      - name: Summary
+        run: |
+          echo "## Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | ${{ inputs.service }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA tag | \`${{ steps.tags.outputs.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Env tag | \`${{ steps.tags.outputs.env }}\` |" >> $GITHUB_STEP_SUMMARY
