@@ -1,3 +1,3 @@
 {
-  "extends": "@lerpz/typescript-config/base.json"
+    "extends": "@lerpz/typescript-config/base.json"
 }
