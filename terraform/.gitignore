@@ -1,0 +1,13 @@
+# Terraform state files — never commit these
+*.tfstate
+*.tfstate.backup
+
+# Terraform variable files may contain secrets — commit *.tfvars.example only
+*.tfvars
+
+# Terraform working directory
+.terraform/
+
+# Crash log files
+crash.log
+crash.*.log
