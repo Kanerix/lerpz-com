@@ -5,7 +5,7 @@ use std::sync::Arc;
 use axum::http::HeaderMap;
 use axum::response::Sse;
 use axum::{Json, extract::State};
-use http::StatusCode;
+use http::{StatusCode, header};
 use lerpz_axum::middleware::azure::AzureAccessToken;
 use lerpz_axum::problem::{HandlerResult, Problem, ProblemSchema};
 use rig::agent::Agent;
@@ -73,7 +73,7 @@ pub async fn handler(
     }
 
     let bearer = headers
-        .get(axum::http::header::AUTHORIZATION)
+        .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|s| s.strip_prefix("Bearer "))
         .ok_or(Problem::unauthorized())?;

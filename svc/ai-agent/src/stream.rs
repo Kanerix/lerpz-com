@@ -1,4 +1,8 @@
-use std::{convert::Infallible, pin::Pin, task::Context};
+use std::{
+    convert::Infallible,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 use axum::response::sse::Event;
 use lerpz_axum::problem::Problem;
@@ -57,10 +61,7 @@ impl AgentStream {
 impl Stream for AgentStream {
     type Item = Result<Event, Infallible>;
 
-    fn poll_next(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> std::task::Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         todo!()
     }
 }
