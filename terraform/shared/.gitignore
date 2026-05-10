@@ -1,0 +1,15 @@
+# Terraform state files — never commit these
+*.tfstate
+*.tfstate.backup
+
+# Terraform variable files may contain secrets — ignore by default.
+# Files under envs/ only contain non-secret config and are safe to commit.
+*.tfvars
+!envs/*.tfvars
+
+# Terraform working directory
+.terraform/
+
+# Crash log files
+crash.log
+crash.*.log

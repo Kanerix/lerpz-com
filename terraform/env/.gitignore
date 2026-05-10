@@ -2,8 +2,10 @@
 *.tfstate
 *.tfstate.backup
 
-# Terraform variable files may contain secrets — commit *.tfvars.example only
+# Terraform variable files may contain secrets — ignore by default.
+# Files under envs/ only contain non-secret config and are safe to commit.
 *.tfvars
+!envs/*.tfvars
 
 # Terraform working directory
 .terraform/

@@ -1,5 +1,5 @@
 output "acr_login_server" {
-  value       = local.acr.login_server
+  value       = local.shared.acr_login_server
   description = <<-EOT
     Login server URL for the Azure Container Registry. Use this as
     the registry host when pushing images
@@ -18,10 +18,9 @@ output "container_app_url" {
 output "container_app_environment_static_ip" {
   value       = azurerm_container_app_environment.lerpz.static_ip_address
   description = <<-EOT
-    Public static IP of the Container App Environment.
-    Create an A record at your DNS registrar pointing the environment domain to this IP
-    before running the second `terraform apply` to provision the managed TLS
-    certificate.
+    Public static IP of the Container App Environment. Create an A record at
+    your DNS registrar pointing the environment domain to this IP before running
+    the second `terraform apply` to provision the managed TLS certificate.
   EOT
 }
 
@@ -48,14 +47,9 @@ output "container_app_environment_default_domain" {
 }
 
 output "deployer_client_id" {
-  value       = local.deployer.client_id
+  value       = local.shared.deployer_client_id
   description = <<-EOT
     Client ID of the deployer managed identity. Set this as AZURE_CLIENT_ID in
     your GitHub Actions workflow.
   EOT
-}
-
-output "github_repository" {
-  value       = var.environment == "prod" ? github_repository.lerpz_core[0].full_name : null
-  description = "Full name of the GitHub repository (org/repo). Only set in prod state."
 }
