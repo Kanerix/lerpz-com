@@ -30,12 +30,19 @@ resource "azurerm_container_app" "lerpz_website" {
 
   ingress {
     external_enabled = true
-    target_port      = 80
+    target_port      = 3000
 
     traffic_weight {
       latest_revision = true
       percentage      = 100
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image,
+      latest_revision_name,
+    ]
   }
 
   template {
@@ -47,6 +54,36 @@ resource "azurerm_container_app" "lerpz_website" {
       image  = var.container_image
       cpu    = 0.25
       memory = "0.5Gi"
+
+      env {
+        name  = "NEXT_PUBLIC_API_URL"
+        value = var.next_public_api_url
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_ENTRA_ID_TENANT_ID"
+        value = var.next_public_entra_id_tenant_id
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_ENTRA_ID_CLIENT_ID"
+        value = var.next_public_entra_id_client_id
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_ENTRA_ID_SCOPE"
+        value = var.next_public_entra_id_scope
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI"
+        value = var.next_public_entra_id_redirect_uri
+      }
+
+      env {
+        name  = "NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI"
+        value = var.next_public_entra_id_logout_uri
+      }
     }
   }
 }
