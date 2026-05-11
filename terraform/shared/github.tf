@@ -75,15 +75,6 @@ resource "github_actions_variable" "acr_login_server" {
   value         = azurerm_container_registry.lerpz.login_server
 }
 
-resource "azurerm_federated_identity_credential" "deployer_pr" {
-  name                      = "github-pr"
-  user_assigned_identity_id = azurerm_user_assigned_identity.deployer.id
-
-  audience = ["api://AzureADTokenExchange"]
-  issuer   = "https://token.actions.githubusercontent.com"
-  subject  = "repo:${local.github_org}/${github_repository.lerpz_core.name}:pull_request"
-}
-
 resource "azurerm_federated_identity_credential" "deployer_env" {
   for_each = toset(local.environments)
 
