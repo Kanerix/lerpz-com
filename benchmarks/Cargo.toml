@@ -16,9 +16,5 @@ name = "upn"
 harness = false
 
 [[bench]]
-name = "hash_pwd"
-harness = false
-
-[[bench]]
-name = "validate_pwd"
+name = "pwd"
 harness = false

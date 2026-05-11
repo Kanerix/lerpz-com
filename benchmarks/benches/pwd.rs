@@ -2,7 +2,13 @@ use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use lerpz_pwd::validate_pwd;
+use lerpz_pwd::{hash_pwd, validate_pwd};
+
+fn bench_hash_pwd(c: &mut Criterion) {
+    c.bench_function("hash_pwd", |b| {
+        b.iter(|| hash_pwd(black_box("#Password123!"), black_box("some_salt")))
+    });
+}
 
 fn bench_validate_pwd(c: &mut Criterion) {
     c.bench_function("validate_pwd", |b| {
@@ -16,5 +22,5 @@ fn bench_validate_pwd(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_validate_pwd);
+criterion_group!(benches, bench_hash_pwd, bench_validate_pwd);
 criterion_main!(benches);
