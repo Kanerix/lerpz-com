@@ -47,6 +47,5 @@ jobs:
     with:
       service: portal
       container-app: lerpz-website
-      resource-group: ${{ vars.AZURE_RESOURCE_GROUP }}
       environment: ${{ github.ref_name == 'main' && 'prod' || 'stag' }}
     secrets: inherit

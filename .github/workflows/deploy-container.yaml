@@ -11,10 +11,6 @@ on:
         description: "Name of the Azure Container App to update."
         type: string
         required: true
-      resource-group:
-        description: "Resource group containing the Container App."
-        type: string
-        required: true
       environment:
         description: "GitHub environment to deploy to (prod or stag)."
         type: string
@@ -75,7 +71,7 @@ jobs:
         run: |
           az containerapp update \
             --name ${{ inputs.container-app }} \
-            --resource-group ${{ inputs.resource-group }} \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --image ${{ steps.tags.outputs.sha }}
 
       - name: Summary
