@@ -13,7 +13,7 @@ export default function HomePage() {
                 aria-hidden
                 className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center"
             >
-                <div className="mt-16 h-[600px] w-[900px] rounded-full bg-primary/10 blur-3xl" />
+                <div className="mt-16 h-[600px] w-[900px] rounded-full dark:bg-primary/10 blur-3xl" />
             </div>
 
             <Header />

@@ -6,7 +6,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 use crate::oapi::HEALTH_TAG;
-use crate::state::AppState;
+use crate::state::{AppState, DatabasePool, RedisPool};
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct HealthCheck {
@@ -45,8 +45,8 @@ pub struct HealthCheck {
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    State(pool): State<sqlx::PgPool>,
-    State(redis): State<bb8::Pool<RedisConnectionManager>>,
+    State(pool): State<DatabasePool>,
+    State(redis): State<RedisPool>,
 ) -> HandlerResult<Json<HealthCheck>> {
     let database_ok = sqlx::query_scalar::<_, i32>("SELECT 1")
         .fetch_one(&pool)
