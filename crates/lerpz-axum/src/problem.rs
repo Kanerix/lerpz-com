@@ -343,6 +343,7 @@ where
 #[cfg(feature = "oapi")]
 #[derive(utoipa::ToSchema)]
 #[allow(dead_code)]
+#[schema(title = "Problem")]
 pub struct ProblemSchema<D = ()>
 where
     D: utoipa::ToSchema,
