@@ -9,6 +9,8 @@ WORKDIR /app
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY svc/portal/package.json ./svc/portal/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
@@ -18,10 +20,11 @@ FROM base AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/svc/portal/node_modules ./svc/portal/node_modules
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY svc/portal ./svc/portal
+COPY packages/ui ./packages/ui
+COPY packages/typescript-config ./packages/typescript-config
 
 ENV NEXT_TELEMETRY_DISABLED=1 \
     SKIP_ENV_VALIDATION=1
