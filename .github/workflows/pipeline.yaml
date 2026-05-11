@@ -1,6 +1,20 @@
 name: "Pipeline"
 
 on:
+  workflow_dispatch:
+    inputs:
+      portal:
+        description: "Force deploy portal"
+        type: boolean
+        default: false
+      portal-api:
+        description: "Force deploy portal-api"
+        type: boolean
+        default: false
+      ai-agent:
+        description: "Force deploy ai-agent"
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -28,7 +42,7 @@ jobs:
   deploy-portal:
     name: "Deploy portal"
     needs: prepare
-    if: needs.prepare.outputs.portal == 'true'
+    if: needs.prepare.outputs.portal == 'true' || inputs.portal == true
     uses: ./.github/workflows/deploy-container.yaml
     with:
       service: portal
