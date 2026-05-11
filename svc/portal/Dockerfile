@@ -23,7 +23,8 @@ COPY --from=deps /app/svc/portal/node_modules ./svc/portal/node_modules
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY svc/portal ./svc/portal
 
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    SKIP_ENV_VALIDATION=1
 
 RUN --mount=type=cache,id=nextjs,target=/app/svc/portal/.next/cache \
     --mount=type=cache,id=turbo,target=/app/.turbo \
