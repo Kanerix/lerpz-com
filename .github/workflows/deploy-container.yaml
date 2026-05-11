@@ -66,7 +66,8 @@ jobs:
           docker build \
             -t ${{ steps.tags.outputs.sha }} \
             -t ${{ steps.tags.outputs.env }} \
-            ./svc/${{ inputs.service }}
+            -f ./svc/${{ inputs.service }}/Dockerfile \
+            .
           docker push ${{ steps.tags.outputs.sha }}
           docker push ${{ steps.tags.outputs.env }}
 
