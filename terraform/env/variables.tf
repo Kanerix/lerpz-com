@@ -41,10 +41,19 @@ variable "next_public_entra_id_logout_uri" {
 variable "container_image" {
   description = <<-EOT
     Container image to run in the Container App.
-    Defaults to a Microsoft hello-world placeholder until a real image is
-    pushed to ACR and this value is overridden
-    (e.g. via a tfvars file or CI/CD pipeline variable).
+    Defaults to the official Azure Container Apps hello-world placeholder
+    (port 80) until a real image is pushed to ACR and this value is
+    overridden (e.g. via a tfvars file or CI/CD pipeline variable).
   EOT
-  type        = string
-  default     = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+  type    = string
+  default = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+}
+
+variable "container_port" {
+  description = <<-EOT
+    Port the container listens on. Defaults to 80 to match the placeholder
+    image. Override to 3000 (or whatever your app uses) in each env tfvars.
+  EOT
+  type    = number
+  default = 80
 }

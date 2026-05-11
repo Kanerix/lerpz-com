@@ -30,7 +30,7 @@ resource "azurerm_container_app" "lerpz_website" {
 
   ingress {
     external_enabled = true
-    target_port      = 3000
+    target_port      = var.container_port
 
     traffic_weight {
       latest_revision = true
@@ -41,7 +41,6 @@ resource "azurerm_container_app" "lerpz_website" {
   lifecycle {
     ignore_changes = [
       template[0].container[0].image,
-      latest_revision_name,
     ]
   }
 

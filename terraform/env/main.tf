@@ -2,6 +2,10 @@ provider "azurerm" {
   features {}
 }
 
+provider "github" {
+  owner = "Kanerix"
+}
+
 # Read outputs from the shared root module.
 # The shared module must be fully applied before planning or applying any environment.
 data "terraform_remote_state" "shared" {
