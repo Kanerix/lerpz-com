@@ -1,6 +1,6 @@
 locals {
   location     = "West Europe"
-  github_org   = "kanerix"
+  github_org   = "Kanerix"
   environments = ["prod", "stag"]
 
   env_config = {
