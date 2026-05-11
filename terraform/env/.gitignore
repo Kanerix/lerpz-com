@@ -5,6 +5,8 @@
 # Terraform variable files may contain secrets — ignore by default.
 # Files under envs/ only contain non-secret config and are safe to commit.
 *.tfvars
+# These does not contains secrets
+!envs/*.tfvars
 
 # Terraform working directory
 .terraform/
