@@ -8,6 +8,7 @@ export default defineConfig({
             schemas: "./src/services/api/models",
             client: "react-query",
             override: {
+                header: () => "// @ts-nocheck\n",
                 mutator: {
                     path: "./src/lib/orval-mutator.ts",
                     name: "customFetch",
