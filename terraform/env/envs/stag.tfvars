@@ -1,2 +1,2 @@
 environment     = "stag"
-container_image = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+container_image = "lerpzacr.azurecr.io/portal:stag"
