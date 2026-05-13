@@ -3,7 +3,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
-use chrono::NaiveDateTime;
+use chrono::Utc;
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -27,7 +27,7 @@ pub struct ConversationMessage {
     /// Raw message text.
     content: String,
     /// Timestamp when the message was created.
-    created_at: NaiveDateTime,
+    created_at: chrono::DateTime<Utc>,
 }
 
 /// A conversation together with all its messages.
@@ -42,9 +42,9 @@ pub struct ConversationDetail {
     /// All messages in chronological order.
     messages: Vec<ConversationMessage>,
     /// Timestamp when the conversation was created.
-    created_at: NaiveDateTime,
+    created_at: chrono::DateTime<Utc>,
     /// Timestamp of the last update.
-    updated_at: NaiveDateTime,
+    updated_at: chrono::DateTime<Utc>,
 }
 
 #[utoipa::path(

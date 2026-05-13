@@ -40,7 +40,6 @@ struct EntraAuth;
 impl Modify for EntraAuth {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
         let tenant_id = CONFIG.ENTRA_ID_TENANT_ID.as_ref();
-        let client_id = CONFIG.ENTRA_ID_CLIENT_ID.as_ref();
         let client_scope = CONFIG.ENTRA_ID_SCOPE.as_ref();
 
         let ms_url = "https://login.microsoftonline.com";

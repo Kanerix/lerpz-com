@@ -1,12 +1,12 @@
 use axum::Json;
 use axum::extract::State;
-use bb8_redis::RedisConnectionManager;
+use axum::http::StatusCode;
 use lerpz_axum::problem::{HandlerResult, ProblemSchema};
 use serde::Serialize;
 use utoipa::ToSchema;
 
 use crate::oapi::HEALTH_TAG;
-use crate::state::{AppState, DatabasePool, RedisPool};
+use crate::state::{AppState, DatabasePool, RedisPool, S3Client};
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct HealthCheck {
@@ -14,6 +14,8 @@ pub struct HealthCheck {
     database: bool,
     /// Whether the Redis connection is healthy
     redis: bool,
+    /// Whether the S3 connection is healthy
+    s3: bool,
 }
 
 #[utoipa::path(
@@ -42,7 +44,8 @@ pub struct HealthCheck {
 pub async fn handler(
     State(pool): State<DatabasePool>,
     State(redis): State<RedisPool>,
-) -> HandlerResult<Json<HealthCheck>> {
+    State(s3): State<S3Client>,
+) -> HandlerResult<(StatusCode, Json<HealthCheck>)> {
     let database_ok = sqlx::query_scalar::<_, i32>("SELECT 1")
         .fetch_one(&pool)
         .await
@@ -54,8 +57,20 @@ pub async fn handler(
         .await
         .is_ok();
 
-    Ok(Json(HealthCheck {
-        database: database_ok,
-        redis: redis_ok,
-    }))
+    let s3_ok = s3.list_buckets().send().await.is_ok();
+
+    let status_code = if database_ok && redis_ok && s3_ok {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+
+    Ok((
+        status_code,
+        Json(HealthCheck {
+            database: database_ok,
+            redis: redis_ok,
+            s3: s3_ok,
+        }),
+    ))
 }

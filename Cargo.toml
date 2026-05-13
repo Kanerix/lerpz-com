@@ -14,10 +14,12 @@ authors = ["Kasper Jønsson <kas@lerpz.com>"]
 lerpz-axum = { path = "crates/lerpz-axum" }
 lerpz-jwt = { path = "crates/lerpz-jwt" }
 lerpz-macros = { path = "crates/lerpz-macros" }
+lerpz-metadata = { path = "crates/lerpz-metadata" }
 lerpz-model = { path = "crates/lerpz-model" }
 lerpz-pwd = { path = "crates/lerpz-pwd" }
 lerpz-utils = { path = "crates/lerpz-utils" }
-# Database
+# Services
+aws-sdk-s3 = "1.132"
 bb8 = "0.9"
 bb8-redis = "0.24"
 mongodb = "2.8"
@@ -63,6 +65,7 @@ cookie = "0.18"
 criterion = "0.7"
 dotenvy = "0.15"
 hex = "0.4"
+image = "=0.25.5"
 jsonwebtoken = "9.3"
 mime_guess = "2.0"
 rand = "0.9"
@@ -78,12 +81,6 @@ validator = "0.20"
 
 [workspace.lints.clippy]
 unwrap_used = "deny"
-
-# For beginning of project only
-[workspace.lints.rust]
-unused_imports = "allow"
-unused_variables = "allow"
-dead_code = "allow"
 
 [profile.release]
 opt-level = 3

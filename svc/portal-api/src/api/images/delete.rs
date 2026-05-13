@@ -1,5 +1,4 @@
 use lerpz_axum::problem::{HandlerResult, ProblemSchema};
-use uuid::Uuid;
 
 use crate::oapi::IMAGES_TAG;
 

@@ -1,6 +1,6 @@
 use chrono::Utc;
-use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// General metadata.
 ///
@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 /// attribute to store them in a nice readable way.
 #[derive(Serialize, Deserialize)]
 pub struct GeneralMetadata {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    id: Option<ObjectId>,
-    created_at: chrono::DateTime<Utc>,
-    updated_at: chrono::DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Uuid>,
+    pub created_at: chrono::DateTime<Utc>,
+    pub updated_at: chrono::DateTime<Utc>,
 }
 
 /// Generation metadata.
@@ -20,8 +20,8 @@ pub struct GeneralMetadata {
 /// information most models use to generate the content it points to.
 #[derive(Serialize, Deserialize)]
 pub struct GenerationMetadata {
-    prompt: String,
-    model: String,
+    pub prompt: String,
+    pub model: String,
 }
 
 /// Analysis metadata.
@@ -29,8 +29,8 @@ pub struct GenerationMetadata {
 /// This is used when AI has analyzed the content.
 #[derive(Serialize, Deserialize)]
 pub struct AnalysisMetadata {
-    title: String,
-    tags: Vec<String>,
+    pub title: String,
+    pub tags: Vec<String>,
 }
 
 /// Storage metadata.
@@ -45,6 +45,12 @@ pub enum StorageMetadata {
     ABS { container: String, blob: String },
 }
 
+/// Metadata for a generic content type.
+///
+/// This is the main metadata type that is stored in the database.
+///
+/// It is tagged with the `type` field so that the database can distinguish
+/// between chat, image, and video metadata.
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Metadata {
@@ -60,8 +66,8 @@ pub enum Metadata {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: Option<AnalysisMetadata>,
         storage: StorageMetadata,
+        analysis: Option<AnalysisMetadata>,
         width: u32,
         height: u32,
     },
@@ -70,8 +76,8 @@ pub enum Metadata {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: Option<AnalysisMetadata>,
         storage: StorageMetadata,
+        analysis: Option<AnalysisMetadata>,
         width: u32,
         height: u32,
         duration: u32,
@@ -81,8 +87,8 @@ pub enum Metadata {
         #[serde(flatten)]
         general: GeneralMetadata,
         generation: GenerationMetadata,
-        analysis: Option<AnalysisMetadata>,
         storage: StorageMetadata,
+        analysis: Option<AnalysisMetadata>,
         duration: u32,
     },
 }

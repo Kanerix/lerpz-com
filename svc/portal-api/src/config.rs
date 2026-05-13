@@ -7,7 +7,7 @@ use std::{
 
 use axum::http::HeaderValue;
 use lerpz_utils::{
-    env::{get_env, get_env_from, get_env_parse},
+    env::{get_env_from, get_env_parse},
     generate_config,
 };
 use secrecy::SecretString;
@@ -27,7 +27,8 @@ enum Env {
 ///
 /// Lazy loaded using [`LazyLock`] to ensure that the configuration is only
 /// loaded once.
-pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::from_env().expect("failed to load config from environment"));
+pub static CONFIG: LazyLock<Config> =
+    LazyLock::new(|| Config::from_env().expect("failed to load config from environment"));
 
 generate_config!(
     ENV: Env = get_env_parse,
@@ -39,8 +40,13 @@ generate_config!(
     PORTKEY_BASE_URL: Arc<str> = get_env_from,
     PORTKEY_PROVIDER: Arc<str> = get_env_from,
     PORTKEY_API_KEY: SecretString = get_env_from,
+    DEFAULT_COMPLETIONS_MODEL: Arc<str> = get_env_from,
     DEFAULT_IMAGE_MODEL: Arc<str> = get_env_from,
-    DEFAULT_TEXT_MODEL: Arc<str> = get_env_from,
     DATABASE_URL: SecretString = get_env_from,
-    REDIS_URL: SecretString = get_env_from
+    REDIS_URL: SecretString = get_env_from,
+    AWS_ACCESS_KEY_ID: Arc<str> = get_env_from,
+    AWS_SECRET_ACCESS_KEY: Arc<str> = get_env_from,
+    AWS_REGION: Arc<str> = get_env_from,
+    AWS_S3_ENDPOINT: Arc<str> = get_env_from,
+    AWS_S3_BUCKET: Arc<str> = get_env_from
 );

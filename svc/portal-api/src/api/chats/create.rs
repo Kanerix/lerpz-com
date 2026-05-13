@@ -88,7 +88,10 @@ pub async fn handler(
     State(database): State<DatabasePool>,
     Json(body): Json<ChatRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
-    let model = body.model.as_deref().unwrap_or(&CONFIG.DEFAULT_TEXT_MODEL);
+    let model = body
+        .model
+        .as_deref()
+        .unwrap_or(&CONFIG.DEFAULT_COMPLETIONS_MODEL);
     let user_id = token.sub;
     let prompt = body.prompt;
     let title = body.title.unwrap_or_else(|| truncate_title(&prompt, 100));
@@ -168,7 +171,7 @@ pub async fn handler(
                             yield Ok(Event::default()
                                 .event("error")
                                 .data("content filter triggered"));
-                            continue;
+                            break;
                         }
                         _ => {}
                     }

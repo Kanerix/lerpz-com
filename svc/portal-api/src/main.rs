@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_openai::Client;
+use aws_sdk_s3::config::{BehaviorVersion, Region};
 use axum::http::Method;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{Json, routing::get};
@@ -76,11 +77,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
 
+    let aws_config = aws_sdk_s3::config::Builder::new()
+        .behavior_version(BehaviorVersion::latest())
+        .region(Region::new(CONFIG.AWS_REGION.as_ref()))
+        .endpoint_url(CONFIG.AWS_S3_ENDPOINT.as_ref())
+        .build();
+    let s3 = aws_sdk_s3::Client::from_conf(aws_config);
+
     let state = AppState {
         azure_config,
         openai,
         database,
         redis,
+        s3,
     };
 
     let cors = CorsLayer::new()

@@ -12,3 +12,9 @@ pub fn router() -> OpenApiRouter<AppState> {
         .routes(routes!(edit::handler))
         .routes(routes!(delete::handler))
 }
+
+pub struct ImageAgent {
+    pub s3: aws_sdk_s3::Client,
+    pub bucket: String,
+    // pub mongo: mongodb::Client, - TODO: Add metadata (Mongo or Postgres?)
+}

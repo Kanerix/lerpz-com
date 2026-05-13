@@ -9,9 +9,11 @@ authors.workspace = true
 [dependencies]
 # Internal
 lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
+lerpz-metadata = { workspace = true }
 lerpz-model = { workspace = true }
 lerpz-utils = { workspace = true }
-# Database
+# Services
+aws-sdk-s3 = { workspace = true }
 bb8 = { workspace = true }
 bb8-redis = { workspace = true }
 redis = { workspace = true }
@@ -46,13 +48,14 @@ serde = { workspace = true }
 # Utilities
 async-openai = { workspace = true, features = ["chat-completion", "image", "audio", "video"] }
 base64 = { workspace = true }
+image = { workspace = true, features = ["jpeg", "png"] }
 chrono = { workspace = true }
 cookie = { workspace = true }
 dotenvy = { workspace = true }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 schemars = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v7"] }
 validator = { workspace = true }
 
 [dev-dependencies]
