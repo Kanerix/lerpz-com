@@ -9,6 +9,7 @@ use crate::oapi::HEALTH_TAG;
     tag = HEALTH_TAG,
     summary = "Force an API failure",
     description = "This is only inlcuded in debug builds",
+    security(()),
     responses(
         (
             status = INTERNAL_SERVER_ERROR,

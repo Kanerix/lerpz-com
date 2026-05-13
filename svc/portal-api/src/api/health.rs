@@ -23,17 +23,12 @@ pub struct HealthCheck {
     tag = HEALTH_TAG,
     summary = "Get API health status",
     description = "Verifies connectivity, always returns 200 if health check succeeds.",
+    security(()),
     responses(
         (
             status = OK,
             description = "Service is healthy",
             body = HealthCheck
-        ),
-        (
-            status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
-            body = ProblemSchema,
-            content_type = "application/problem+json"
         ),
         (
             status = INTERNAL_SERVER_ERROR,
