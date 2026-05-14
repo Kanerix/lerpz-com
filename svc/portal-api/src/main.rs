@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_openai::Client;
-use aws_sdk_s3::config::{BehaviorVersion, Region};
+use aws_sdk_s3::config::{BehaviorVersion, Credentials, Region};
 use axum::http::Method;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{Json, routing::get};
@@ -77,10 +77,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
 
+    let aws_credentials = Credentials::new(
+        CONFIG.AWS_ACCESS_KEY_ID.as_ref(),
+        CONFIG.AWS_SECRET_ACCESS_KEY.as_ref(),
+        None,
+        None,
+        "env",
+    );
     let aws_config = aws_sdk_s3::config::Builder::new()
         .behavior_version(BehaviorVersion::latest())
         .region(Region::new(CONFIG.AWS_REGION.as_ref()))
         .endpoint_url(CONFIG.AWS_S3_ENDPOINT.as_ref())
+        .force_path_style(true)
+        .credentials_provider(aws_credentials)
         .build();
     let s3 = aws_sdk_s3::Client::from_conf(aws_config);
 

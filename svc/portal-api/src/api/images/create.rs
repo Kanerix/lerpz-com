@@ -18,12 +18,13 @@ use lerpz_axum::{
     problem::{HandlerResult, Problem, ProblemSchema},
 };
 use lerpz_metadata::{
-    MetadataClient,
+    Metadata, MetadataClient,
     models::{GeneralMetadata, GenerationMetadata, StorageMetadata},
 };
 use serde::Deserialize;
 use serde_json::json;
 use tokio_stream::{Stream, StreamExt as _};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
@@ -32,7 +33,7 @@ use crate::{
     state::{AppState, DatabasePool, OpenAI, S3Client},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct ImageRequest {
     /// What model to use.
     model: Option<String>,
@@ -50,6 +51,14 @@ pub struct ImageRequest {
     operation_id = "create_image",
     tag = IMAGES_TAG,
     summary = "Create a new image",
+    request_body(
+        content = ImageRequest,
+        description = "Image generation parameters",
+        content_type = "application/json",
+        example = json!({
+            "prompt": "A toller dog!"
+        })
+    ),
     responses(
         (
             status = OK,
@@ -117,8 +126,10 @@ pub async fn handler(
 
     let request = request_builder.build()?;
     let mut stream = openai.images().generate_stream(request).await?;
+    let meta_client = lerpz_metadata::Client::from_pool(database);
 
     let sse_stream = async_stream::stream! {
+        tracing::trace!("starting image stream");
         while let Some(chunk_result) = stream.next().await {
             let chunk = match chunk_result {
                 Ok(c) => c,
@@ -132,23 +143,25 @@ pub async fn handler(
             };
 
             match chunk {
-                ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, .. }) => {
+                ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, partial_image_index,.. }) => {
+                    tracing::trace!(index = %partial_image_index, "generated partial image");
                     yield Ok(Event::default()
                         .event("partial_image")
                         .json_data(b64_json)
                         .expect("failed to serialize partial_image event"));
                 }
-                ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, .. }) => {
-                    // Yield the final rendered image to the client first.
+                ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, output_format, .. }) => {
+                    tracing::trace!(format = %output_format, "generated complete image");
                     yield Ok(Event::default()
                         .event("completed_image")
                         .json_data(&b64_json)
                         .expect("failed to serialize completed_image event"));
 
-                    // Decode the base64 image bytes.
+                    tracing::trace!("decoding complete image");
                     let image_bytes: Vec<u8> = match BASE64.decode(&b64_json) {
                         Ok(bytes) => bytes,
                         Err(err) => {
+                            tracing::error!("{}", err.to_string());
                             yield Ok(Event::default()
                                 .event("error")
                                 .json_data(err.to_string())
@@ -157,13 +170,14 @@ pub async fn handler(
                         }
                     };
 
-                    // Read the image dimensions from the decoded bytes.
+                    tracing::trace!("reading dimensions of complete image");
                     let (width, height) = {
                         let cursor = std::io::Cursor::new(&image_bytes);
                         match ImageReader::new(cursor).with_guessed_format() {
                             Ok(reader) => match reader.into_dimensions() {
                                 Ok(dims) => dims,
                                 Err(err) => {
+                                    tracing::error!("{}", err.to_string());
                                     yield Ok(Event::default()
                                         .event("error")
                                         .json_data(err.to_string())
@@ -172,6 +186,7 @@ pub async fn handler(
                                 }
                             },
                             Err(err) => {
+                                tracing::error!("{}", err.to_string());
                                 yield Ok(Event::default()
                                     .event("error")
                                     .json_data(err.to_string())
@@ -181,16 +196,12 @@ pub async fn handler(
                         }
                     };
 
-                    // Build the S3 key and metadata.
                     let id = Uuid::now_v7();
                     let key = format!("images/{oid}/{id}.jpg");
                     let now = Utc::now();
-                    let metadata = lerpz_metadata::Metadata::Image {
-                        general: GeneralMetadata {
-                            id: Some(id),
-                            created_at: now,
-                            updated_at: now,
-                        },
+
+                    let metadata = Metadata::Image {
+                        general: GeneralMetadata { id, created_at: now, updated_at: now },
                         generation: GenerationMetadata {
                             prompt: prompt.clone(),
                             model: model_name.clone(),
@@ -200,12 +211,18 @@ pub async fn handler(
                             key: key.clone(),
                         },
                         analysis: None,
-                        width: width,
-                        height: height,
+                        format: output_format.to_string(),
+                        width,
+                        height,
                     };
 
-                    // Save image bytes to S3.
+                    tracing::trace!(
+                        bucket = %CONFIG.AWS_S3_BUCKET,
+                        key = %key,
+                        "saving image to storage (s3)",
+                    );
                     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &image_bytes).await {
+                        tracing::error!("{}", err.to_string());
                         yield Ok(Event::default()
                             .event("error")
                             .json_data(err.to_string())
@@ -213,24 +230,22 @@ pub async fn handler(
                         continue;
                     }
 
-                    // Persist metadata to the database.
-                    let meta_client = lerpz_metadata::Client::from_pool(database.clone());
+                    tracing::trace!("persisting metadata to database");
                     match meta_client.insert(metadata).await {
-                        Ok(inserted_id) => {
+                        Ok(_) => {
                             yield Ok(Event::default()
                                 .event("saved")
-                                .json_data(json!({ "id": inserted_id }))
+                                .json_data(json!({ "id": id }))
                                 .expect("failed to serialize saved event"));
                         }
                         Err(err) => {
+                            tracing::error!("{}", err.to_string());
                             yield Ok(Event::default()
                                 .event("error")
                                 .json_data(err.to_string())
                                 .expect("failed to serialize error event"));
                         }
                     }
-
-                    continue;
                 }
             };
         }

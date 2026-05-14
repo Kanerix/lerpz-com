@@ -8,9 +8,6 @@ use crate::{
 
 pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Result<()> {
     let (content_type, bucket, key) = match metadata {
-        Metadata::Chat { .. } => Err(Error::InvalidMetadata(
-            "chat metadata cannot be saved to S3".to_string(),
-        )),
         Metadata::Image { storage, .. } => {
             let (bucket, key) = match storage {
                 StorageMetadata::S3 { bucket, key } => (bucket, key),
@@ -20,7 +17,7 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
                     ));
                 }
             };
-            Ok(("image/jpeg", bucket, key))
+            ("image/png", bucket, key)
         }
         Metadata::Video { storage, .. } => {
             let (bucket, key) = match storage {
@@ -31,7 +28,7 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
                     ));
                 }
             };
-            Ok(("video/mp4", bucket, key))
+            ("video/mp4", bucket, key)
         }
         Metadata::Audio { storage, .. } => {
             let (bucket, key) = match storage {
@@ -42,9 +39,9 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
                     ));
                 }
             };
-            Ok(("audio/mpeg", bucket, key))
+            ("audio/mpeg", bucket, key)
         }
-    }?;
+    };
 
     let bytes = ByteStream::from(bytes.to_vec());
 
@@ -60,6 +57,6 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
     Ok(())
 }
 
-pub async fn save_to_abs(metadata: &Metadata, client: &Client) {
+pub async fn save_to_abs(_metadata: &Metadata, _client: &Client) {
     todo!()
 }

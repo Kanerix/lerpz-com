@@ -1,5 +1,5 @@
 use axum::{Json, extract::State};
-use chrono::{NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, ProblemSchema},
@@ -22,9 +22,9 @@ pub struct Conversation {
     /// AI model used for this conversation
     model: String,
     /// Timestamp of when the conversation was created
-    created_at: Option<chrono::DateTime<Utc>>,
+    created_at: Option<DateTime<Utc>>,
     /// Timestamp of the last message in the conversation
-    updated_at: Option<chrono::DateTime<Utc>>,
+    updated_at: Option<DateTime<Utc>>,
 }
 
 #[utoipa::path(

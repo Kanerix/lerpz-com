@@ -8,8 +8,7 @@ use uuid::Uuid;
 /// attribute to store them in a nice readable way.
 #[derive(Serialize, Deserialize)]
 pub struct GeneralMetadata {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<Uuid>,
+    pub id: Uuid,
     pub created_at: chrono::DateTime<Utc>,
     pub updated_at: chrono::DateTime<Utc>,
 }
@@ -54,13 +53,6 @@ pub enum StorageMetadata {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Metadata {
-    /// Chat metadata.
-    Chat {
-        #[serde(flatten)]
-        general: GeneralMetadata,
-        generation: GenerationMetadata,
-        analysis: Option<AnalysisMetadata>,
-    },
     /// Image metadata.
     Image {
         #[serde(flatten)]
@@ -68,6 +60,7 @@ pub enum Metadata {
         generation: GenerationMetadata,
         storage: StorageMetadata,
         analysis: Option<AnalysisMetadata>,
+        format: String,
         width: u32,
         height: u32,
     },
@@ -78,6 +71,7 @@ pub enum Metadata {
         generation: GenerationMetadata,
         storage: StorageMetadata,
         analysis: Option<AnalysisMetadata>,
+        format: String,
         width: u32,
         height: u32,
         duration: u32,
@@ -89,6 +83,7 @@ pub enum Metadata {
         generation: GenerationMetadata,
         storage: StorageMetadata,
         analysis: Option<AnalysisMetadata>,
+        format: String,
         duration: u32,
     },
 }
