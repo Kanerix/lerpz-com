@@ -109,7 +109,7 @@ impl AzureConfigInner {
 
         let jwks_url = format!(
             "https://login.microsoftonline.com/{}/discovery/v2.0/keys",
-            &tenant_id
+            tenant_id
         );
 
         let (jwks, cache_control) = fetch_jwks(&http_client, &jwks_url).await?;

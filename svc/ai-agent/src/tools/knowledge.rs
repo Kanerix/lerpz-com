@@ -1,9 +1,9 @@
-use rig::completion::ToolDefinition;
-use rig::embeddings::EmbeddingModel;
-use rig::tool::Tool;
-use rig::vector_store::VectorSearchRequest;
-use rig::vector_store::VectorStoreIndexDyn;
-use rig::vector_store::request::Filter;
+use rig_core::completion::ToolDefinition;
+use rig_core::embeddings::EmbeddingModel;
+use rig_core::tool::Tool;
+use rig_core::vector_store::VectorSearchRequest;
+use rig_core::vector_store::VectorStoreIndexDyn;
+use rig_core::vector_store::request::Filter;
 use rig_qdrant::QdrantVectorStore;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

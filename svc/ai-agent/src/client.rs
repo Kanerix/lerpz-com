@@ -28,9 +28,7 @@
 //! let agent = client.agent("gpt-4o").build();
 //! ```
 
-use std::sync::Arc;
-
-use rig::providers::openai;
+use rig_core::providers::openai;
 use secrecy::{ExposeSecret, SecretString};
 
 use http::HeaderMap;

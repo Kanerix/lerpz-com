@@ -7,10 +7,10 @@
 
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPoints;
-use rig::agent::Agent;
-use rig::client::CompletionClient;
-use rig::providers::openai;
-use rig::providers::openai::responses_api::ResponsesCompletionModel;
+use rig_core::agent::Agent;
+use rig_core::client::CompletionClient;
+use rig_core::providers::openai;
+use rig_core::providers::openai::responses_api::ResponsesCompletionModel;
 use rig_qdrant::QdrantVectorStore;
 
 use crate::tools::{GetUserProfile, SearchKnowledgeBase};

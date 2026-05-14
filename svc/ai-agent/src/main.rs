@@ -9,7 +9,7 @@ use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
-use rig::client::EmbeddingsClient;
+use rig_core::client::EmbeddingsClient;
 use scalar_api_reference::scalar_html;
 
 use secrecy::ExposeSecret;

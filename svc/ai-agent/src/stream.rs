@@ -5,8 +5,8 @@ use std::{
 };
 
 use axum::response::sse::Event;
-use lerpz_axum::problem::Problem;
-use rig::tool::Tool;
+use rig_core::providers::openai::responses_api::ResponsesCompletionModel;
+use rig_core::{agent::Agent, tool::Tool};
 use tokio_stream::Stream;
 use uuid::Uuid;
 
@@ -45,15 +45,19 @@ where
 }
 
 pub struct AgentStream {
-    db: sqlx::PgPool,
+    _db: sqlx::PgPool,
+    _agent: Agent<ResponsesCompletionModel>,
 }
 
 impl AgentStream {
-    pub fn new(db: sqlx::PgPool) -> Self {
-        Self { db }
+    pub fn new(db: sqlx::PgPool, agent: Agent<ResponsesCompletionModel>) -> Self {
+        Self {
+            _db: db,
+            _agent: agent,
+        }
     }
 
-    pub fn init<T: Tool>(&self) -> AgentEvent<T> {
+    pub fn _init<T: Tool>(&self) -> AgentEvent<T> {
         AgentEvent::Init(Uuid::new_v4())
     }
 }
@@ -61,7 +65,7 @@ impl AgentStream {
 impl Stream for AgentStream {
     type Item = Result<Event, Infallible>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         todo!()
     }
 }

@@ -8,8 +8,6 @@ use axum::{Json, extract::State};
 use http::{StatusCode, header};
 use lerpz_axum::middleware::azure::AzureAccessToken;
 use lerpz_axum::problem::{HandlerResult, Problem, ProblemSchema};
-use rig::agent::Agent;
-use rig::completion::Prompt;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -79,10 +77,9 @@ pub async fn handler(
         .ok_or(Problem::unauthorized())?;
 
     let agent = agent_factory.create(bearer);
-    let message = payload.message.as_str();
-    let response = agent.prompt(message).await?;
+    let _message = payload.message.as_str();
 
-    let agent_stream = AgentStream::new(db);
+    let agent_stream = AgentStream::new(db, agent);
 
     Ok(Sse::new(agent_stream))
 }

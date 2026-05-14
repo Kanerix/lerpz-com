@@ -8,7 +8,7 @@ use std::{
 use http::HeaderValue;
 use lerpz_utils::{
     env::{get_env_from, get_env_parse},
-    generate_config, get_env,
+    generate_config,
 };
 use secrecy::SecretString;
 

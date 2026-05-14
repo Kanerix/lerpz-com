@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use axum::extract::FromRef;
 use lerpz_axum::middleware::azure::AzureConfig;
-use rig::agent::{Agent, AgentBuilder};
 
 use crate::factory::AgentFactory;
 
