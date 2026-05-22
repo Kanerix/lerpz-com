@@ -209,6 +209,41 @@ services:
         aliases:
           - venator.lerpz.local
 
+  artoo:
+    container_name: artoo
+    restart: on-failure
+    init: true
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: svc/artoo/Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.artoo-http.rule=Host(`agent.lerpz.local`)"
+      - "traefik.http.routers.artoo-http.entrypoints=web"
+      - "traefik.http.routers.artoo-http.priority=3"
+      - "traefik.http.routers.artoo-https.rule=Host(`agent.lerpz.local`)"
+      - "traefik.http.routers.artoo-https.entrypoints=websecure"
+      - "traefik.http.routers.artoo-https.tls=true"
+      - "traefik.http.routers.artoo-https.priority=3"
+      - "traefik.http.services.artoo.loadbalancer.server.port=3002"
+    expose:
+      - "3002"
+    hostname: lerpz-artoo
+    domainname: artoo.lerpz.local
+    env_file: svc/artoo/.env.docker
+    depends_on:
+      kamino:
+        condition: service_healthy
+      naboo:
+        condition: service_healthy
+      ilum:
+        condition: service_healthy
+    networks:
+      lerpz-network:
+        aliases:
+          - artoo.lerpz.local
+
 configs:
   traefik-dynamic:
     content: |
@@ -239,6 +274,21 @@ configs:
             service: holonet-local
             priority: 1
 
+          artoo-local-http:
+            rule: "Host(`agent.lerpz.local`)"
+            entryPoints:
+              - web
+            service: artoo-local
+            priority: 1
+
+          artoo-local-https:
+            rule: "Host(`agent.lerpz.local`)"
+            entryPoints:
+              - websecure
+            tls: {}
+            service: artoo-local
+            priority: 1
+
           venator-local-http:
             rule: "Host(`api.lerpz.local`)"
             entryPoints:
@@ -259,6 +309,11 @@ configs:
             loadBalancer:
               servers:
                 - url: "http://host.docker.internal:3000"
+
+          artoo-local:
+            loadBalancer:
+              servers:
+                - url: "http://host.docker.internal:3002"
 
           venator-local:
             loadBalancer:
