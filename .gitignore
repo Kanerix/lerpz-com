@@ -1,5 +1,6 @@
 # Rust
 /target/
+rustc-ice-*.txt
 
 # Node
 **/.next/
