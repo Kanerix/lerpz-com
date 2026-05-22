@@ -3,12 +3,12 @@ name: "Detect changed services"
 on:
   workflow_call:
     outputs:
-      portal:
-        value: ${{ jobs.detect-changes.outputs.portal }}
-      portal-api:
-        value: ${{ jobs.detect-changes.outputs.portal-api }}
-      ai-agent:
-        value: ${{ jobs.detect-changes.outputs.ai-agent }}
+      holonet:
+        value: ${{ jobs.detect-changes.outputs.holonet }}
+      venator:
+        value: ${{ jobs.detect-changes.outputs.venator }}
+      artoo:
+        value: ${{ jobs.detect-changes.outputs.artoo }}
 
 jobs:
   detect-changes:
@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      portal: ${{ steps.filter.outputs.portal }}
-      portal-api: ${{ steps.filter.outputs.portal-api }}
-      ai-agent: ${{ steps.filter.outputs.ai-agent }}
+      holonet: ${{ steps.filter.outputs.holonet }}
+      venator: ${{ steps.filter.outputs.venator }}
+      artoo: ${{ steps.filter.outputs.artoo }}
 
     steps:
       - name: Checkout
@@ -31,19 +31,19 @@ jobs:
         uses: dorny/paths-filter@v4
         with:
           filters: |
-            portal:
-              - 'svc/portal/**'
+            holonet:
+              - 'svc/holonet/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'tsconfig.json'
-            portal-api:
-              - 'svc/portal-api/**'
+            venator:
+              - 'svc/venator/**'
               - 'crates/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
-            ai-agent:
-              - 'svc/ai-agent/**'
+            artoo:
+              - 'svc/artoo/**'
               - 'crates/**'
               - 'Cargo.toml'
               - 'Cargo.lock'

@@ -3,16 +3,16 @@ name: "Pipeline"
 on:
   workflow_dispatch:
     inputs:
-      portal:
-        description: "Force deploy portal"
+      holonet:
+        description: "Force deploy holonet"
         type: boolean
         default: false
-      portal-api:
-        description: "Force deploy portal-api"
+      venator:
+        description: "Force deploy venator"
         type: boolean
         default: false
-      ai-agent:
-        description: "Force deploy ai-agent"
+      artoo:
+        description: "Force deploy artoo"
         type: boolean
         default: false
   push:
@@ -45,17 +45,17 @@ jobs:
           echo "## Changed Services" >> $GITHUB_STEP_SUMMARY
           echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| portal | ${{ needs.prepare.outputs.portal }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| portal-api | ${{ needs.prepare.outputs.portal-api }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| ai-agent | ${{ needs.prepare.outputs.ai-agent }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| holonet | ${{ needs.prepare.outputs.holonet }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| venator | ${{ needs.prepare.outputs.venator }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| artoo | ${{ needs.prepare.outputs.artoo }} |" >> $GITHUB_STEP_SUMMARY
 
-  deploy-portal:
-    name: "Deploy portal"
+  deploy-holonet:
+    name: "Deploy holonet"
     needs: [prepare, env]
-    if: needs.prepare.outputs.portal == 'true' || inputs.portal == true
+    if: needs.prepare.outputs.holonet == 'true' || inputs.holonet == true
     uses: ./.github/workflows/deploy-container.yaml
     with:
-      service: portal
+      service: holonet
       container-app: lerpz-website-${{ needs.env.outputs.name }}
       environment: ${{ needs.env.outputs.name }}
     secrets: inherit

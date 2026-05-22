@@ -13,8 +13,8 @@ FROM chef AS planner
 WORKDIR /chef
 
 COPY Cargo.toml Cargo.lock ./
-COPY svc/portal-api ./svc/portal-api
-COPY lib ./lib
+COPY svc/artoo ./svc/artoo
+COPY crates ./crates
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -28,15 +28,15 @@ RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     cargo chef cook --release --recipe-path recipe.json
 
 COPY Cargo.toml Cargo.lock ./
-COPY svc/portal-api ./svc/portal-api
-COPY lib ./lib
+COPY svc/artoo ./svc/artoo
+COPY crates ./crates
 
 ENV SQLX_OFFLINE=true
 
 RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     --mount=type=cache,id=target,target=/build/target \
-    cargo build --release --bin portal-api && \
-    cp /build/target/release/portal-api /build/server
+    cargo build --release --bin artoo && \
+    cp /build/target/release/artoo /build/server
 
 
 FROM debian:bookworm-slim AS runtime

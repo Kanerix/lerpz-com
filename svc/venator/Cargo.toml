@@ -1,5 +1,5 @@
 [package]
-name = "ai-agent"
+name = "venator"
 version.workspace = true
 edition.workspace = true
 homepage.workspace = true

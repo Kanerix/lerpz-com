@@ -8,7 +8,7 @@ WORKDIR /app
 
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY svc/portal/package.json ./svc/portal/
+COPY svc/holonet/package.json ./svc/holonet/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 
@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY svc/portal ./svc/portal
+COPY svc/holonet ./svc/holonet
 COPY packages/ui ./packages/ui
 COPY packages/typescript-config ./packages/typescript-config
 
@@ -43,9 +43,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI=$NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI \
     NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI=$NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI
 
-RUN --mount=type=cache,id=nextjs,target=/app/svc/portal/.next/cache \
+RUN --mount=type=cache,id=nextjs,target=/app/svc/holonet/.next/cache \
     --mount=type=cache,id=turbo,target=/app/.turbo \
-    pnpm --filter portal build
+    pnpm --filter holonet build
 
 
 FROM base AS runner
@@ -58,12 +58,12 @@ ENV NODE_ENV=production \
 RUN addgroup --system --gid 1001 app && \
     adduser --system --uid 1001 --ingroup app lerpz
 
-COPY --from=builder --chown=lerpz:app /app/svc/portal/.next/standalone ./
-COPY --from=builder --chown=lerpz:app /app/svc/portal/.next/static ./svc/portal/.next/static
-COPY --from=builder --chown=lerpz:app /app/svc/portal/public ./svc/portal/public
+COPY --from=builder --chown=lerpz:app /app/svc/holonet/.next/standalone ./
+COPY --from=builder --chown=lerpz:app /app/svc/holonet/.next/static ./svc/holonet/.next/static
+COPY --from=builder --chown=lerpz:app /app/svc/holonet/public ./svc/holonet/public
 
 USER lerpz
 
 EXPOSE 3000
 
-CMD ["node", "svc/portal/server.js"]
+CMD ["node", "svc/holonet/server.js"]

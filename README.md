@@ -5,6 +5,21 @@ platform — an internal enterprise AI portal that provides chat interfaces, use
 management, and organizational tools, all backed by Microsoft Entra ID
 authentication.
 
+## Services
+
+| Name | Role | Stack |
+|---|---|---|
+| `holonet` | Frontend | Next.js |
+| `venator` | Backend API | Rust / Axum |
+| `artoo` | AI Agent | Rust |
+| `ilum` | Vector database | Qdrant |
+| `kamino` | Primary database | PostgreSQL |
+| `naboo` | Cache | Dragonfly (Redis-compatible) |
+| `geonosis` | Object storage | MinIO |
+
+Service names follow a Star Wars Republic era theme. `holonet` and `venator` are directly linked — the Venator-class Star Destroyer was equipped with a HoloNet transceiver, making it the engine behind the network.
+[docs/NAMING.md](docs/NAMING.md) for the full rationale behind each name.
+
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (edition 2024)
@@ -44,7 +59,7 @@ Add these entries to `/etc/hosts`:
 
 #### Default mode (local development)
 
-Start only the infrastructure services. If you followed the trafeik
+Start only the infrastructure services. If you followed the Traefik
 steps, requests will be proxied to apps running on your local machine
 (`localhost:3000` and `localhost:3001`):
 
