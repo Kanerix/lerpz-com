@@ -35,10 +35,10 @@ use crate::{
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ImageRequest {
-    /// What model to use.
-    model: Option<String>,
     /// Prompt that is sent to the model.
     prompt: String,
+    /// What model to use.
+    model: Option<String>,
     /// The amount of images to generate.
     ///
     /// This will default to 1 image if not provided.
@@ -96,24 +96,23 @@ pub async fn handler(
     State(s3): State<S3Client>,
     Json(body): Json<ImageRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
-    let model_name = body
-        .model
-        .as_deref()
-        .unwrap_or(&CONFIG.DEFAULT_IMAGE_MODEL)
-        .to_string();
-    let prompt = body.prompt.clone();
-    let model = ImageModel::Other(model_name.clone());
     let oid = token.oid.ok_or(Problem::new(
         StatusCode::INTERNAL_SERVER_ERROR,
         "Unkown token format",
         "Missing Object ID from token",
     ))?;
 
+    let model_name = body
+        .model
+        .as_deref()
+        .unwrap_or(&CONFIG.DEFAULT_IMAGE_MODEL)
+        .to_string();
+
     let mut request_builder = CreateImageRequestArgs::default();
 
     request_builder
-        .model(model)
-        .prompt(body.prompt)
+        .model(ImageModel::Other(model_name.clone()))
+        .prompt(body.prompt.clone())
         .n(body.amount.unwrap_or(1))
         .quality(ImageQuality::Low)
         .size(ImageSize::S1024x1024)
@@ -161,7 +160,7 @@ pub async fn handler(
                     let image_bytes: Vec<u8> = match BASE64.decode(&b64_json) {
                         Ok(bytes) => bytes,
                         Err(err) => {
-                            tracing::error!("{}", err.to_string());
+                            tracing::error!("{err}");
                             yield Ok(Event::default()
                                 .event("error")
                                 .json_data(err.to_string())
@@ -177,7 +176,7 @@ pub async fn handler(
                             Ok(reader) => match reader.into_dimensions() {
                                 Ok(dims) => dims,
                                 Err(err) => {
-                                    tracing::error!("{}", err.to_string());
+                                    tracing::error!("{err}");
                                     yield Ok(Event::default()
                                         .event("error")
                                         .json_data(err.to_string())
@@ -186,7 +185,7 @@ pub async fn handler(
                                 }
                             },
                             Err(err) => {
-                                tracing::error!("{}", err.to_string());
+                                tracing::error!("{err}");
                                 yield Ok(Event::default()
                                     .event("error")
                                     .json_data(err.to_string())
@@ -200,15 +199,21 @@ pub async fn handler(
                     let key = format!("images/{oid}/{id}.jpg");
                     let now = Utc::now();
 
+                    tracing::trace!(
+                        bucket = %CONFIG.AWS_S3_BUCKET,
+                        key = %key,
+                        "saving image to storage (s3)",
+                    );
+
                     let metadata = Metadata::Image {
                         general: GeneralMetadata { id, created_at: now, updated_at: now },
                         generation: GenerationMetadata {
-                            prompt: prompt.clone(),
+                            prompt: body.prompt.clone(),
                             model: model_name.clone(),
                         },
                         storage: StorageMetadata::S3 {
                             bucket: CONFIG.AWS_S3_BUCKET.to_string(),
-                            key: key.clone(),
+                            key,
                         },
                         analysis: None,
                         format: output_format.to_string(),
@@ -216,13 +221,8 @@ pub async fn handler(
                         height,
                     };
 
-                    tracing::trace!(
-                        bucket = %CONFIG.AWS_S3_BUCKET,
-                        key = %key,
-                        "saving image to storage (s3)",
-                    );
                     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &image_bytes).await {
-                        tracing::error!("{}", err.to_string());
+                        tracing::error!("{err}");
                         yield Ok(Event::default()
                             .event("error")
                             .json_data(err.to_string())
@@ -239,7 +239,7 @@ pub async fn handler(
                                 .expect("failed to serialize saved event"));
                         }
                         Err(err) => {
-                            tracing::error!("{}", err.to_string());
+                            tracing::error!("{err}");
                             yield Ok(Event::default()
                                 .event("error")
                                 .json_data(err.to_string())

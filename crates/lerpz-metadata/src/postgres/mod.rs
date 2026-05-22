@@ -185,7 +185,7 @@ impl MetadataClient for Client {
                 let provider = StorageProvider::from(&storage);
                 let (bucket, key) = match &storage {
                     StorageMetadata::S3 { bucket, key } => (bucket.as_str(), key.as_str()),
-                    StorageMetadata::ABS { container, blob } => (container.as_str(), blob.as_str()),
+                    StorageMetadata::ABS { .. } => todo!(),
                 };
                 let row = sqlx::query!(
                     "INSERT INTO video_metadata
@@ -226,7 +226,7 @@ impl MetadataClient for Client {
                 let provider = StorageProvider::from(&storage);
                 let (bucket, key) = match &storage {
                     StorageMetadata::S3 { bucket, key } => (bucket.as_str(), key.as_str()),
-                    StorageMetadata::ABS { container, blob } => (container.as_str(), blob.as_str()),
+                    StorageMetadata::ABS { .. } => todo!(),
                 };
                 let row = sqlx::query!(
                     "INSERT INTO audio_metadata
@@ -269,7 +269,7 @@ impl MetadataClient for Client {
                 let provider = StorageProvider::from(&storage);
                 let (bucket, key) = match &storage {
                     StorageMetadata::S3 { bucket, key } => (bucket.as_str(), key.as_str()),
-                    StorageMetadata::ABS { container, blob } => (container.as_str(), blob.as_str()),
+                    StorageMetadata::ABS { .. } => todo!(),
                 };
                 sqlx::query!(
                     "UPDATE image_metadata
@@ -308,7 +308,7 @@ impl MetadataClient for Client {
                 let provider = StorageProvider::from(&storage);
                 let (bucket, key) = match &storage {
                     StorageMetadata::S3 { bucket, key } => (bucket.as_str(), key.as_str()),
-                    StorageMetadata::ABS { container, blob } => (container.as_str(), blob.as_str()),
+                    StorageMetadata::ABS { .. } => todo!(),
                 };
                 sqlx::query!(
                     "UPDATE video_metadata
@@ -346,7 +346,7 @@ impl MetadataClient for Client {
                 let provider = StorageProvider::from(&storage);
                 let (bucket, key) = match &storage {
                     StorageMetadata::S3 { bucket, key } => (bucket.as_str(), key.as_str()),
-                    StorageMetadata::ABS { container, blob } => (container.as_str(), blob.as_str()),
+                    StorageMetadata::ABS { .. } => todo!(),
                 };
                 sqlx::query!(
                     "UPDATE audio_metadata

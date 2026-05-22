@@ -6,9 +6,15 @@ use crate::{
     models::StorageMetadata,
 };
 
+/// Saves the given bytes to S3 using the provided metadata.
+///
+/// Returns an error if the metadata has an storage type which is not
+/// [`StorageMetadata::S3`] or if the save operation fails.
 pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Result<()> {
     let (content_type, bucket, key) = match metadata {
-        Metadata::Image { storage, .. } => {
+        Metadata::Image {
+            storage, format, ..
+        } => {
             let (bucket, key) = match storage {
                 StorageMetadata::S3 { bucket, key } => (bucket, key),
                 StorageMetadata::ABS { .. } => {
@@ -17,9 +23,11 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
                     ));
                 }
             };
-            ("image/png", bucket, key)
+            (format!("image/{format}"), bucket, key)
         }
-        Metadata::Video { storage, .. } => {
+        Metadata::Video {
+            storage, format, ..
+        } => {
             let (bucket, key) = match storage {
                 StorageMetadata::S3 { bucket, key } => (bucket, key),
                 StorageMetadata::ABS { .. } => {
@@ -28,9 +36,11 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
                     ));
                 }
             };
-            ("video/mp4", bucket, key)
+            (format!("video/{format}"), bucket, key)
         }
-        Metadata::Audio { storage, .. } => {
+        Metadata::Audio {
+            storage, format, ..
+        } => {
             let (bucket, key) = match storage {
                 StorageMetadata::S3 { bucket, key } => (bucket, key),
                 StorageMetadata::ABS { .. } => {
@@ -39,7 +49,7 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
                     ));
                 }
             };
-            ("audio/mpeg", bucket, key)
+            (format!("audio/{format}"), bucket, key)
         }
     };
 
@@ -57,6 +67,10 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
     Ok(())
 }
 
+/// Saves the given bytes to Azure Blob Storage using the provided metadata.
+///
+/// Returns an error if the metadata has an storage type which is not
+/// [`StorageMetadata::ABS`] or if the save operation fails.
 pub async fn save_to_abs(_metadata: &Metadata, _client: &Client) {
     todo!()
 }
