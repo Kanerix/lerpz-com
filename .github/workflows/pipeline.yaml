@@ -7,12 +7,12 @@ on:
         description: "Force deploy holonet"
         type: boolean
         default: false
-      artoo:
-        description: "Force deploy artoo"
+      coruscant:
+        description: "Force deploy coruscant"
         type: boolean
         default: false
-      venator:
-        description: "Force deploy venator"
+      artoo:
+        description: "Force deploy artoo"
         type: boolean
         default: false
   push:
@@ -46,7 +46,7 @@ jobs:
           echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
           echo "| holonet | ${{ needs.prepare.outputs.holonet }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| venator | ${{ needs.prepare.outputs.venator }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| coruscant | ${{ needs.prepare.outputs.coruscant }} |" >> $GITHUB_STEP_SUMMARY
           echo "| artoo | ${{ needs.prepare.outputs.artoo }} |" >> $GITHUB_STEP_SUMMARY
 
   deploy-holonet:
@@ -57,5 +57,27 @@ jobs:
     with:
       service: holonet
       container-app: lerpz-website-${{ needs.env.outputs.name }}
+      environment: ${{ needs.env.outputs.name }}
+    secrets: inherit
+
+  deploy-coruscant:
+    name: "Deploy coruscant"
+    needs: [prepare, env]
+    if: needs.prepare.outputs.coruscant == 'true' || inputs.coruscant == true
+    uses: ./.github/workflows/deploy-container.yaml
+    with:
+      service: coruscant
+      container-app: lerpz-api-${{ needs.env.outputs.name }}
+      environment: ${{ needs.env.outputs.name }}
+    secrets: inherit
+
+  deploy-artoo:
+    name: "Deploy artoo"
+    needs: [prepare, env]
+    if: needs.prepare.outputs.artoo == 'true' || inputs.artoo == true
+    uses: ./.github/workflows/deploy-container.yaml
+    with:
+      service: artoo
+      container-app: lerpz-agent-${{ needs.env.outputs.name }}
       environment: ${{ needs.env.outputs.name }}
     secrets: inherit

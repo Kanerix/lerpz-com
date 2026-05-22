@@ -17,22 +17,22 @@ messages, receive news, and interact with the wider galaxy. It is the
 visible, public-facing layer of the Republic. As the user-facing interface,
 `holonet` is how users see and interact with the platform.
 
-### `artoo` — Backend API (Rust/Axum)
+### `coruscant` — Backend API (Rust/Axum)
 
-R2-D2 is the most capable and dependable droid in the galaxy. He fixes ships,
-carries vital messages, interfaces with foreign systems, and keeps every
-operation running — reliably, tirelessly, and always in the background.
-Everything else depends on him. As the backend API that powers the platform,
-`artoo` is always there and everything else depends on it.
+Coruscant is the center of the Republic — the hub through which all governance,
+communication, and coordination flows. Every hyperlane leads there; nothing
+happens in the galaxy without going through it. As the backend API that powers
+the platform, `coruscant` is always at the center and everything else depends
+on it.
 
-### `venator` — AI Agent
+### `artoo` — AI Agent
 
-The Venator-class Star Destroyer was not just a warship — it was the
-Republic's most versatile platform, capable of independent long-range
-operations far from home. It would jump into a system, assess the situation,
-execute a mission, and report back. An AI agent that spins up autonomously,
-reasons over data, takes action, and returns results maps onto exactly this
-kind of independent, self-directed operation.
+R2-D2 is the most capable and resourceful droid in the galaxy. He acts
+autonomously, assesses situations on the fly, interfaces with foreign systems,
+and executes missions without being told exactly how. He spins up, reasons over
+the problem, takes action, and gets the job done. An AI agent that operates
+independently, reasons over data, and returns results maps perfectly onto this
+kind of self-directed, tireless capability.
 
 ### `ilum` — Qdrant (Vector Database)
 
@@ -50,12 +50,12 @@ they maintain perfect archives of every clone, every template, every genetic
 detail. Replication is literally their purpose. The primary relational database
 is exactly that: a meticulous, complete, and replicated source of truth.
 
-### `naboo` — Dragonfly (Cache)
+### `kessel` — Dragonfly (Cache)
 
-Naboo is the home of the N-1 starfighter — one of the fastest and most elegant
-ships in the prequel era. Fast, sleek, and built for rapid response. A cache
-layer is fast, peripheral, and ephemeral — it sits at the edge and accelerates
-everything around it.
+The Kessel Run is the most famous speed record in the galaxy — Han Solo made
+it in less than 12 parsecs. Speed is the entire point. A cache layer is fast,
+ephemeral, and built for rapid response; it sits at the edge and accelerates
+everything around it. Kessel is fast.
 
 ### `geonosis` — MinIO (Object Storage)
 

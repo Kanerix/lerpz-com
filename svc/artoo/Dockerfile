@@ -14,7 +14,6 @@ WORKDIR /chef
 
 COPY Cargo.toml Cargo.lock ./
 COPY svc/artoo ./svc/artoo
-COPY crates ./crates
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -52,6 +51,6 @@ COPY --chown=lerpz:app --from=builder /build/server ./
 
 USER lerpz
 
-EXPOSE 3001
+EXPOSE 3002
 
 ENTRYPOINT ["/app/server"]

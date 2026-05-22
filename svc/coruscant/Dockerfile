@@ -13,8 +13,7 @@ FROM chef AS planner
 WORKDIR /chef
 
 COPY Cargo.toml Cargo.lock ./
-COPY svc/venator ./svc/venator
-COPY crates ./crates
+COPY svc/coruscant ./svc/coruscant
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -28,15 +27,15 @@ RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     cargo chef cook --release --recipe-path recipe.json
 
 COPY Cargo.toml Cargo.lock ./
-COPY svc/venator ./svc/venator
+COPY svc/coruscant ./svc/coruscant
 COPY crates ./crates
 
 ENV SQLX_OFFLINE=true
 
 RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     --mount=type=cache,id=target,target=/build/target \
-    cargo build --release --bin venator && \
-    cp /build/target/release/venator /build/server
+    cargo build --release --bin coruscant && \
+    cp /build/target/release/coruscant /build/server
 
 
 FROM debian:bookworm-slim AS runtime
@@ -52,6 +51,6 @@ COPY --chown=lerpz:app --from=builder /build/server ./
 
 USER lerpz
 
-EXPOSE 3002
+EXPOSE 3001
 
 ENTRYPOINT ["/app/server"]

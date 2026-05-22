@@ -26,12 +26,12 @@ services:
       timeout: 5s
       retries: 5
 
-  naboo:
+  kessel:
     image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
-    container_name: naboo
+    container_name: kessel
     restart: on-failure
-    hostname: naboo
-    domainname: naboo.lerpz.local
+    hostname: kessel
+    domainname: kessel.lerpz.local
     ulimits:
       memlock: -1
     ports:
@@ -41,7 +41,7 @@ services:
     networks:
       lerpz-network:
         aliases:
-          - naboo.lerpz.local
+          - kessel.lerpz.local
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -169,12 +169,45 @@ services:
     depends_on:
       kamino:
         condition: service_healthy
-      naboo:
+      kessel:
         condition: service_healthy
     networks:
       lerpz-network:
         aliases:
           - holonet.lerpz.local
+
+  coruscant:
+    container_name: coruscant
+    restart: on-failure
+    init: true
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: svc/coruscant/Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.coruscant-http.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.coruscant-http.entrypoints=web"
+      - "traefik.http.routers.coruscant-http.priority=2"
+      - "traefik.http.routers.coruscant-https.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.coruscant-https.entrypoints=websecure"
+      - "traefik.http.routers.coruscant-https.tls=true"
+      - "traefik.http.routers.coruscant-https.priority=2"
+      - "traefik.http.services.coruscant.loadbalancer.server.port=3001"
+    expose:
+      - "3001"
+    hostname: lerpz-coruscant
+    domainname: coruscant.lerpz.local
+    env_file: svc/coruscant/.env.docker
+    depends_on:
+      kamino:
+        condition: service_healthy
+      kessel:
+        condition: service_healthy
+    networks:
+      lerpz-network:
+        aliases:
+          - coruscant.lerpz.local
 
   artoo:
     container_name: artoo
@@ -186,63 +219,30 @@ services:
       dockerfile: svc/artoo/Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.artoo-http.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.artoo-http.rule=Host(`agent.lerpz.local`)"
       - "traefik.http.routers.artoo-http.entrypoints=web"
-      - "traefik.http.routers.artoo-http.priority=2"
-      - "traefik.http.routers.artoo-https.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.artoo-http.priority=3"
+      - "traefik.http.routers.artoo-https.rule=Host(`agent.lerpz.local`)"
       - "traefik.http.routers.artoo-https.entrypoints=websecure"
       - "traefik.http.routers.artoo-https.tls=true"
-      - "traefik.http.routers.artoo-https.priority=2"
-      - "traefik.http.services.artoo.loadbalancer.server.port=3001"
+      - "traefik.http.routers.artoo-https.priority=3"
+      - "traefik.http.services.artoo.loadbalancer.server.port=3002"
     expose:
-      - "3001"
+      - "3002"
     hostname: lerpz-artoo
     domainname: artoo.lerpz.local
     env_file: svc/artoo/.env.docker
     depends_on:
       kamino:
         condition: service_healthy
-      naboo:
-        condition: service_healthy
-    networks:
-      lerpz-network:
-        aliases:
-          - artoo.lerpz.local
-
-  venator:
-    container_name: venator
-    restart: on-failure
-    init: true
-    profiles: ["full"]
-    build:
-      context: .
-      dockerfile: svc/venator/Dockerfile
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.venator-http.rule=Host(`agent.lerpz.local`)"
-      - "traefik.http.routers.venator-http.entrypoints=web"
-      - "traefik.http.routers.venator-http.priority=3"
-      - "traefik.http.routers.venator-https.rule=Host(`agent.lerpz.local`)"
-      - "traefik.http.routers.venator-https.entrypoints=websecure"
-      - "traefik.http.routers.venator-https.tls=true"
-      - "traefik.http.routers.venator-https.priority=3"
-      - "traefik.http.services.venator.loadbalancer.server.port=3002"
-    expose:
-      - "3002"
-    hostname: lerpz-venator
-    domainname: venator.lerpz.local
-    env_file: svc/venator/.env.docker
-    depends_on:
-      kamino:
-        condition: service_healthy
-      naboo:
+      kessel:
         condition: service_healthy
       ilum:
         condition: service_healthy
     networks:
       lerpz-network:
         aliases:
-          - venator.lerpz.local
+          - artoo.lerpz.local
 
 configs:
   traefik-dynamic:
@@ -274,34 +274,34 @@ configs:
             service: holonet-local
             priority: 1
 
-          artoo-local-http:
+          coruscant-local-http:
             rule: "Host(`api.lerpz.local`)"
+            entryPoints:
+              - web
+            service: coruscant-local
+            priority: 1
+
+          coruscant-local-https:
+            rule: "Host(`api.lerpz.local`)"
+            entryPoints:
+              - websecure
+            tls: {}
+            service: coruscant-local
+            priority: 1
+
+          artoo-local-http:
+            rule: "Host(`agent.lerpz.local`)"
             entryPoints:
               - web
             service: artoo-local
             priority: 1
 
           artoo-local-https:
-            rule: "Host(`api.lerpz.local`)"
+            rule: "Host(`agent.lerpz.local`)"
             entryPoints:
               - websecure
             tls: {}
             service: artoo-local
-            priority: 1
-
-          venator-local-http:
-            rule: "Host(`agent.lerpz.local`)"
-            entryPoints:
-              - web
-            service: venator-local
-            priority: 1
-
-          venator-local-https:
-            rule: "Host(`agent.lerpz.local`)"
-            entryPoints:
-              - websecure
-            tls: {}
-            service: venator-local
             priority: 1
 
         services:
@@ -310,12 +310,12 @@ configs:
               servers:
                 - url: "http://host.docker.internal:3000"
 
-          artoo-local:
+          coruscant-local:
             loadBalancer:
               servers:
                 - url: "http://host.docker.internal:3001"
 
-          venator-local:
+          artoo-local:
             loadBalancer:
               servers:
                 - url: "http://host.docker.internal:3002"

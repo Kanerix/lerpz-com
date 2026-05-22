@@ -1,5 +1,5 @@
 [package]
-name = "venator"
+name = "coruscant"
 version.workspace = true
 edition.workspace = true
 homepage.workspace = true
