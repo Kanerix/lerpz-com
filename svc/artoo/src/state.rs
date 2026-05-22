@@ -1,27 +1,33 @@
+//! Application state shared across all axum handlers.
+
 use std::sync::Arc;
 
-use async_openai::Client;
 use axum::extract::FromRef;
-use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 
-use crate::portkey::PortkeyConfig;
+use crate::factory::AgentFactory;
 
-pub(crate) type OpenAI = Arc<Client<PortkeyConfig>>;
-
-pub(crate) type DatabasePool = sqlx::PgPool;
-
-pub(crate) type RedisPool = bb8::Pool<RedisConnectionManager>;
-
-pub(crate) type S3Client = aws_sdk_s3::Client;
+pub type DatabasePool = sqlx::PgPool;
 
 #[derive(Clone)]
-pub(crate) struct AppState {
+pub struct AppState {
     pub azure_config: AzureConfig,
-    pub openai: OpenAI,
+    pub agent_factory: Arc<AgentFactory>,
     pub database: DatabasePool,
-    pub redis: RedisPool,
-    pub s3: S3Client,
+}
+
+impl AppState {
+    pub fn new(
+        azure_config: AzureConfig,
+        agent_factory: AgentFactory,
+        database: sqlx::PgPool,
+    ) -> Self {
+        Self {
+            azure_config,
+            agent_factory: Arc::new(agent_factory),
+            database,
+        }
+    }
 }
 
 impl FromRef<AppState> for AzureConfig {
@@ -30,26 +36,14 @@ impl FromRef<AppState> for AzureConfig {
     }
 }
 
-impl FromRef<AppState> for OpenAI {
+impl FromRef<AppState> for Arc<AgentFactory> {
     fn from_ref(state: &AppState) -> Self {
-        state.openai.clone()
+        state.agent_factory.clone()
     }
 }
 
 impl FromRef<AppState> for DatabasePool {
-    fn from_ref(state: &AppState) -> sqlx::PgPool {
+    fn from_ref(state: &AppState) -> Self {
         state.database.clone()
-    }
-}
-
-impl FromRef<AppState> for RedisPool {
-    fn from_ref(state: &AppState) -> Self {
-        state.redis.clone()
-    }
-}
-
-impl FromRef<AppState> for S3Client {
-    fn from_ref(state: &AppState) -> Self {
-        state.s3.clone()
     }
 }

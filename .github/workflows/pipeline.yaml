@@ -7,12 +7,12 @@ on:
         description: "Force deploy holonet"
         type: boolean
         default: false
-      venator:
-        description: "Force deploy venator"
-        type: boolean
-        default: false
       artoo:
         description: "Force deploy artoo"
+        type: boolean
+        default: false
+      venator:
+        description: "Force deploy venator"
         type: boolean
         default: false
   push:

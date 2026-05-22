@@ -9,14 +9,14 @@ authors.workspace = true
 [dependencies]
 # Internal
 lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
-lerpz-metadata = { workspace = true }
-lerpz-model = { workspace = true }
 lerpz-utils = { workspace = true }
-# Services
-aws-sdk-s3 = { workspace = true }
-bb8 = { workspace = true }
-bb8-redis = { workspace = true }
-redis = { workspace = true }
+# AI & async
+rig-core = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true }
+# Database
+qdrant-client = { workspace = true }
+rig-qdrant = { workspace = true }
 sqlx = { workspace = true, features = [
     "chrono",
     "macros",
@@ -26,39 +26,27 @@ sqlx = { workspace = true, features = [
     "uuid",
 ] }
 # Axum, Tokio and Tower
-axum = { workspace = true, features = [
-    "macros",
-    "tokio",
-    "json",
-    "tracing",
-] }
-tokio = { workspace = true, features = ["full"] }
-tokio-stream = { workspace = true }
-tower-http = { workspace = true, features = ["cors", "trace"] }
-async-stream = { workspace = true }
-utoipa = { workspace = true, features = ["macros", "chrono", "uuid"] }
-utoipa-axum  = { workspace = true }
+axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
 scalar_api_reference = { workspace = true, features = ["axum"] }
-serde_json = { workspace = true }
+tower-http = { workspace = true, features = ["cors", "trace"] }
+utoipa = { workspace = true, features = ["macros"] }
+utoipa-axum = { workspace = true }
 # Tracing
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 # Serde
-serde = { workspace = true }
-# Utilities
-async-openai = { workspace = true, features = ["chat-completion", "image", "audio", "video"] }
-base64 = { workspace = true }
-image = { workspace = true, features = ["jpeg", "png"] }
-chrono = { workspace = true }
-cookie = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+schemars = { workspace = true }
+# Other
+anyhow = { workspace = true }
 dotenvy = { workspace = true }
+http = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
-schemars = { workspace = true }
-uuid = { workspace = true, features = ["v7"] }
-validator = { workspace = true }
-
-[dev-dependencies]
+thiserror = { workspace = true }
+uuid = { workspace = true }
 
 [lints]
 workspace = true

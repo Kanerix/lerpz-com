@@ -1,18 +1,21 @@
+use crate::config::CONFIG;
+use crate::oapi::ApiDoc;
+use crate::portkey::PortkeyConfig;
+use crate::state::AppState;
+
+use std::sync::Arc;
 use std::time::Duration;
 
-use axum::Json;
-use axum::response::Html;
-use axum::response::{IntoResponse, Redirect};
-use axum::routing::get;
-use http::Method;
+use async_openai::Client;
+use aws_sdk_s3::config::{BehaviorVersion, Credentials, Region};
+use axum::http::Method;
+use axum::response::{Html, IntoResponse, Redirect};
+use axum::{Json, routing::get};
+use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
-use qdrant_client::Qdrant;
-use qdrant_client::qdrant::QueryPointsBuilder;
-use rig_core::client::EmbeddingsClient;
 use scalar_api_reference::scalar_html;
-
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret, SecretString};
 use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
@@ -21,20 +24,11 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 
-use crate::client::build_client;
-use crate::config::CONFIG;
-use crate::factory::AgentFactory;
-use crate::oapi::ApiDoc;
-use crate::state::AppState;
-
 mod api;
-mod client;
 mod config;
-mod factory;
 mod oapi;
+mod portkey;
 mod state;
-mod stream;
-mod tools;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -61,30 +55,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let agent_client = build_client(
-        &CONFIG.PORTKEY_BASE_URL,
-        &CONFIG.PORTKEY_API_KEY,
-        &CONFIG.PORTKEY_PROVIDER,
-    )?;
-
-    let default_model = CONFIG.DEFAULT_MODEL.as_ref();
-
-    let qdrant = Qdrant::from_url(&CONFIG.QDRANT_URL_GRPC)
-        .build()
-        .map_err(|e| anyhow::anyhow!("failed to build Qdrant client: {e}"))?;
-    let embedding_model = agent_client.embedding_model(&*CONFIG.DEFAULT_EMBEDDING_MODEL);
-    let query_params = QueryPointsBuilder::new(&*CONFIG.QDRANT_COLLECTION).build();
-
-    let http_client = reqwest::Client::new();
-
-    let agent_factory = AgentFactory::new(
-        agent_client,
-        default_model,
-        qdrant,
-        query_params,
-        embedding_model,
-        http_client,
-    );
+    let portkey_config = PortkeyConfig {
+        api_base: CONFIG.PORTKEY_BASE_URL.to_string(),
+        api_key: SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
+        api_provider: CONFIG.PORTKEY_PROVIDER.to_string(),
+    };
+    let openai = Arc::new(Client::with_config(portkey_config));
 
     let database = PgPoolOptions::new()
         .max_connections(5)
@@ -93,7 +69,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 
-    let state = AppState::new(azure_config, agent_factory, database);
+    let redis_manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
+        .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
+    let redis = bb8::Pool::builder()
+        .build(redis_manager)
+        .await
+        .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
+
+    let aws_credentials = Credentials::new(
+        CONFIG.AWS_ACCESS_KEY_ID.as_ref(),
+        CONFIG.AWS_SECRET_ACCESS_KEY.as_ref(),
+        None,
+        None,
+        "env",
+    );
+    let aws_config = aws_sdk_s3::config::Builder::new()
+        .behavior_version(BehaviorVersion::latest())
+        .region(Region::new(CONFIG.AWS_REGION.as_ref()))
+        .endpoint_url(CONFIG.AWS_S3_ENDPOINT.as_ref())
+        .force_path_style(true)
+        .credentials_provider(aws_credentials)
+        .build();
+    let s3 = aws_sdk_s3::Client::from_conf(aws_config);
+
+    let state = AppState {
+        azure_config,
+        openai,
+        database,
+        redis,
+        s3,
+    };
 
     let cors = CorsLayer::new()
         .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())

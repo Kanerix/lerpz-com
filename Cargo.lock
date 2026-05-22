@@ -98,22 +98,16 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 name = "artoo"
 version = "0.1.0"
 dependencies = [
- "async-openai",
- "async-stream",
- "aws-sdk-s3",
+ "anyhow",
  "axum 0.8.9",
- "base64",
- "bb8",
- "bb8-redis",
- "chrono",
- "cookie",
  "dotenvy",
- "image",
+ "http 1.4.0",
  "lerpz-axum",
- "lerpz-metadata",
- "lerpz-model",
  "lerpz-utils",
- "redis",
+ "qdrant-client",
+ "reqwest 0.12.28",
+ "rig-core",
+ "rig-qdrant",
  "scalar_api_reference",
  "schemars",
  "secrecy",
@@ -121,6 +115,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "strum",
+ "thiserror 2.0.18",
  "tokio",
  "tokio-stream",
  "tower-http",
@@ -129,7 +124,6 @@ dependencies = [
  "utoipa",
  "utoipa-axum",
  "uuid",
- "validator",
 ]
 
 [[package]]
@@ -5666,16 +5660,22 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 name = "venator"
 version = "0.1.0"
 dependencies = [
- "anyhow",
+ "async-openai",
+ "async-stream",
+ "aws-sdk-s3",
  "axum 0.8.9",
+ "base64",
+ "bb8",
+ "bb8-redis",
+ "chrono",
+ "cookie",
  "dotenvy",
- "http 1.4.0",
+ "image",
  "lerpz-axum",
+ "lerpz-metadata",
+ "lerpz-model",
  "lerpz-utils",
- "qdrant-client",
- "reqwest 0.12.28",
- "rig-core",
- "rig-qdrant",
+ "redis",
  "scalar_api_reference",
  "schemars",
  "secrecy",
@@ -5683,7 +5683,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "strum",
- "thiserror 2.0.18",
  "tokio",
  "tokio-stream",
  "tower-http",
@@ -5692,6 +5691,7 @@ dependencies = [
  "utoipa",
  "utoipa-axum",
  "uuid",
+ "validator",
 ]
 
 [[package]]

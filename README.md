@@ -10,14 +10,14 @@ authentication.
 | Name | Role | Stack |
 |---|---|---|
 | `holonet` | Frontend | Next.js |
-| `venator` | Backend API | Rust / Axum |
-| `artoo` | AI Agent | Rust |
+| `artoo` | Backend API | Rust / Axum |
+| `venator` | AI Agent | Rust |
 | `ilum` | Vector database | Qdrant |
 | `kamino` | Primary database | PostgreSQL |
 | `naboo` | Cache | Dragonfly (Redis-compatible) |
 | `geonosis` | Object storage | MinIO |
 
-Service names follow a Star Wars Republic era theme. `holonet` and `venator` are directly linked — the Venator-class Star Destroyer was equipped with a HoloNet transceiver, making it the engine behind the network.
+Service names follow a Star Wars Republic era theme. See
 [docs/NAMING.md](docs/NAMING.md) for the full rationale behind each name.
 
 ## Prerequisites

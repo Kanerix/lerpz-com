@@ -9,32 +9,30 @@ covering *The Phantom Menace*, *Attack of the Clones*, *Revenge of the Sith*,
 and *The Clone Wars*. Each name was chosen to reflect the role the service plays
 in the platform.
 
-### `holonet` — Frontend
+### `holonet` — Frontend (Next.js)
 
-The HoloNet is the Republic's galaxy-wide communications and information network
-— the interface through which citizens, senators, and soldiers send messages,
-receive news, and interact with the wider galaxy. It is the visible,
-public-facing layer of the Republic. As the user-facing interface, `holonet` is
-how users see and interact with the platform.
+The HoloNet is the Republic's galaxy-wide communications and information
+network — the interface through which citizens, senators, and soldiers send
+messages, receive news, and interact with the wider galaxy. It is the
+visible, public-facing layer of the Republic. As the user-facing interface,
+`holonet` is how users see and interact with the platform.
 
-The Venator-class Star Destroyer was equipped with a powerful HoloNet
-transceiver, making it one of the network's key nodes in the field. `holonet`
-broadcasts what `venator` powers.
+### `artoo` — Backend API (Rust/Axum)
 
-### `venator` — Backend API
+R2-D2 is the most capable and dependable droid in the galaxy. He fixes ships,
+carries vital messages, interfaces with foreign systems, and keeps every
+operation running — reliably, tirelessly, and always in the background.
+Everything else depends on him. As the backend API that powers the platform,
+`artoo` is always there and everything else depends on it.
 
-The Venator-class Star Destroyer is the backbone of the Republic fleet —
-powerful, reliable, and always in the thick of it. Every operation depends on
-it. It carries troops, coordinates missions, and keeps everything moving.
-Everything else in the platform depends on `venator` in the same way.
+### `venator` — AI Agent
 
-### `artoo` — AI Agent
-
-R2-D2 is the most capable and helpful droid in the galaxy. He fixes ships,
-carries vital messages, interfaces with foreign systems, and bails everyone
-out of impossible situations — autonomously, resourcefully, and without being
-asked twice. An AI agent that retrieves information, takes action, and solves
-problems maps directly onto this role.
+The Venator-class Star Destroyer was not just a warship — it was the
+Republic's most versatile platform, capable of independent long-range
+operations far from home. It would jump into a system, assess the situation,
+execute a mission, and report back. An AI agent that spins up autonomously,
+reasons over data, takes action, and returns results maps onto exactly this
+kind of independent, self-directed operation.
 
 ### `ilum` — Qdrant (Vector Database)
 

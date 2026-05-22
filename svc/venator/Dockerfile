@@ -52,6 +52,6 @@ COPY --chown=lerpz:app --from=builder /build/server ./
 
 USER lerpz
 
-EXPOSE 3001
+EXPOSE 3002
 
 ENTRYPOINT ["/app/server"]

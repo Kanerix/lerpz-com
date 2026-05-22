@@ -1,21 +1,18 @@
+//! OpenAPI documentation definition for the AI agent HTTP service.
+
 use utoipa::openapi::SecurityRequirement;
 use utoipa::openapi::security::{AuthorizationCode, Flow, OAuth2, Scopes, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
 use crate::config::CONFIG;
 
-pub(crate) const CHATS_TAG: &str = "chats";
-pub(crate) const IMAGES_TAG: &str = "images";
-pub(crate) const MODELS_TAG: &str = "models";
-pub(crate) const GROUPS_TAG: &str = "groups";
-pub(crate) const ORGS_TAG: &str = "orgs";
-pub(crate) const HEALTH_TAG: &str = "health";
+pub(crate) const AGENT_TAG: &str = "agent";
 
 #[derive(OpenApi)]
 #[openapi(
     info(
-        title = "Lerpz AI",
-        description = "Lerpz AI backend API",
+        title = "Lerpz AI Agent",
+        description = "Lerpz AI Agent HTTP API",
         contact(
             name = "Kasper Jønsson",
             email = "kas@lerpz.com",
@@ -23,18 +20,11 @@ pub(crate) const HEALTH_TAG: &str = "health";
     ),
     modifiers(&EntraAuth),
     tags(
-        (name = CHATS_TAG, description = "Manage AI conversations and stream responses via Server-Sent Events."),
-        (name = IMAGES_TAG, description = "Generate and edit images using AI models with real-time streaming previews."),
-        (name = MODELS_TAG, description = "Discover and manage the AI models available to your organization."),
-        (name = GROUPS_TAG, description = "Manage user groups and their access to organizational resources."),
-        (name = ORGS_TAG, description = "Manage organizations, their members, and top-level settings."),
-        (name = HEALTH_TAG, description = "Monitor API health and verify connectivity to backing services."),
+        (name = AGENT_TAG, description = "AI agent chat endpoints"),
     )
 )]
 pub(crate) struct ApiDoc;
 
-/// Injects the Microsoft Entra ID OAuth2 authorization-code security scheme
-/// into the generated OpenAPI document and marks every operation as requiring it.
 struct EntraAuth;
 
 impl Modify for EntraAuth {
@@ -50,7 +40,7 @@ impl Modify for EntraAuth {
             AuthorizationCode::new(
                 auth_url,
                 token_url,
-                Scopes::from_iter([(client_scope, "Default API access")]),
+                Scopes::from_iter([(client_scope, "Default API access")])
             ),
         )]));
 
