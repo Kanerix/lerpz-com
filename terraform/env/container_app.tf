@@ -55,33 +55,33 @@ resource "azurerm_container_app" "lerpz_website" {
       memory = "0.5Gi"
 
       env {
-        name  = "NEXT_PUBLIC_API_URL"
-        value = var.next_public_api_url
+        name  = "PUBLIC_API_URL"
+        value = var.public_api_url
       }
 
       env {
-        name  = "NEXT_PUBLIC_ENTRA_ID_TENANT_ID"
-        value = var.next_public_entra_id_tenant_id
+        name  = "PUBLIC_ENTRA_ID_TENANT_ID"
+        value = var.public_entra_id_tenant_id
       }
 
       env {
-        name  = "NEXT_PUBLIC_ENTRA_ID_CLIENT_ID"
-        value = var.next_public_entra_id_client_id
+        name  = "PUBLIC_ENTRA_ID_CLIENT_ID"
+        value = var.public_entra_id_client_id
       }
 
       env {
-        name  = "NEXT_PUBLIC_ENTRA_ID_SCOPE"
-        value = var.next_public_entra_id_scope
+        name  = "PUBLIC_ENTRA_ID_SCOPE"
+        value = var.public_entra_id_scope
       }
 
       env {
-        name  = "NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI"
-        value = var.next_public_entra_id_redirect_uri
+        name  = "PUBLIC_ENTRA_ID_REDIRECT_URI"
+        value = var.public_entra_id_redirect_uri
       }
 
       env {
-        name  = "NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI"
-        value = var.next_public_entra_id_logout_uri
+        name  = "PUBLIC_ENTRA_ID_LOGOUT_URI"
+        value = var.public_entra_id_logout_uri
       }
     }
   }

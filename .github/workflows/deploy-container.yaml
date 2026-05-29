@@ -63,12 +63,12 @@ jobs:
             -t ${{ steps.tags.outputs.sha }} \
             -t ${{ steps.tags.outputs.env }} \
             -f ./svc/${{ inputs.service }}/Dockerfile \
-            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
-            --build-arg NEXT_PUBLIC_ENTRA_ID_TENANT_ID=${{ vars.NEXT_PUBLIC_ENTRA_ID_TENANT_ID }} \
-            --build-arg NEXT_PUBLIC_ENTRA_ID_CLIENT_ID=${{ vars.NEXT_PUBLIC_ENTRA_ID_CLIENT_ID }} \
-            --build-arg NEXT_PUBLIC_ENTRA_ID_SCOPE=${{ vars.NEXT_PUBLIC_ENTRA_ID_SCOPE }} \
-            --build-arg NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI=${{ vars.NEXT_PUBLIC_ENTRA_ID_REDIRECT_URI }} \
-            --build-arg NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI=${{ vars.NEXT_PUBLIC_ENTRA_ID_LOGOUT_URI }} \
+            --build-arg PUBLIC_API_URL=${{ vars.PUBLIC_API_URL }} \
+            --build-arg PUBLIC_ENTRA_ID_TENANT_ID=${{ vars.PUBLIC_ENTRA_ID_TENANT_ID }} \
+            --build-arg PUBLIC_ENTRA_ID_CLIENT_ID=${{ vars.PUBLIC_ENTRA_ID_CLIENT_ID }} \
+            --build-arg PUBLIC_ENTRA_ID_SCOPE=${{ vars.PUBLIC_ENTRA_ID_SCOPE }} \
+            --build-arg PUBLIC_ENTRA_ID_REDIRECT_URI=${{ vars.PUBLIC_ENTRA_ID_REDIRECT_URI }} \
+            --build-arg PUBLIC_ENTRA_ID_LOGOUT_URI=${{ vars.PUBLIC_ENTRA_ID_LOGOUT_URI }} \
             .
           docker push ${{ steps.tags.outputs.sha }}
           docker push ${{ steps.tags.outputs.env }}
