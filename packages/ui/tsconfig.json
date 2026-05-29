@@ -1,11 +1,20 @@
 {
-  "extends": "@lerpz/typescript-config/react-library.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@lerpz/ui/*": ["./src/*"]
-    }
-  },
-  "include": ["."],
-  "exclude": ["node_modules", "dist"]
+    "compilerOptions": {
+        "strict": true,
+        "target": "ES2022",
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "lib": ["es2022", "DOM", "DOM.Iterable"],
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "verbatimModuleSyntax": true,
+        "baseUrl": ".",
+        "paths": {
+            "@lerpz/ui/*": ["./src/*"]
+        }
+    },
+    "include": ["./**/*.ts", "./**/*.svelte"],
+    "exclude": ["node_modules", "dist"]
 }

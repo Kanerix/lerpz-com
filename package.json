@@ -1,21 +1,25 @@
 {
-  "name": "lerpz-ai",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "dev:portal": "pnpm --filter portal dev",
-    "build:portal": "pnpm --filter portal build",
-    "start:portal": "pnpm --filter portal start",
-    "lint:portal": "pnpm --filter portal lint",
-    "format:portal": "pnpm --filter portal format",
-    "generate:api:portal": "pnpm --filter portal generate:api"
-  },
-  "engines": {
-    "node": ">=22"
-  },
-  "packageManager": "pnpm@11.0.6",
-  "devDependencies": {
-    "@biomejs/biome": "2.4.14",
-    "@lerpz/typescript-config": "workspace:*"
-  }
+    "name": "lerpz-ai",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev:portal": "bun --filter @lerpz/holonet dev",
+        "build:portal": "bun --filter @lerpz/holonet build",
+        "start:portal": "bun --filter @lerpz/holonet start",
+        "lint:portal": "bun --filter @lerpz/holonet lint",
+        "format:portal": "bun --filter @lerpz/holonet format",
+        "generate:api:portal": "bun --filter @lerpz/holonet generate:api"
+    },
+    "workspaces": [
+        "packages/*",
+        "svc/holonet"
+    ],
+    "engines": {
+        "node": ">=24"
+    },
+    "packageManager": "bun@1.4.0-canary.1",
+    "devDependencies": {
+        "@biomejs/biome": "2.4.16",
+        "@lerpz/typescript-config": "workspace:*"
+    }
 }

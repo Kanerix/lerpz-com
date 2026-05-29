@@ -2,12 +2,11 @@
 /target/
 rustc-ice-*.txt
 
-# Node
-**/.next/
+# Node / Bun
+**/.svelte-kit/
 **/node_modules/
-.pnpm-debug.log*
-npm-debug.log*
-next-env.d.ts
+**/build/
+.bun-debug.log*
 
 # Environment files
 **/.env

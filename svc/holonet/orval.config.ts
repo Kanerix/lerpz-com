@@ -4,13 +4,13 @@ export default defineConfig({
     "portal-api": {
         output: {
             mode: "tags-split",
-            target: "./src/services/api",
-            schemas: "./src/services/api/models",
-            client: "react-query",
+            target: "./src/lib/api",
+            schemas: "./src/lib/api/models",
+            client: "svelte-query",
             override: {
                 header: () => "// @ts-nocheck\n",
                 mutator: {
-                    path: "./src/lib/orval-mutator.ts",
+                    path: "./src/lib/http/orval-mutator.ts",
                     name: "customFetch",
                 },
                 query: {

@@ -1,0 +1,95 @@
+<script lang="ts">
+import Icon from "@iconify/svelte";
+import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
+import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+import { cn } from "@lerpz/ui/lib/utils";
+import type { ConversationMessage } from "$lib/api/models/index.js";
+
+let {
+    messages = [],
+    isStreaming = false,
+    error = null,
+}: {
+    messages: ConversationMessage[];
+    isStreaming: boolean;
+    error: string | null;
+} = $props();
+
+let bottomRef = $state<HTMLDivElement | null>(null);
+
+$effect(() => {
+    messages; // track
+    bottomRef?.scrollIntoView({ behavior: "smooth" });
+});
+</script>
+
+{#if messages.length === 0}
+  <div class="flex flex-col items-center justify-center h-[calc(100vh-220px)] text-center gap-4">
+    <div class="flex flex-col items-center gap-3">
+      <div class="bg-muted rounded-full p-4">
+        <Icon icon="mdi:robot-outline" class="size-8 text-muted-foreground" />
+      </div>
+      <h2 class="text-xl font-semibold tracking-tight">Start a conversation</h2>
+      <p class="text-sm text-muted-foreground max-w-sm">
+        Type a message below to begin chatting. Your conversation will be saved automatically.
+      </p>
+    </div>
+  </div>
+{:else}
+  <ScrollArea class="h-[calc(100vh-220px)] w-full">
+    <div class="mx-auto max-w-[750px] flex flex-col gap-4 pb-8">
+      {#each messages as message, index (message.id)}
+        <div class={cn("flex items-end gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
+          {#if message.role === "assistant"}
+            <Avatar size="sm" class="shrink-0">
+              <AvatarFallback>
+                <Icon icon="mdi:robot-outline" class="size-3.5" />
+              </AvatarFallback>
+            </Avatar>
+          {/if}
+
+          <div class={cn(
+            "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words",
+            message.role === "user"
+              ? "bg-primary text-primary-foreground rounded-br-md"
+              : "bg-muted text-foreground rounded-bl-md"
+          )}>
+            {message.content}
+            {#if message.role === "assistant" && isStreaming && index === messages.length - 1}
+              <span class="inline-block w-1.5 h-4 ml-0.5 bg-foreground/70 animate-pulse rounded-sm align-text-bottom"></span>
+            {/if}
+          </div>
+
+          {#if message.role === "user"}
+            <Avatar size="sm" class="shrink-0">
+              <AvatarFallback>
+                <Icon icon="mdi:person" class="size-3.5" />
+              </AvatarFallback>
+            </Avatar>
+          {/if}
+        </div>
+      {/each}
+
+      {#if isStreaming && messages[messages.length - 1]?.role === "user"}
+        <div class="flex gap-3 justify-start">
+          <Avatar size="sm" class="shrink-0">
+            <AvatarFallback>
+              <Icon icon="mdi:robot-outline" class="size-3.5" />
+            </AvatarFallback>
+          </Avatar>
+          <div class="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+            <Icon icon="mdi:loading" class="size-4 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      {/if}
+
+      {#if error}
+        <div class="mx-auto text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2">
+          {error}
+        </div>
+      {/if}
+
+      <div bind:this={bottomRef}></div>
+    </div>
+  </ScrollArea>
+{/if}

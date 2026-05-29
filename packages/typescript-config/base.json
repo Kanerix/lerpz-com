@@ -1,21 +1,21 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Default",
-  "compilerOptions": {
-    "strict": true,
-    "target": "ES2022",
-    "declaration": true,
-    "declarationMap": true,
-    "esModuleInterop": true,
-    "incremental": false,
-    "isolatedModules": true,
-    "lib": ["es2022", "DOM", "DOM.Iterable"],
-    "module": "nodenext",
-    "moduleDetection": "force",
-    "moduleResolution": "nodenext",
-    "noUncheckedIndexedAccess": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Default",
+    "compilerOptions": {
+        "strict": true,
+        "target": "ES2022",
+        "declaration": true,
+        "declarationMap": true,
+        "esModuleInterop": true,
+        "incremental": false,
+        "isolatedModules": true,
+        "lib": ["es2022", "DOM", "DOM.Iterable"],
+        "module": "nodenext",
+        "moduleDetection": "force",
+        "moduleResolution": "nodenext",
+        "noUncheckedIndexedAccess": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true
+    }
 }
