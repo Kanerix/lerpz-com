@@ -3,12 +3,12 @@ name: "Pipeline"
 on:
   workflow_dispatch:
     inputs:
-      holonet:
-        description: "Force deploy holonet"
-        type: boolean
-        default: false
       coruscant:
         description: "Force deploy coruscant"
+        type: boolean
+        default: false
+      kamino:
+        description: "Force deploy kamino"
         type: boolean
         default: false
       artoo:
@@ -45,20 +45,9 @@ jobs:
           echo "## Changed Services" >> $GITHUB_STEP_SUMMARY
           echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| holonet | ${{ needs.prepare.outputs.holonet }} |" >> $GITHUB_STEP_SUMMARY
           echo "| coruscant | ${{ needs.prepare.outputs.coruscant }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| kamino | ${{ needs.prepare.outputs.kamino }} |" >> $GITHUB_STEP_SUMMARY
           echo "| artoo | ${{ needs.prepare.outputs.artoo }} |" >> $GITHUB_STEP_SUMMARY
-
-  deploy-holonet:
-    name: "Deploy holonet"
-    needs: [prepare, env]
-    if: needs.prepare.outputs.holonet == 'true' || inputs.holonet == true
-    uses: ./.github/workflows/deploy-container.yaml
-    with:
-      service: holonet
-      container-app: lerpz-website-${{ needs.env.outputs.name }}
-      environment: ${{ needs.env.outputs.name }}
-    secrets: inherit
 
   deploy-coruscant:
     name: "Deploy coruscant"
@@ -67,6 +56,17 @@ jobs:
     uses: ./.github/workflows/deploy-container.yaml
     with:
       service: coruscant
+      container-app: lerpz-website-${{ needs.env.outputs.name }}
+      environment: ${{ needs.env.outputs.name }}
+    secrets: inherit
+
+  deploy-kamino:
+    name: "Deploy kamino"
+    needs: [prepare, env]
+    if: needs.prepare.outputs.kamino == 'true' || inputs.kamino == true
+    uses: ./.github/workflows/deploy-container.yaml
+    with:
+      service: kamino
       container-app: lerpz-api-${{ needs.env.outputs.name }}
       environment: ${{ needs.env.outputs.name }}
     secrets: inherit

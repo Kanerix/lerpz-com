@@ -5,27 +5,24 @@ This document outlines the naming conventions used in the Lerpz.com platform.
 ## Service Names
 
 Service names are drawn from the **Star Wars Republic** era — the period
-covering *The Phantom Menace*, *Attack of the Clones*, *Revenge of the Sith*,
-and *The Clone Wars*. Each name was chosen to reflect the role the service plays
+covering _The Phantom Menace_, _Attack of the Clones_, _Revenge of the Sith_,
+and _The Clone Wars_. Each name was chosen to reflect the role the service plays
 in the platform.
 
-### `holonet` — Frontend (Next.js)
+### `coruscant` — Frontend (Next.js)
 
-The HoloNet is the Republic's galaxy-wide communications and information
-network — the interface through which citizens, senators, and soldiers send
-messages, receive news, and interact with the wider galaxy. It is the
-visible, public-facing layer of the Republic. As the user-facing interface,
-`holonet` is how users see and interact with the platform.
+Coruscant is the gleaming, city-covered centre of the Republic — the face of
+the galaxy that everyone sees and interacts with. As the user-facing interface,
+`coruscant` is how users see and interact with the platform.
 
-### `coruscant` — Backend API (Rust/Axum)
+### `kamino` — Backend API (Rust/Axum)
 
-Coruscant is the center of the Republic — the hub through which all governance,
-communication, and coordination flows. Every hyperlane leads there; nothing
-happens in the galaxy without going through it. As the backend API that powers
-the platform, `coruscant` is always at the center and everything else depends
-on it.
+Kamino is the hidden ocean world that nobody knew existed — deleted from the
+Jedi Archives, operating in secret, yet producing everything the Republic
+depended on. As the backend API that powers the platform, `kamino` is the
+hidden engine behind everything `coruscant` presents to the world.
 
-### `artoo` — AI Agent
+### `artoo` — AI Agent (Rust)
 
 R2-D2 is the most capable and resourceful droid in the galaxy. He acts
 autonomously, assesses situations on the fly, interfaces with foreign systems,
@@ -40,15 +37,16 @@ Ilum is the ice planet where kyber crystals are mined — the raw source of
 meaning and resonance in the Force. Every Jedi younglings travels there to find
 the crystal that will become the heart of their lightsaber. Qdrant is a vector
 database: it stores embeddings that carry semantic meaning and enables
-similarity search — finding things that *resonate* with a query rather than
+similarity search — finding things that _resonate_ with a query rather than
 matching it literally. Ilum is where that meaning lives.
 
-### `kamino` — PostgreSQL (Primary Database)
+### `jocasta` — PostgreSQL (Primary Database)
 
-Kamino is a remote ocean world whose inhabitants are obsessive record-keepers —
-they maintain perfect archives of every clone, every template, every genetic
-detail. Replication is literally their purpose. The primary relational database
-is exactly that: a meticulous, complete, and replicated source of truth.
+Jocasta Nu is the Jedi Temple's chief librarian and keeper of the Archives —
+the most complete repository of knowledge in the galaxy. She maintains,
+catalogues, and guards every record with precision. The primary relational
+database is exactly that: the meticulous, authoritative source of truth that
+everything else depends on.
 
 ### `kessel` — Dragonfly (Cache)
 

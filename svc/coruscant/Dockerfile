@@ -1,56 +1,65 @@
-FROM rust:slim-bookworm AS chef
-
-RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-    build-essential pkg-config libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    cargo install cargo-chef
+FROM oven/bun:1-slim AS base
 
 
-FROM chef AS planner
-WORKDIR /chef
-
-COPY Cargo.toml Cargo.lock ./
-COPY svc/coruscant ./svc/coruscant
-
-RUN cargo chef prepare --recipe-path recipe.json
-
-
-FROM chef AS builder
-WORKDIR /build
-
-COPY --from=planner /chef/recipe.json ./recipe.json
-RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    --mount=type=cache,id=deps,target=/build/target \
-    cargo chef cook --release --recipe-path recipe.json
-
-COPY Cargo.toml Cargo.lock ./
-COPY svc/coruscant ./svc/coruscant
-COPY crates ./crates
-
-ENV SQLX_OFFLINE=true
-
-RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    --mount=type=cache,id=target,target=/build/target \
-    cargo build --release --bin coruscant && \
-    cp /build/target/release/coruscant /build/server
-
-
-FROM debian:bookworm-slim AS runtime
+FROM base AS deps
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
-    rm -rf /var/lib/apt/lists/* && \
-    addgroup --system --gid 1001 app && \
+COPY package.json bun.lock ./
+COPY svc/coruscant/package.json ./svc/coruscant/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
+
+
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+
+COPY package.json bun.lock ./
+COPY svc/coruscant ./svc/coruscant
+COPY packages/ui ./packages/ui
+COPY packages/typescript-config ./packages/typescript-config
+
+ENV SKIP_ENV_VALIDATION=1
+
+ARG PUBLIC_API_URL
+ARG PUBLIC_ENTRA_ID_TENANT_ID
+ARG PUBLIC_ENTRA_ID_CLIENT_ID
+ARG PUBLIC_ENTRA_ID_SCOPE
+ARG PUBLIC_ENTRA_ID_REDIRECT_URI
+ARG PUBLIC_ENTRA_ID_LOGOUT_URI
+
+ENV PUBLIC_API_URL=$PUBLIC_API_URL \
+    PUBLIC_ENTRA_ID_TENANT_ID=$PUBLIC_ENTRA_ID_TENANT_ID \
+    PUBLIC_ENTRA_ID_CLIENT_ID=$PUBLIC_ENTRA_ID_CLIENT_ID \
+    PUBLIC_ENTRA_ID_SCOPE=$PUBLIC_ENTRA_ID_SCOPE \
+    PUBLIC_ENTRA_ID_REDIRECT_URI=$PUBLIC_ENTRA_ID_REDIRECT_URI \
+    PUBLIC_ENTRA_ID_LOGOUT_URI=$PUBLIC_ENTRA_ID_LOGOUT_URI
+
+RUN --mount=type=cache,id=vite,target=/app/svc/coruscant/.vite-cache \
+    bun --filter coruscant run build
+
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    PORT=3000
+
+RUN addgroup --system --gid 1001 app && \
     adduser --system --uid 1001 --ingroup app lerpz
 
-COPY --chown=lerpz:app --from=builder /build/server ./
+COPY --from=builder --chown=lerpz:app /app/svc/coruscant/build ./build
+COPY --from=builder --chown=lerpz:app /app/svc/coruscant/package.json ./package.json
+
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --production --frozen-lockfile
 
 USER lerpz
 
-EXPOSE 3001
+EXPOSE 3000
 
-ENTRYPOINT ["/app/server"]
+CMD ["bun", "build/index.js"]

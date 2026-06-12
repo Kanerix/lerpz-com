@@ -1,12 +1,12 @@
 name: lerpz
 
 services:
-  kamino:
+  jocasta:
     image: postgres:latest
-    container_name: kamino
+    container_name: jocasta
     restart: on-failure
-    hostname: kamino
-    domainname: kamino.lerpz.local
+    hostname: jocasta
+    domainname: jocasta.lerpz.local
     environment:
       - POSTGRES_USER=lerpz
       - POSTGRES_PASSWORD=Password123
@@ -19,7 +19,7 @@ services:
     networks:
       lerpz-network:
         aliases:
-          - kamino.lerpz.local
+          - jocasta.lerpz.local
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lerpz -d primary"]
       interval: 10s
@@ -143,39 +143,6 @@ services:
     networks:
       - lerpz-network
 
-  holonet:
-    container_name: holonet
-    restart: on-failure
-    init: true
-    profiles: ["full"]
-    build:
-      context: .
-      dockerfile: svc/holonet/Dockerfile
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.holonet-http.rule=Host(`lerpz.local`)"
-      - "traefik.http.routers.holonet-http.entrypoints=web"
-      - "traefik.http.routers.holonet-http.priority=1"
-      - "traefik.http.routers.holonet-https.rule=Host(`lerpz.local`)"
-      - "traefik.http.routers.holonet-https.entrypoints=websecure"
-      - "traefik.http.routers.holonet-https.tls=true"
-      - "traefik.http.routers.holonet-https.priority=1"
-      - "traefik.http.services.holonet.loadbalancer.server.port=3000"
-    expose:
-      - "3000"
-    hostname: lerpz-holonet
-    domainname: holonet.lerpz.local
-    env_file: svc/holonet/.env.docker
-    depends_on:
-      kamino:
-        condition: service_healthy
-      kessel:
-        condition: service_healthy
-    networks:
-      lerpz-network:
-        aliases:
-          - holonet.lerpz.local
-
   coruscant:
     container_name: coruscant
     restart: on-failure
@@ -186,21 +153,21 @@ services:
       dockerfile: svc/coruscant/Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.coruscant-http.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.coruscant-http.rule=Host(`lerpz.local`)"
       - "traefik.http.routers.coruscant-http.entrypoints=web"
-      - "traefik.http.routers.coruscant-http.priority=2"
-      - "traefik.http.routers.coruscant-https.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.coruscant-http.priority=1"
+      - "traefik.http.routers.coruscant-https.rule=Host(`lerpz.local`)"
       - "traefik.http.routers.coruscant-https.entrypoints=websecure"
       - "traefik.http.routers.coruscant-https.tls=true"
-      - "traefik.http.routers.coruscant-https.priority=2"
-      - "traefik.http.services.coruscant.loadbalancer.server.port=3001"
+      - "traefik.http.routers.coruscant-https.priority=1"
+      - "traefik.http.services.coruscant.loadbalancer.server.port=3000"
     expose:
-      - "3001"
+      - "3000"
     hostname: lerpz-coruscant
     domainname: coruscant.lerpz.local
     env_file: svc/coruscant/.env.docker
     depends_on:
-      kamino:
+      jocasta:
         condition: service_healthy
       kessel:
         condition: service_healthy
@@ -208,6 +175,39 @@ services:
       lerpz-network:
         aliases:
           - coruscant.lerpz.local
+
+  kamino:
+    container_name: kamino
+    restart: on-failure
+    init: true
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: svc/kamino/Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kamino-http.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.kamino-http.entrypoints=web"
+      - "traefik.http.routers.kamino-http.priority=2"
+      - "traefik.http.routers.kamino-https.rule=Host(`api.lerpz.local`)"
+      - "traefik.http.routers.kamino-https.entrypoints=websecure"
+      - "traefik.http.routers.kamino-https.tls=true"
+      - "traefik.http.routers.kamino-https.priority=2"
+      - "traefik.http.services.kamino.loadbalancer.server.port=3001"
+    expose:
+      - "3001"
+    hostname: lerpz-kamino
+    domainname: kamino.lerpz.local
+    env_file: svc/kamino/.env.docker
+    depends_on:
+      jocasta:
+        condition: service_healthy
+      kessel:
+        condition: service_healthy
+    networks:
+      lerpz-network:
+        aliases:
+          - kamino.lerpz.local
 
   artoo:
     container_name: artoo
@@ -233,7 +233,7 @@ services:
     domainname: artoo.lerpz.local
     env_file: svc/artoo/.env.docker
     depends_on:
-      kamino:
+      jocasta:
         condition: service_healthy
       kessel:
         condition: service_healthy
@@ -259,34 +259,34 @@ configs:
 
       http:
         routers:
-          holonet-local-http:
-            rule: "Host(`lerpz.local`)"
-            entryPoints:
-              - web
-            service: holonet-local
-            priority: 1
-
-          holonet-local-https:
-            rule: "Host(`lerpz.local`)"
-            entryPoints:
-              - websecure
-            tls: {}
-            service: holonet-local
-            priority: 1
-
           coruscant-local-http:
-            rule: "Host(`api.lerpz.local`)"
+            rule: "Host(`lerpz.local`)"
             entryPoints:
               - web
             service: coruscant-local
             priority: 1
 
           coruscant-local-https:
-            rule: "Host(`api.lerpz.local`)"
+            rule: "Host(`lerpz.local`)"
             entryPoints:
               - websecure
             tls: {}
             service: coruscant-local
+            priority: 1
+
+          kamino-local-http:
+            rule: "Host(`api.lerpz.local`)"
+            entryPoints:
+              - web
+            service: kamino-local
+            priority: 1
+
+          kamino-local-https:
+            rule: "Host(`api.lerpz.local`)"
+            entryPoints:
+              - websecure
+            tls: {}
+            service: kamino-local
             priority: 1
 
           artoo-local-http:
@@ -305,12 +305,12 @@ configs:
             priority: 1
 
         services:
-          holonet-local:
+          coruscant-local:
             loadBalancer:
               servers:
                 - url: "http://host.docker.internal:3000"
 
-          coruscant-local:
+          kamino-local:
             loadBalancer:
               servers:
                 - url: "http://host.docker.internal:3001"

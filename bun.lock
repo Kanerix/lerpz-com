@@ -40,8 +40,8 @@
         "svelte": "^5.0.0",
       },
     },
-    "svc/holonet": {
-      "name": "@lerpz/holonet",
+    "svc/coruscant": {
+      "name": "@lerpz/coruscant",
       "version": "0.1.0",
       "dependencies": {
         "@azure/msal-browser": "^5.1.0",
@@ -206,7 +206,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lerpz/holonet": ["@lerpz/holonet@workspace:svc/holonet"],
+    "@lerpz/coruscant": ["@lerpz/coruscant@workspace:svc/coruscant"],
 
     "@lerpz/typescript-config": ["@lerpz/typescript-config@workspace:packages/typescript-config"],
 

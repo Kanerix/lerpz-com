@@ -9,12 +9,12 @@ authentication.
 
 | Name | Role | Stack |
 |---|---|---|
-| `holonet` | Frontend | Next.js |
-| `artoo` | Backend API | Rust / Axum |
-| `venator` | AI Agent | Rust |
+| `coruscant` | Frontend | Next.js |
+| `kamino` | Backend API | Rust / Axum |
+| `artoo` | AI Agent | Rust |
 | `ilum` | Vector database | Qdrant |
-| `kamino` | Primary database | PostgreSQL |
-| `naboo` | Cache | Dragonfly (Redis-compatible) |
+| `jocasta` | Primary database | PostgreSQL |
+| `kessel` | Cache | Dragonfly (Redis-compatible) |
 | `geonosis` | Object storage | MinIO |
 
 Service names follow a Star Wars Republic era theme. See

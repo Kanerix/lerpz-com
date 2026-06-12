@@ -3,16 +3,16 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "dev:portal": "bun --filter @lerpz/holonet dev",
-        "build:portal": "bun --filter @lerpz/holonet build",
-        "start:portal": "bun --filter @lerpz/holonet start",
-        "lint:portal": "bun --filter @lerpz/holonet lint",
-        "format:portal": "bun --filter @lerpz/holonet format",
-        "generate:api:portal": "bun --filter @lerpz/holonet generate:api"
+        "dev:portal": "bun --filter @lerpz/coruscant dev",
+        "build:portal": "bun --filter @lerpz/coruscant build",
+        "start:portal": "bun --filter @lerpz/coruscant start",
+        "lint:portal": "bun --filter @lerpz/coruscant lint",
+        "format:portal": "bun --filter @lerpz/coruscant format",
+        "generate:api:portal": "bun --filter @lerpz/coruscant generate:api"
     },
     "workspaces": [
         "packages/*",
-        "svc/holonet"
+        "svc/coruscant"
     ],
     "engines": {
         "node": ">=24"

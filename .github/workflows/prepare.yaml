@@ -3,10 +3,10 @@ name: "Detect changed services"
 on:
   workflow_call:
     outputs:
-      holonet:
-        value: ${{ jobs.detect-changes.outputs.holonet }}
       coruscant:
         value: ${{ jobs.detect-changes.outputs.coruscant }}
+      kamino:
+        value: ${{ jobs.detect-changes.outputs.kamino }}
       artoo:
         value: ${{ jobs.detect-changes.outputs.artoo }}
 
@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      holonet: ${{ steps.filter.outputs.holonet }}
       coruscant: ${{ steps.filter.outputs.coruscant }}
+      kamino: ${{ steps.filter.outputs.kamino }}
       artoo: ${{ steps.filter.outputs.artoo }}
 
     steps:
@@ -31,14 +31,14 @@ jobs:
         uses: dorny/paths-filter@v4
         with:
           filters: |
-            holonet:
-              - 'svc/holonet/**'
+            coruscant:
+              - 'svc/coruscant/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'tsconfig.json'
-            coruscant:
-              - 'svc/coruscant/**'
+            kamino:
+              - 'svc/kamino/**'
               - 'crates/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
