@@ -44,12 +44,3 @@ impl Default for Claims {
         }
     }
 }
-
-impl From<lerpz_model::User> for Claims {
-    fn from(user: lerpz_model::User) -> Self {
-        Claims {
-            sub: user.id.to_string(),
-            ..Default::default()
-        }
-    }
-}

@@ -4,7 +4,6 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-lerpz-model = { workspace = true }
 anyhow = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 jsonwebtoken = { workspace = true }
