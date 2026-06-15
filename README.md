@@ -12,12 +12,12 @@ authentication.
 | `coruscant` | Frontend | Next.js |
 | `kamino` | Backend API | Rust / Axum |
 | `artoo` | AI Agent | Rust |
-| `ilum` | Vector database | Qdrant |
-| `jocasta` | Primary database | PostgreSQL |
-| `kessel` | Cache | Dragonfly (Redis-compatible) |
-| `geonosis` | Object storage | MinIO |
+| `qdrant` | Vector database | Qdrant |
+| `postgres` | Primary database | PostgreSQL |
+| `dragonfly` | Cache | Dragonfly (Redis-compatible) |
+| `minio` | Object storage | MinIO |
 
-Service names follow a Star Wars Republic era theme. See
+Application service names follow a Star Wars Republic era theme. See
 [docs/NAMING.md](docs/NAMING.md) for the full rationale behind each name.
 
 ## Prerequisites
