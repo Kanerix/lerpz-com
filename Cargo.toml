@@ -15,7 +15,6 @@ lerpz-axum = { path = "crates/lerpz-axum" }
 lerpz-jwt = { path = "crates/lerpz-jwt" }
 lerpz-macros = { path = "crates/lerpz-macros" }
 lerpz-metadata = { path = "crates/lerpz-metadata" }
-lerpz-model = { path = "crates/lerpz-model" }
 lerpz-pwd = { path = "crates/lerpz-pwd" }
 lerpz-utils = { path = "crates/lerpz-utils" }
 # Services

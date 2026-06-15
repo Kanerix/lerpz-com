@@ -2628,7 +2628,6 @@ dependencies = [
  "image",
  "lerpz-axum",
  "lerpz-metadata",
- "lerpz-model",
  "lerpz-utils",
  "redis",
  "scalar_api_reference",
@@ -2696,7 +2695,6 @@ dependencies = [
  "anyhow",
  "chrono",
  "jsonwebtoken",
- "lerpz-model",
  "rand 0.9.4",
  "serde",
  "thiserror 2.0.18",
@@ -2717,17 +2715,6 @@ name = "lerpz-metadata"
 version = "0.1.0"
 dependencies = [
  "aws-sdk-s3",
- "chrono",
- "serde",
- "sqlx",
- "thiserror 2.0.18",
- "uuid",
-]
-
-[[package]]
-name = "lerpz-model"
-version = "0.1.0"
-dependencies = [
  "chrono",
  "serde",
  "sqlx",
