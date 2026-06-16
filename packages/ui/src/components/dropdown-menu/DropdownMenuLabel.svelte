@@ -10,6 +10,10 @@ let {
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Menu.ItemGroupLabel data-slot="dropdown-menu-label" class={cn("text-muted-foreground px-3 py-2 text-xs", className)} {...rest}>
+<Menu.ItemGroupLabel
+  data-slot="dropdown-menu-label"
+  class={cn("px-3 py-2 text-xs text-muted-foreground", className)}
+  {...rest}
+>
   {@render children?.()}
 </Menu.ItemGroupLabel>

@@ -8,4 +8,11 @@ let {
     ...rest
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
-<div data-slot="sidebar-footer" class={cn("flex flex-col gap-2 p-2", className)} {...rest}>{@render children?.()}</div>
+
+<div
+    data-slot="sidebar-footer"
+    class={cn("flex flex-col gap-2 p-2", className)}
+    {...rest}
+>
+    {@render children?.()}
+</div>

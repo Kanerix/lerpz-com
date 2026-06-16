@@ -4,7 +4,10 @@ import type { Snippet } from "svelte";
 import { cn } from "../../lib/utils.js";
 
 const badgeVariants = cva(
-    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
+    [
+        "inline-flex items-center px-2.5 py-0.5 text-xs font-semibold",
+        "rounded-full border transition-colors",
+    ],
     {
         variants: {
             variant: {
@@ -33,6 +36,10 @@ let {
 } & VariantProps<typeof badgeVariants> = $props();
 </script>
 
-<span data-slot="badge" class={cn(badgeVariants({ variant, className }))} {...rest}>
+<span
+  data-slot="badge"
+  class={cn(badgeVariants({ variant, className }))}
+  {...rest}
+>
   {@render children?.()}
 </span>

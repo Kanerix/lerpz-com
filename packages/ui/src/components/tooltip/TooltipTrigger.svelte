@@ -1,8 +1,14 @@
 <script lang="ts">
-import type { PropsFn } from "@ark-ui/svelte";
 import { Tooltip } from "@ark-ui/svelte/tooltip";
 import type { Snippet } from "svelte";
+import type { HTMLAttributes, SvelteHTMLElements } from "svelte/elements";
 import { cn } from "../../lib/utils.js";
+
+// `PropsFn` is declared in @ark-ui/svelte's internal types but not re-exported,
+// so we mirror its definition here for the `asChild` snippet.
+type PropsFn<T extends keyof SvelteHTMLElements> = (
+    props?: SvelteHTMLElements[T],
+) => HTMLAttributes<HTMLElement>;
 
 let {
     class: className = "",
@@ -17,6 +23,11 @@ let {
 } = $props();
 </script>
 
-<Tooltip.Trigger data-slot="tooltip-trigger" class={cn(className)} {asChild} {...rest}>
+<Tooltip.Trigger
+    data-slot="tooltip-trigger"
+    class={cn(className)}
+    {asChild}
+    {...rest}
+>
   {@render children?.()}
 </Tooltip.Trigger>

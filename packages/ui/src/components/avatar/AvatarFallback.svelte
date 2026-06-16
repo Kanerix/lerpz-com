@@ -10,6 +10,14 @@ let {
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Avatar.Fallback data-slot="avatar-fallback" class={cn("bg-muted text-muted-foreground flex size-full items-center justify-center rounded-full text-sm", className)} {...rest}>
+<Avatar.Fallback
+  data-slot="avatar-fallback"
+  class={cn(
+    "flex size-full items-center justify-center text-sm",
+    "bg-muted text-muted-foreground rounded-full",
+    className
+  )}
+  {...rest}
+>
   {@render children?.()}
 </Avatar.Fallback>

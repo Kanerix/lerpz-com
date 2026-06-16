@@ -14,14 +14,23 @@ let {
   <Select.Trigger
     data-slot="select-trigger"
     class={cn(
-      "border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 flex w-fit items-center justify-between gap-1.5 rounded-4xl border px-3 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+      "flex w-fit items-center justify-between gap-1.5 px-3 text-sm",
+      "bg-input/30 rounded-4xl border border-input transition-colors",
+      "focus-visible:border-ring focus-visible:ring-ring/50",
+      "focus-visible:ring-[3px] focus-visible:outline-none",
+      "disabled:cursor-not-allowed disabled:opacity-50",
       size === "default" ? "h-9" : "h-8",
       className
     )}
   >
     {@render children?.()}
     <Select.Indicator>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-muted-foreground">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        class="size-4 text-muted-foreground"
+      >
         <path d="M7 10l5 5 5-5H7z"/>
       </svg>
     </Select.Indicator>

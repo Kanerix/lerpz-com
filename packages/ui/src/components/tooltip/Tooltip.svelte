@@ -1,6 +1,6 @@
 <script lang="ts">
-import { Tooltip } from "@ark-ui/svelte/tooltip";
 import type { TooltipRootProps } from "@ark-ui/svelte/tooltip";
+import { Tooltip } from "@ark-ui/svelte/tooltip";
 import type { Snippet } from "svelte";
 
 // openDelay/closeDelay are valid zag-js props that the Svelte wrapper types don't surface directly

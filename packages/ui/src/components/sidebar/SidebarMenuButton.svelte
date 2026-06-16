@@ -5,7 +5,18 @@ import { cn } from "../../lib/utils.js";
 import { useSidebar } from "./context.svelte.js";
 
 const variants = cva(
-    "peer/menu-button ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none transition-[width,height,padding] focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground",
+    [
+        "peer/menu-button flex w-full items-center gap-2 overflow-hidden",
+        "rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring",
+        "transition-[width,height,padding] focus-visible:ring-2",
+        "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        "active:bg-sidebar-accent active:text-sidebar-accent-foreground",
+        "disabled:pointer-events-none disabled:opacity-50",
+        "aria-disabled:pointer-events-none aria-disabled:opacity-50",
+        "group-has-[[data-sidebar=menu-action]]/menu-item:pr-8",
+        "data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium",
+        "data-[active=true]:text-sidebar-accent-foreground",
+    ],
     {
         variants: {
             size: {

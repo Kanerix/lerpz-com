@@ -18,7 +18,7 @@ let {
   data-slot="avatar"
   data-size={size}
   class={cn(
-    "relative flex shrink-0 select-none overflow-hidden rounded-full",
+    "relative flex shrink-0 overflow-hidden select-none rounded-full",
     size === "sm" && "size-6",
     size === "default" && "size-8",
     size === "lg" && "size-10",

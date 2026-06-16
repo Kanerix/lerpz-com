@@ -8,4 +8,8 @@ let {
 }: { class?: string; [key: string]: unknown } = $props();
 </script>
 
-<Menu.Separator data-slot="dropdown-menu-separator" class={cn("bg-border/50 -mx-1 my-1 h-px", className)} {...rest} />
+<Menu.Separator
+  data-slot="dropdown-menu-separator"
+  class={cn("-mx-1 my-1 h-px bg-border/50", className)}
+  {...rest}
+/>

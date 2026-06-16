@@ -15,4 +15,10 @@ let {
 } = $props();
 </script>
 
-<Avatar.Image data-slot="avatar-image" class={cn("aspect-square size-full object-cover", className)} {src} {alt} {...rest} />
+<Avatar.Image
+  data-slot="avatar-image"
+  class={cn("aspect-square size-full object-cover", className)}
+  {src}
+  {alt}
+  {...rest}
+/>

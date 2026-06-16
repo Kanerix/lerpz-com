@@ -13,7 +13,8 @@ let {
 <Popover.Content
   data-slot="popover-content"
   class={cn(
-    "bg-popover text-popover-foreground z-50 rounded-2xl border shadow-2xl outline-none",
+    "z-50 bg-popover text-popover-foreground",
+    "rounded-2xl border shadow-2xl outline-none",
     "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
     "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
     className

@@ -8,4 +8,11 @@ let {
     ...rest
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
-<div data-slot="sidebar-group" class={cn("relative flex w-full min-w-0 flex-col p-2", className)} {...rest}>{@render children?.()}</div>
+
+<div
+    data-slot="sidebar-group"
+    class={cn("relative flex flex-col w-full min-w-0 p-2", className)}
+    {...rest}
+>
+    {@render children?.()}
+</div>

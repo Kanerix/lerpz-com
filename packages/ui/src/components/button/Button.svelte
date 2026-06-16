@@ -1,6 +1,9 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
-import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
+import type {
+    HTMLAnchorAttributes,
+    HTMLButtonAttributes,
+} from "svelte/elements";
 import { cn } from "../../lib/utils.js";
 import { type ButtonVariants, buttonVariants } from "./button-variants.js";
 

@@ -14,7 +14,12 @@ let {
   {rows}
   bind:this={el}
   class={cn(
-    "border-input bg-input/30 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-full rounded-2xl border px-3 py-2 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+    "flex w-full px-3 py-2 text-sm",
+    "bg-input/30 rounded-2xl border border-input transition-colors resize-none",
+    "placeholder:text-muted-foreground",
+    "focus-visible:border-ring focus-visible:ring-ring/50",
+    "focus-visible:ring-[3px] focus-visible:outline-none",
+    "disabled:cursor-not-allowed disabled:opacity-50",
     className
   )}
   {...rest}
