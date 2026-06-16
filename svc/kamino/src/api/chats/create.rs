@@ -40,9 +40,10 @@ pub struct ChatRequest {
     summary = "Create a new chat",
     description = "Creates a new conversation, streams the AI reply back via Server-Sent Events. \
         The first event is `conversation_created` with the new conversation ID; \
-        subsequent `message` events carry incremental token chunks; \
-        a `done` event signals completion and carries the full assembled reply; \
-        `saved` confirms the reply was persisted; \
+        subsequent `message` events carry incremental token chunks until the \
+        stream ends; \
+        `saved` confirms the reply was persisted and is the final event before \
+        the stream closes; \
         `error` is emitted on failures.",
     request_body(
         content = ChatRequest,
@@ -55,7 +56,6 @@ pub struct ChatRequest {
             description = "SSE stream of AI response chunks. Events: \
                 conversation_created (conversation UUID), \
                 message (token chunk), \
-                done (full assembled reply), \
                 saved (conversation UUID), \
                 error (error message)",
             content_type = "text/event-stream",
@@ -152,35 +152,28 @@ pub async fn handler(
             };
 
             let mut buf = String::new();
-            let mut finished = false;
 
             for choice in &chunk.choices {
                 if let Some(ref delta) = choice.delta.content {
                     buf.push_str(delta);
                 }
 
-                if let Some(finish_reason) = choice.finish_reason {
-                    match finish_reason {
-                        FinishReason::Stop => { finished = true; }
-                        FinishReason::ContentFilter => {
-                            yield Ok(Event::default()
-                                .event("error")
-                                .data("content filter triggered"));
-                            break;
-                        }
-                        _ => {}
-                    }
+                if let Some(FinishReason::ContentFilter) = choice.finish_reason {
+                    yield Ok(Event::default()
+                        .event("error")
+                        .data("content filter triggered"));
+                    break;
                 }
             }
 
-            assistant_buf.push_str(&buf);
-
-            if !finished {
+            // Stream each non-empty delta as a `message` event. The reply is
+            // complete once the upstream ends and the connection closes; no
+            // explicit terminal event is sent.
+            if !buf.is_empty() {
+                assistant_buf.push_str(&buf);
                 yield Ok(Event::default().event("message").data(buf));
             }
         }
-
-        yield Ok(Event::default().event("done").data(&assistant_buf));
 
         let result = sqlx::query!(
             "INSERT INTO messages (conversation_id, role, content)
