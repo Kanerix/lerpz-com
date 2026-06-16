@@ -39,8 +39,8 @@ pub struct MessageRequest {
     description = "Appends a new user message to the conversation and streams \
         the AI reply back via Server-Sent Events. Requires the conversation to \
         belong to the authenticated user. SSE events emitted: `message` (token \
-        chunk), `done` (final token chunk), `saved` (conversation UUID confirming \
-        persistence), `error` (error message).",
+        chunk), `done` (completion signal carrying the full assembled reply), \
+        `saved` (conversation UUID confirming persistence), `error` (error message).",
     params(
         ("id" = Uuid, Path, description = "Conversation ID"),
     ),
@@ -54,7 +54,7 @@ pub struct MessageRequest {
             status = OK,
             description = "SSE stream of AI response chunks. Events: \
                            message (token chunk), \
-                           done (final token chunk), \
+                           done (full assembled reply), \
                            saved (conversation UUID), \
                            error (error message)",
             content_type = "text/event-stream",
@@ -171,7 +171,6 @@ pub async fn handler(
     let mut request_builder = CreateChatCompletionRequestArgs::default();
 
     request_builder
-        .max_tokens(2048u32)
         .model(&model)
         .messages(messages)
         .stream(true);
@@ -185,7 +184,6 @@ pub async fn handler(
 
     let sse_stream = async_stream::stream! {
         let mut assistant_buf = String::new();
-        let mut completed = false;
 
         while let Some(chunk_result) = stream.next().await {
             let chunk = match chunk_result {
@@ -207,10 +205,7 @@ pub async fn handler(
                 }
                 if let Some(finish_reason) = choice.finish_reason {
                     match finish_reason {
-                        FinishReason::Stop => {
-                            completed = true;
-                            finished = true;
-                        }
+                        FinishReason::Stop => { finished = true; }
                         FinishReason::ContentFilter => {
                             yield Ok(Event::default()
                                 .event("error")
@@ -224,19 +219,12 @@ pub async fn handler(
 
             assistant_buf.push_str(&buf);
 
-            if finished {
-                yield Ok(Event::default().event("done").data(buf));
-            } else {
+            if !finished {
                 yield Ok(Event::default().event("message").data(buf));
             }
         }
 
-        if !completed {
-            yield Ok(Event::default()
-                .event("error")
-                .data("stream ended without completion"));
-            return;
-        }
+        yield Ok(Event::default().event("done").data(&assistant_buf));
 
         let result = sqlx::query!(
             "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
