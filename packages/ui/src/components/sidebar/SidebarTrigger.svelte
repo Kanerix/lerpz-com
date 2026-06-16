@@ -15,7 +15,7 @@ const sidebar = useSidebar();
   onclick={() => sidebar.toggleSidebar()}
   class={cn(
     "inline-flex size-7 items-center justify-center",
-    "rounded-md text-sidebar-foreground",
+    "rounded-md text-sidebar-foreground cursor-pointer",
     "hover:bg-sidebar-accent",
     className
   )}

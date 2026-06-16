@@ -10,6 +10,10 @@ let {
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Menu.Trigger data-slot="dropdown-menu-trigger" class={cn(className)} {...rest}>
+<Menu.Trigger
+  data-slot="dropdown-menu-trigger"
+  class={cn("cursor-pointer", className)}
+  {...rest}
+>
   {@render children?.()}
 </Menu.Trigger>

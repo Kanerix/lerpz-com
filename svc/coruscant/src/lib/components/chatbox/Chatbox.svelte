@@ -12,7 +12,6 @@ import type {
     ChatboxSubmitArgs,
 } from "./chatbox-context.svelte.js";
 import {
-    getChatboxContext,
     setChatboxContext,
 } from "./chatbox-context.svelte.js";
 import ImageShelf from "./ImageShelf.svelte";

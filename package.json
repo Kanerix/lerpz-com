@@ -3,12 +3,12 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "dev:portal": "bun --filter @lerpz/coruscant dev",
-        "build:portal": "bun --filter @lerpz/coruscant build",
-        "start:portal": "bun --filter @lerpz/coruscant start",
-        "lint:portal": "bun --filter @lerpz/coruscant lint",
-        "format:portal": "bun --filter @lerpz/coruscant format",
-        "generate:api:portal": "bun --filter @lerpz/coruscant generate:api"
+        "dev": "bun --filter @lerpz/coruscant dev",
+        "build": "bun --filter @lerpz/coruscant build",
+        "start": "bun --filter @lerpz/coruscant start",
+        "lint": "bun --filter @lerpz/coruscant lint",
+        "format": "bun --filter @lerpz/coruscant format",
+        "generate-api": "bun --filter @lerpz/coruscant generate:api"
     },
     "workspaces": [
         "packages/*",

@@ -7,11 +7,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@lerpz/ui/components/sidebar";
-import { page } from "$app/stores";
+import { page } from "$app/state";
 
 let { class: className = "" }: { class?: string } = $props();
 
-const pathname = $derived($page.url.pathname);
+const pathname = $derived(page.url.pathname);
 
 const pages = [
     { title: "Docs", url: "/docs", icon: "mdi:file-document-outline" },

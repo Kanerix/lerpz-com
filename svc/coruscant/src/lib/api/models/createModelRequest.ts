@@ -2,11 +2,9 @@
 import type { ModelFamily } from './modelFamily';
 
 /**
- * An AI model that can be routed to via Portkey.
+ * Parameters for creating a new model.
  */
-export interface Model {
-  /** Timestamp of when the model was created. */
-  created_at: string;
+export interface CreateModelRequest {
   /** Portkey deployment name used when routing requests. */
   deployment_name: string;
   /**
@@ -18,12 +16,8 @@ export interface Model {
   display_name: string;
   /** Provider family the model belongs to. */
   family: ModelFamily;
-  /** Unique model identifier. */
-  id: string;
   /** Portkey provider slug the deployment lives under. */
   provider: string;
-  /** Arbitrary provider/runtime settings as a JSON object. */
-  settings: unknown;
-  /** Timestamp of the last update. */
-  updated_at: string;
+  /** Arbitrary provider/runtime settings as a JSON object. Defaults to `{}`. */
+  settings?: unknown;
 }

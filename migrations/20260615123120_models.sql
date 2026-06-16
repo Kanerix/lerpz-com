@@ -26,3 +26,6 @@ CREATE TRIGGER update_timestamp
 
 CREATE INDEX idx_models_family ON models(family);
 CREATE INDEX idx_models_provider ON models(provider);
+
+INSERT INTO models (display_name, description, family, deployment_name, provider, settings)
+VALUES ('Gemini Flash', 'A really fast generative AI model', 'google', '@google/gemini-2.5-flash', 'google', '{}');

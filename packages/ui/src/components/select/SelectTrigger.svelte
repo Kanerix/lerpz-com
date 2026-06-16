@@ -16,6 +16,7 @@ let {
     class={cn(
       "flex w-fit items-center justify-between gap-1.5 px-3 text-sm",
       "bg-input/30 rounded-4xl border border-input transition-colors",
+      "cursor-pointer",
       "focus-visible:border-ring focus-visible:ring-ring/50",
       "focus-visible:ring-[3px] focus-visible:outline-none",
       "disabled:cursor-not-allowed disabled:opacity-50",

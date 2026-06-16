@@ -1,11 +1,14 @@
 // @ts-nocheck
 
-export * from "./chatRequest";
-export * from "./conversation";
-export * from "./conversationDetail";
-export * from "./conversationMessage";
-export * from "./healthCheck";
-export * from "./messageRequest";
-export * from "./model";
-export * from "./models";
-export * from "./problemSchema";
+export * from './chatRequest';
+export * from './conversation';
+export * from './conversationDetail';
+export * from './conversationMessage';
+export * from './createModelRequest';
+export * from './healthCheck';
+export * from './imageRequest';
+export * from './messageRequest';
+export * from './model';
+export * from './modelFamily';
+export * from './problemSchema';
+export * from './updateModelRequest';

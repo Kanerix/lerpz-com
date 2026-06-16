@@ -10,6 +10,10 @@ let {
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Popover.Trigger data-slot="popover-trigger" class={cn(className)} {...rest}>
+<Popover.Trigger
+  data-slot="popover-trigger"
+  class={cn("cursor-pointer", className)}
+  {...rest}
+>
   {@render children?.()}
 </Popover.Trigger>

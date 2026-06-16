@@ -9,15 +9,15 @@ import {
 } from "@lerpz/ui/components/sidebar";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
 import { createQuery } from "@tanstack/svelte-query";
-import { page } from "$app/stores";
-import { getListChatsQueryKey, listChats } from "$lib/api/chats/chats.js";
+import { page } from "$app/state";
+import { getListChatsUrl, listChats } from "$lib/api/chats/chats.js";
 import type { Conversation } from "$lib/api/models/index.js";
 
-const pathname = $derived($page.url.pathname);
+const pathname = $derived(page.url.pathname);
 
 const query = createQuery(() => ({
-    queryKey: getListChatsQueryKey(),
-    queryFn: listChats,
+    queryKey: [getListChatsUrl()],
+    queryFn: ({ signal }: { signal: AbortSignal }) => listChats({ signal }),
 }));
 
 type DateGroup = "Today" | "Yesterday" | "This week" | "Older";
