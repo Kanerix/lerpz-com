@@ -2,11 +2,11 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { Card, CardContent } from "@lerpz/ui/components/card";
-import { Textarea } from "@lerpz/ui/components/textarea";
 import { untrack } from "svelte";
 import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ChatboxSettings from "./ChatboxSettings.svelte";
+import MarkdownEditor from "./MarkdownEditor.svelte";
 import type {
     ChatboxMode,
     ChatboxSubmitArgs,
@@ -47,12 +47,10 @@ let isEnhancePending = $state(false);
 
 const isPending = $derived(isSubmitPending || isEnhancePending || isStreaming);
 
-let textareaEl = $state<HTMLTextAreaElement | null>(null);
 let cardEl = $state<HTMLDivElement | null>(null);
 
 $effect(() => {
     chatboxStore.setChatboxAnchor(cardEl);
-    textareaEl?.focus();
 });
 
 $effect(() => {
@@ -140,11 +138,8 @@ async function enhance(prompt: string): Promise<string> {
     }
 }
 
-function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        if (!isPending && chatboxStore.prompt.trim()) submit();
-    }
+function handleEnter() {
+    if (!isPending && chatboxStore.prompt.trim()) submit();
 }
 </script>
 
@@ -153,27 +148,15 @@ function handleKeyDown(e: KeyboardEvent) {
   <div bind:this={cardEl}>
     <Card class="rounded-4xl">
       <CardContent class="flex flex-col gap-3 p-3">
-        <!-- Mobile textarea -->
-        <Textarea
-          bind:el={textareaEl}
-          disabled={isPending}
-          placeholder={placeholders[mode]}
-          value={chatboxStore.prompt}
-          oninput={(e) => chatboxStore.setPrompt((e.target as HTMLTextAreaElement).value)}
-          onkeydown={handleKeyDown}
-          rows={1}
-          class="block sm:hidden grow min-h-0 border-none shadow-none ring-0 outline-none focus-visible:ring-0 bg-transparent"
-        />
-        <!-- Desktop row -->
-        <div class="flex gap-4">
-          <Textarea
+        <div class="flex items-end gap-4">
+          <MarkdownEditor
+            value={chatboxStore.prompt}
+            onChange={(md) => chatboxStore.setPrompt(md)}
+            onEnter={handleEnter}
             disabled={isPending}
             placeholder={placeholders[mode]}
-            value={chatboxStore.prompt}
-            oninput={(e) => chatboxStore.setPrompt((e.target as HTMLTextAreaElement).value)}
-            onkeydown={handleKeyDown}
-            rows={1}
-            class="hidden sm:block grow min-h-0 border-none shadow-none ring-0 outline-none focus-visible:ring-0 bg-transparent"
+            autofocus
+            class="grow self-stretch px-1 py-1.5"
           />
           <Button
             size="icon"

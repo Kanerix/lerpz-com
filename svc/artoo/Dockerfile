@@ -13,7 +13,10 @@ FROM chef AS planner
 WORKDIR /chef
 
 COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+COPY benchmarks ./benchmarks
 COPY svc/artoo ./svc/artoo
+COPY svc/kamino ./svc/kamino
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -27,8 +30,10 @@ RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     cargo chef cook --release --recipe-path recipe.json
 
 COPY Cargo.toml Cargo.lock ./
-COPY svc/artoo ./svc/artoo
 COPY crates ./crates
+COPY benchmarks ./benchmarks
+COPY svc/artoo ./svc/artoo
+COPY svc/kamino ./svc/kamino
 
 ENV SQLX_OFFLINE=true
 

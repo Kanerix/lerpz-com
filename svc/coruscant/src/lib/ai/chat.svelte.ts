@@ -50,7 +50,6 @@ export function createChat(options: UseChatOptions = {}) {
         assistantBuf = "";
         assistantMsgId = tempId();
 
-        let streamDone = false;
         const convId = conversationIdRef;
         const isNew = convId === null;
 
@@ -127,44 +126,16 @@ export function createChat(options: UseChatOptions = {}) {
                             }
                             break;
                         }
-                        case "done": {
-                            // `done` carries the full, authoritative response,
-                            // so replace the streamed buffer rather than
-                            // appending to avoid duplicating the message.
-                            assistantBuf = data;
-                            const content = assistantBuf;
-                            const id = assistantMsgId;
-                            const last = messages[messages.length - 1];
-                            if (last?.role === "assistant") {
-                                messages = [
-                                    ...messages.slice(0, -1),
-                                    { ...last, content },
-                                ];
-                            } else {
-                                messages = [
-                                    ...messages,
-                                    {
-                                        id,
-                                        role: "assistant",
-                                        content,
-                                        created_at: new Date().toISOString(),
-                                    },
-                                ];
-                            }
-                            isStreaming = false;
-                            streamDone = true;
-                            break;
-                        }
                         case "saved": {
                             isSaved = true;
                             isLoading = false;
+                            isStreaming = false;
                             onSaved?.(data);
                             break;
                         }
                         case "error": {
                             isLoading = false;
                             isStreaming = false;
-                            streamDone = true;
                             error = data;
                             onError?.(data);
                             closeRef = null;
@@ -180,13 +151,9 @@ export function createChat(options: UseChatOptions = {}) {
                     closeRef = null;
                 },
                 onClose: (incomplete) => {
-                    // Always finalize streaming state when the connection
-                    // closes. With `doneSignal: null` a clean close reports
-                    // `incomplete === false`, so without this the spinner would
-                    // hang whenever the server omits an explicit `done` event.
                     isLoading = false;
                     isStreaming = false;
-                    if (!streamDone && (incomplete || !error)) {
+                    if (incomplete && !error) {
                         error = "Stream ended unexpectedly.";
                     }
                     closeRef = null;
