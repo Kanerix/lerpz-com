@@ -13,7 +13,9 @@ let {
   data-slot="scroll-area"
   class={cn("relative overflow-hidden", className)}
 >
-  <ScrollArea.Viewport class="size-full rounded-[inherit]">
+  <ScrollArea.Viewport
+    class="size-full rounded-[inherit] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+  >
     {@render children?.()}
   </ScrollArea.Viewport>
   <ScrollArea.Scrollbar
