@@ -6,6 +6,7 @@ import { untrack } from "svelte";
 import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ChatboxSettings from "./ChatboxSettings.svelte";
+import ChatStatusBar from "./ChatStatusBar.svelte";
 import MarkdownEditor from "./MarkdownEditor.svelte";
 import type {
     ChatboxMode,
@@ -28,6 +29,9 @@ let {
     models = [],
     isModelsLoading = false,
     isStreaming = false,
+    isThinking = false,
+    isSaved = false,
+    error = null,
     loadModels = async () => {},
     defaultMode = "chat",
 }: {
@@ -36,6 +40,9 @@ let {
     models?: Model[];
     isModelsLoading?: boolean;
     isStreaming?: boolean;
+    isThinking?: boolean;
+    isSaved?: boolean;
+    error?: string | null;
     loadModels?: (mode?: string) => Promise<void>;
     defaultMode?: ChatboxMode;
 } = $props();
@@ -145,6 +152,7 @@ function handleEnter() {
 
 <aside class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[750px] p-4">
   <ImageShelf />
+  <ChatStatusBar {isThinking} {isSaved} {error} />
   <div bind:this={cardEl}>
     <Card class="rounded-4xl">
       <CardContent class="flex flex-col gap-3 p-3">

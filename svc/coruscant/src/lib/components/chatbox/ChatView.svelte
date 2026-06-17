@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { cn } from "@lerpz/ui/lib/utils";
 import type { ConversationMessage } from "$lib/api/models/index.js";
+import CopyButton from "./CopyButton.svelte";
+import Markdown from "./Markdown.svelte";
 
 let {
     messages = [],
@@ -36,37 +38,49 @@ $effect(() => {
     </div>
   </div>
 {:else}
-  <ScrollArea class="h-[calc(100vh-220px)] w-full">
+  <ScrollArea orientation="vertical" class="h-[calc(100vh-220px)] w-full">
     <div class="mx-auto max-w-[750px] flex flex-col gap-4 pb-8">
       {#each messages as message, index (message.id)}
-        <div class={cn("flex items-end gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
-          {#if message.role === "assistant"}
-            <Avatar size="sm" class="shrink-0">
-              <AvatarFallback>
-                <Icon icon="mdi:robot-outline" class="size-3.5" />
-              </AvatarFallback>
-            </Avatar>
-          {/if}
+        <div class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}>
+          <div class={cn("flex items-end gap-3 max-w-full", message.role === "user" ? "justify-end" : "justify-start")}>
+            {#if message.role === "assistant"}
+              <Avatar size="sm" class="shrink-0">
+                <AvatarFallback>
+                  <Icon icon="mdi:robot-outline" class="size-3.5" />
+                </AvatarFallback>
+              </Avatar>
+            {/if}
 
-          <div class={cn(
-            "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words",
-            message.role === "user"
-              ? "bg-primary text-primary-foreground rounded-br-md"
-              : "bg-muted text-foreground rounded-bl-md"
-          )}>
-            {message.content}
-            {#if message.role === "assistant" && isStreaming && index === messages.length - 1}
-              <span class="inline-block w-1.5 h-4 ml-0.5 bg-foreground/70 animate-pulse rounded-sm align-text-bottom"></span>
+            <div class={cn(
+              "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
+              message.role === "user"
+                ? "bg-primary text-primary-foreground rounded-br-md"
+                : "bg-muted text-foreground rounded-bl-md"
+            )}>
+              <Markdown
+                content={message.content}
+                class={message.role === "user" ? "markdown-on-primary" : ""}
+              />
+              {#if message.role === "assistant" && isStreaming && index === messages.length - 1}
+                <span class="inline-block w-1.5 h-4 ml-0.5 bg-foreground/70 animate-pulse rounded-sm align-text-bottom"></span>
+              {/if}
+            </div>
+
+            {#if message.role === "user"}
+              <Avatar size="sm" class="shrink-0">
+                <AvatarFallback>
+                  <Icon icon="mdi:person" class="size-3.5" />
+                </AvatarFallback>
+              </Avatar>
             {/if}
           </div>
 
-          {#if message.role === "user"}
-            <Avatar size="sm" class="shrink-0">
-              <AvatarFallback>
-                <Icon icon="mdi:person" class="size-3.5" />
-              </AvatarFallback>
-            </Avatar>
-          {/if}
+          <div class={cn(
+            "opacity-0 transition-opacity group-hover:opacity-80 focus-within:opacity-80",
+            message.role === "user" ? "pr-9" : "pl-9"
+          )}>
+            <CopyButton text={message.content} />
+          </div>
         </div>
       {/each}
 

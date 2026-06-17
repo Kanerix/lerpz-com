@@ -8,7 +8,7 @@
         "start": "bun --filter @lerpz/coruscant start",
         "lint": "bun --filter @lerpz/coruscant lint",
         "format": "bun --filter @lerpz/coruscant format",
-        "generate-api": "bun --filter @lerpz/coruscant generate:api"
+        "generate:api": "bun --filter @lerpz/coruscant generate:api"
     },
     "workspaces": [
         "packages/*",

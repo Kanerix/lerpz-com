@@ -9,13 +9,13 @@ import {
     CardTitle,
 } from "@lerpz/ui/components/card";
 import { goto } from "$app/navigation";
-import { page } from "$app/stores";
-import ThemeButton from "$lib/components/ThemeButton.svelte";
+import { page } from "$app/state";
 import { msalStore } from "$lib/auth/msal.svelte.js";
+import ThemeButton from "$lib/components/ThemeButton.svelte";
 
-const error = $derived($page.url.searchParams.get("error"));
+const error = $derived(page.url.searchParams.get("error"));
 const errorDescription = $derived(
-    $page.url.searchParams.get("error_description"),
+    page.url.searchParams.get("error_description"),
 );
 
 $effect(() => {

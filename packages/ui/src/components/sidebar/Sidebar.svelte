@@ -16,16 +16,23 @@ let {
 } = $props();
 
 const sidebar = useSidebar();
+
+const width = $derived(
+    collapsible === "icon" && sidebar.state === "collapsed"
+        ? "var(--sidebar-width-icon)"
+        : "var(--sidebar-width)",
+);
 </script>
 
 <div
   data-slot="sidebar"
   data-state={sidebar.state}
   data-collapsible={collapsible}
+  style="width: {width}; min-width: 0;"
   class={cn(
-    "group peer hidden md:flex flex-col w-[--sidebar-width]",
+    "group peer hidden md:flex flex-col shrink-0 grow-0",
+    "sticky top-0 h-svh",
     "text-sidebar-foreground transition-[width] duration-200",
-    "data-[collapsible=icon]:data-[state=collapsed]:w-[--sidebar-width-icon]",
     className
   )}
   {...rest}

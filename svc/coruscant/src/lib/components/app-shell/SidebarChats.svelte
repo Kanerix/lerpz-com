@@ -20,16 +20,23 @@ const query = createQuery(() => ({
     queryFn: ({ signal }: { signal: AbortSignal }) => listChats({ signal }),
 }));
 
-type DateGroup = "Today" | "Yesterday" | "This week" | "Older";
+const MAX_CHATS = 10;
+
+type DateGroup = "Today" | "Yesterday" | "A week ago" | "A month ago";
 const DATE_GROUP_ORDER: DateGroup[] = [
     "Today",
     "Yesterday",
-    "This week",
-    "Older",
+    "A week ago",
+    "A month ago",
 ];
 
+function getTime(conv: Conversation): number {
+    const dateStr = conv.updated_at ?? conv.created_at;
+    return dateStr ? new Date(dateStr).getTime() : 0;
+}
+
 function getDateGroup(dateStr: string | null | undefined): DateGroup {
-    if (!dateStr) return "Older";
+    if (!dateStr) return "A month ago";
     const date = new Date(dateStr);
     const now = new Date();
     const startOfToday = new Date(
@@ -43,13 +50,15 @@ function getDateGroup(dateStr: string | null | undefined): DateGroup {
     startOfWeek.setDate(startOfWeek.getDate() - 7);
     if (date >= startOfToday) return "Today";
     if (date >= startOfYesterday) return "Yesterday";
-    if (date >= startOfWeek) return "This week";
-    return "Older";
+    if (date >= startOfWeek) return "A week ago";
+    return "A month ago";
 }
 
 const groups = $derived.by(() => {
     if (query.data?.status !== 200) return [];
-    const convs = query.data.data ?? [];
+    const convs = [...(query.data.data ?? [])]
+        .sort((a, b) => getTime(b) - getTime(a))
+        .slice(0, MAX_CHATS);
     const map = new Map<DateGroup, Conversation[]>();
     for (const conv of convs) {
         const g = getDateGroup(conv.updated_at ?? conv.created_at);
@@ -63,7 +72,7 @@ const groups = $derived.by(() => {
 </script>
 
 {#if query.isLoading}
-  <SidebarGroup>
+  <SidebarGroup class="group-data-[state=collapsed]:hidden">
     <SidebarGroupLabel><Skeleton class="h-3 w-12" /></SidebarGroupLabel>
     <SidebarGroupContent class="px-2">
       <div class="space-y-1">
@@ -74,9 +83,9 @@ const groups = $derived.by(() => {
     </SidebarGroupContent>
   </SidebarGroup>
 {:else if query.data?.status !== 200}
-  <p class="text-muted-foreground px-2 py-4 text-center text-xs">Error: {query.data?.status}</p>
+  <p class="text-muted-foreground group-data-[state=collapsed]:hidden px-2 py-4 text-center text-xs">Error: {query.data?.status}</p>
 {:else if (query.data.data?.length ?? 0) === 0}
-  <SidebarGroup>
+  <SidebarGroup class="group-data-[state=collapsed]:hidden">
     <SidebarGroupLabel>Chats</SidebarGroupLabel>
     <SidebarGroupContent>
       <p class="text-muted-foreground px-2 py-4 text-center text-xs">
@@ -86,7 +95,7 @@ const groups = $derived.by(() => {
   </SidebarGroup>
 {:else}
   {#each groups as [label, items]}
-    <SidebarGroup>
+    <SidebarGroup class="group-data-[state=collapsed]:hidden">
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>

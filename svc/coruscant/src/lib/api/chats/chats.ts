@@ -163,7 +163,7 @@ export const getCreateChatUrl = () => {
 }
 
 /**
- * Creates a new conversation, streams the AI reply back via Server-Sent Events. The first event is `conversation_created` with the new conversation ID; subsequent `message` events carry incremental token chunks; a `done` event signals the final chunk; `saved` confirms the reply was persisted; `error` is emitted on failures.
+ * Creates a new conversation, streams the AI reply back via Server-Sent Events. The first event is `conversation_created` with the new conversation ID; subsequent `message` events carry incremental token chunks until the stream ends; `saved` confirms the reply was persisted and is the final event before the stream closes; `error` is emitted on failures.
  * @summary Create a new chat
  */
 export const createChat = async (chatRequest: ChatRequest, options?: RequestInit): Promise<createChatResponse> => {
@@ -373,7 +373,7 @@ export const getSendChatMessageUrl = (id: string,) => {
 }
 
 /**
- * Appends a new user message to the conversation and streams the AI reply back via Server-Sent Events. Requires the conversation to belong to the authenticated user. SSE events emitted: `message` (token chunk), `done` (final token chunk), `saved` (conversation UUID confirming persistence), `error` (error message).
+ * Appends a new user message to the conversation and streams the AI reply back via Server-Sent Events. Requires the conversation to belong to the authenticated user. SSE events emitted: `message` (token chunk) streamed until the response ends, `saved` (conversation UUID confirming persistence, sent as the final event before the stream closes), `error` (error message).
  * @summary Send a message in an existing chat
  */
 export const sendChatMessage = async (id: string,

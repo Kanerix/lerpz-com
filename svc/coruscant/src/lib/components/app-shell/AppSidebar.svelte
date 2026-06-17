@@ -1,5 +1,5 @@
 <script lang="ts">
-import Icon from "@iconify/svelte";
+import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Separator as SeparatorComp } from "@lerpz/ui/components/separator";
 import {
     Sidebar,
@@ -8,43 +8,25 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@lerpz/ui/components/sidebar";
-import ModeSwitcher from "./ModeSwitcher.svelte";
+import NavModes from "./NavModes.svelte";
 import NavSecondary from "./NavSecondary.svelte";
+import NewChatButton from "./NewChatButton.svelte";
+import SidebarBrand from "./SidebarBrand.svelte";
 import SidebarChats from "./SidebarChats.svelte";
 import UserInfo from "./UserInfo.svelte";
-
-const modes = [
-    {
-        variant: "chat" as const,
-        name: "Chat",
-        icon: "mdi:chat-bubble",
-        plan: "Free",
-        href: "/ai/chats",
-    },
-    {
-        variant: "image" as const,
-        name: "Image",
-        icon: "mdi:image",
-        plan: "Free",
-        href: "/ai/images",
-    },
-    {
-        variant: "video" as const,
-        name: "Video",
-        icon: "mdi:videocam",
-        plan: "Enterprise",
-        href: "/ai/videos",
-    },
-];
 </script>
 
 <Sidebar collapsible="icon">
   <SidebarHeader>
-    <ModeSwitcher defaultMode={modes[0]!} {modes} />
+    <SidebarBrand />
   </SidebarHeader>
   <SeparatorComp />
-  <SidebarContent>
-    <SidebarChats />
+  <SidebarContent class="overflow-hidden">
+    <NavModes />
+    <ScrollArea class="min-h-0 flex-1" orientation="vertical">
+      <SidebarChats />
+    </ScrollArea>
+    <NewChatButton />
     <NavSecondary class="mt-auto" />
   </SidebarContent>
   <SeparatorComp />

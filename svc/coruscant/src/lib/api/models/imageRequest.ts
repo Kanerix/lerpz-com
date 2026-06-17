@@ -3,8 +3,8 @@
 export interface ImageRequest {
   /**
      * The amount of images to generate.
-   *
-   * This will default to 1 image if not provided.
+     *
+     * This will default to 1 image if not provided.
      * @minimum 0
      * @nullable
      */

@@ -1,5 +1,4 @@
 <script lang="ts">
-import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 </script>
 

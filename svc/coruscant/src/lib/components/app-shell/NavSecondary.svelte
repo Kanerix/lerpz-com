@@ -26,8 +26,8 @@ const pages = [
       {#each pages as item}
         <SidebarMenuItem>
           <SidebarMenuButton href={item.url} isActive={item.url === pathname}>
-            <Icon icon={item.icon} />
-            <span>{item.title}</span>
+            <Icon icon={item.icon} class="shrink-0" />
+            <span class="group-data-[state=collapsed]:hidden">{item.title}</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       {/each}

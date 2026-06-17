@@ -1,8 +1,6 @@
 <script lang="ts">
 import { InteractionStatus } from "@azure/msal-browser";
-import { Toaster } from "@lerpz/ui/components/sonner";
 import type { Snippet } from "svelte";
-import { setContext } from "svelte";
 import { goto } from "$app/navigation";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import AppShell from "$lib/components/app-shell/AppShell.svelte";

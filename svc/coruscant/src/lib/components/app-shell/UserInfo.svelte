@@ -49,20 +49,20 @@ const avatarFallback = $derived(
 );
 </script>
 
-<SidebarMenu>
+<SidebarMenu class="w-full">
   <SidebarMenuItem>
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <SidebarMenuButton size="lg">
-          <Avatar class="h-8 w-8 rounded-lg">
+      <DropdownMenuTrigger class="w-full">
+        <SidebarMenuButton size="lg" class="group-data-[state=collapsed]:size-8 group-data-[state=collapsed]:p-0">
+          <Avatar class="h-8 w-8 shrink-0 rounded-lg">
             <AvatarImage src={avatarSrc ?? ""} alt={account?.name ?? ""} />
             <AvatarFallback class="rounded-lg">{avatarFallback}</AvatarFallback>
           </Avatar>
-          <div class="grid flex-1 text-left text-sm leading-tight">
+          <div class="grid flex-1 text-left text-sm leading-tight group-data-[state=collapsed]:hidden">
             <span class="truncate font-medium">{account?.name}</span>
             <span class="truncate text-xs">{account?.username}</span>
           </div>
-          <Icon icon="mdi:unfold-more-horizontal" class="ml-auto size-4" />
+          <Icon icon="mdi:unfold-more-horizontal" class="ml-auto size-4 group-data-[state=collapsed]:hidden" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent

@@ -1,24 +1,17 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
-import { toast } from "svelte-sonner";
 import { goto } from "$app/navigation";
-import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
 import { createChat } from "$lib/ai/chat.svelte.js";
+import { setAiContext } from "$lib/ai/context.svelte.js";
 import { createImageSse } from "$lib/ai/image-sse.svelte.js";
 import { createModels } from "$lib/ai/models.svelte.js";
-import { setAiContext } from "$lib/ai/context.svelte.js";
+import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
 
 let { children }: { children: Snippet } = $props();
 
 const chat = createChat({
     onSaved: (convId) => {
-        toast.success("Chat saved", {
-            description: "Your conversation has been saved.",
-        });
         goto(`/ai/chats/${convId}`, { replaceState: true });
-    },
-    onError: (error) => {
-        toast.error("Chat error", { description: error });
     },
 });
 
@@ -87,11 +80,14 @@ const isPending = $derived(
     switch (args.mode) {
       case "chat": chat.send(args.prompt); break;
       case "image": image.start(args.prompt); break;
-      case "video": toast.info("Video generation is not yet available."); break;
+      case "video": break; // Video generation is not yet available.
     }
   }}
-  onEnhance={async (prompt) => { toast.info("Prompt enhancement coming soon."); return prompt; }}
+  onEnhance={async (prompt) => prompt}
   isStreaming={isPending}
+  isThinking={isPending}
+  isSaved={chat.isSaved}
+  error={chat.error ?? image.error}
   models={modelsHook.models}
   isModelsLoading={modelsHook.isLoading}
   loadModels={modelsHook.loadModels}
