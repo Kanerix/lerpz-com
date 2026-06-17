@@ -93,8 +93,8 @@ const groups = $derived.by(() => {
           {#each items as conv}
             {@const href = `/ai/chats/${conv.id}`}
             <SidebarMenuItem>
-              <SidebarMenuButton isActive={pathname === href}>
-                <a {href} class="flex items-center gap-2">{conv.title ?? "Untitled"}</a>
+              <SidebarMenuButton {href} isActive={pathname === href}>
+                <span class="flex items-center gap-2">{conv.title ?? "Untitled"}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           {/each}
