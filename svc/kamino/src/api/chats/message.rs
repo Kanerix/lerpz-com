@@ -97,6 +97,7 @@ pub async fn handler(
     let user_id = token.sub;
     let prompt = body.prompt;
 
+    tracing::trace!(%conv_id, %user_id, "loading conversation");
     let conversation = sqlx::query!(
         "SELECT id, model FROM conversations WHERE id = $1 AND user_id = $2",
         &conv_id,
@@ -108,6 +109,7 @@ pub async fn handler(
     let conversation = match conversation {
         Some(c) => c,
         None => {
+            tracing::warn!(%conv_id, %user_id, "conversation not found");
             return Err(Problem::new(
                 StatusCode::NOT_FOUND,
                 "Not Found",
@@ -118,6 +120,7 @@ pub async fn handler(
 
     let model = conversation.model;
 
+    tracing::trace!(%conv_id, "loading previous messages");
     let previous_messages = sqlx::query!(
         "SELECT role AS \"role: String\", content
         FROM messages
@@ -128,6 +131,7 @@ pub async fn handler(
     .fetch_all(&database)
     .await?;
 
+    tracing::trace!(%conv_id, "persisting user message");
     sqlx::query!(
         "INSERT INTO messages (conversation_id, role, content)
         VALUES ($1, 'user', $2)",
@@ -183,16 +187,18 @@ pub async fn handler(
     let mut stream = openai.chat().create_stream(request).await?;
 
     let sse_stream = async_stream::stream! {
+        tracing::trace!(%conv_id, "starting chat stream");
         let mut assistant_buf = String::new();
 
         while let Some(chunk_result) = stream.next().await {
             let chunk = match chunk_result {
                 Ok(c) => c,
                 Err(err) => {
+                    tracing::error!("{err}");
                     yield Ok(Event::default()
                         .event("error")
                         .data(format!("stream error: {err}")));
-                    continue;
+                    break;
                 }
             };
 
@@ -203,6 +209,7 @@ pub async fn handler(
                     buf.push_str(delta);
                 }
                 if let Some(FinishReason::ContentFilter) = choice.finish_reason {
+                    tracing::warn!(%conv_id, "content filter triggered");
                     yield Ok(Event::default()
                         .event("error")
                         .data("content filter triggered"));
@@ -210,15 +217,13 @@ pub async fn handler(
                 }
             }
 
-            // Stream each non-empty delta as a `message` event. The reply is
-            // complete once the upstream ends and the connection closes; no
-            // explicit terminal event is sent.
             if !buf.is_empty() {
                 assistant_buf.push_str(&buf);
                 yield Ok(Event::default().event("message").data(buf));
             }
         }
 
+        tracing::trace!(%conv_id, "persisting assistant message");
         let result = sqlx::query!(
             "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
             &conv_id,
@@ -228,7 +233,10 @@ pub async fn handler(
         .await;
 
         match result {
-            Ok(_) => yield Ok(Event::default().event("saved").data(conv_id.to_string())),
+            Ok(_) => {
+                tracing::trace!(%conv_id, "saved assistant message");
+                yield Ok(Event::default().event("saved").data(conv_id.to_string()));
+            }
             Err(err) => {
                 tracing::error!("failed to save assistant message: {err}");
                 yield Ok(Event::default()

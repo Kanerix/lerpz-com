@@ -38,6 +38,8 @@ pub struct ImageRequest {
     /// Prompt that is sent to the model.
     prompt: String,
     /// What model to use.
+    ///
+    /// This will default to a predefined model if not provided.
     model: Option<String>,
     /// The amount of images to generate.
     ///
@@ -133,11 +135,12 @@ pub async fn handler(
             let chunk = match chunk_result {
                 Ok(c) => c,
                 Err(err) => {
+                    tracing::error!("failed to get chunk: {err}");
                     yield Ok(Event::default()
                         .event("error")
                         .json_data(err.to_string())
                         .expect("failed to serialize error event"));
-                    continue;
+                    break;
                 }
             };
 
@@ -185,7 +188,7 @@ pub async fn handler(
                                 }
                             },
                             Err(err) => {
-                                tracing::error!("{err}");
+                                tracing::error!("failed to read image: {err}");
                                 yield Ok(Event::default()
                                     .event("error")
                                     .json_data(err.to_string())

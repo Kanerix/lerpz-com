@@ -40,10 +40,8 @@ pub struct ChatRequest {
     summary = "Create a new chat",
     description = "Creates a new conversation, streams the AI reply back via Server-Sent Events. \
         The first event is `conversation_created` with the new conversation ID; \
-        subsequent `message` events carry incremental token chunks until the \
-        stream ends; \
-        `saved` confirms the reply was persisted and is the final event before \
-        the stream closes; \
+        subsequent `message` events carry incremental token chunks until the stream ends; \
+        `saved` confirms the reply was persisted and is the final event before the stream closes; \
         `error` is emitted on failures.",
     request_body(
         content = ChatRequest,
@@ -96,6 +94,7 @@ pub async fn handler(
     let prompt = body.prompt;
     let title = body.title.unwrap_or_else(|| truncate_title(&prompt, 100));
 
+    tracing::trace!(%user_id, %model, "creating conversation");
     let conv_id = sqlx::query_scalar!(
         "INSERT INTO conversations (user_id, title, model)
         VALUES ($1, $2, $3)
@@ -107,6 +106,7 @@ pub async fn handler(
     .fetch_one(&database)
     .await?;
 
+    tracing::trace!(%conv_id, "persisting user message");
     sqlx::query!(
         "INSERT INTO messages (conversation_id, role, content)
         VALUES ($1, 'user', $2)",
@@ -134,6 +134,7 @@ pub async fn handler(
     let mut stream = openai.chat().create_stream(request).await?;
 
     let sse_stream = async_stream::stream! {
+        tracing::trace!(%conv_id, "starting chat stream");
         yield Ok(Event::default()
             .event("conversation_created")
             .data(conv_id.to_string()));
@@ -144,10 +145,11 @@ pub async fn handler(
             let chunk = match chunk_result {
                 Ok(c) => c,
                 Err(err) => {
+                    tracing::error!("failed to get chunk: {err}");
                     yield Ok(Event::default()
                         .event("error")
                         .data(format!("stream error: {err}")));
-                    continue;
+                    break;
                 }
             };
 
@@ -159,6 +161,7 @@ pub async fn handler(
                 }
 
                 if let Some(FinishReason::ContentFilter) = choice.finish_reason {
+                    tracing::warn!(%conv_id, "content filter triggered");
                     yield Ok(Event::default()
                         .event("error")
                         .data("content filter triggered"));
@@ -166,15 +169,13 @@ pub async fn handler(
                 }
             }
 
-            // Stream each non-empty delta as a `message` event. The reply is
-            // complete once the upstream ends and the connection closes; no
-            // explicit terminal event is sent.
             if !buf.is_empty() {
                 assistant_buf.push_str(&buf);
                 yield Ok(Event::default().event("message").data(buf));
             }
         }
 
+        tracing::trace!(%conv_id, "persisting assistant message");
         let result = sqlx::query!(
             "INSERT INTO messages (conversation_id, role, content)
             VALUES ($1, 'assistant', $2)",
@@ -185,7 +186,10 @@ pub async fn handler(
         .await;
 
         match result {
-            Ok(_) => yield Ok(Event::default().event("saved").data(conv_id.to_string())),
+            Ok(_) => {
+                tracing::trace!(%conv_id, "saved assistant message");
+                yield Ok(Event::default().event("saved").data(conv_id.to_string()));
+            }
             Err(err) => {
                 tracing::error!("failed to save assistant message: {err}");
                 yield Ok(Event::default()
