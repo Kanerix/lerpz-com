@@ -9,8 +9,8 @@ graph TD
     User:::accent0
 
     subgraph aca[Azure Container Apps Environment]
-        Portal[portal\nlerpz.com]:::accent1
-        PortalAPI[portal-api\napi.lerpz.com]:::accent2
+        Frontend[frontend\nlerpz.com]:::accent1
+        Backend[backend\napi.lerpz.com]:::accent2
     end
 
     subgraph data[Data]
