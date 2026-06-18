@@ -8,6 +8,9 @@
     "include": [
         "src/**/*.ts",
         "src/**/*.svelte",
+        ".svelte-kit/ambient.d.ts",
+        ".svelte-kit/env.d.ts",
+        ".svelte-kit/non-ambient.d.ts",
         ".svelte-kit/types/**/*.ts",
         "svelte.config.js",
         "vite.config.ts"

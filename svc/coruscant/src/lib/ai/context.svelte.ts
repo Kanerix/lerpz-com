@@ -1,4 +1,5 @@
 import { getContext, setContext } from "svelte";
+import type { SendChatOptions } from "$lib/ai/chat.svelte.js";
 import type { Model } from "$lib/ai/models.svelte.js";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 
@@ -14,7 +15,7 @@ export type AiContextValue = {
     stopChat: () => void;
     resetChat: () => void;
     enterConversation: (id: string, messages?: ConversationMessage[]) => void;
-    sendChat: (prompt: string) => void;
+    sendChat: (prompt: string, options?: SendChatOptions) => void;
     readonly generatedImage: string | null;
     readonly isImageLoading: boolean;
     readonly isImageDone: boolean;

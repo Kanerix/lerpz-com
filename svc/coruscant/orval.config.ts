@@ -1,7 +1,7 @@
 import { defineConfig } from "orval";
 
 export default defineConfig({
-    "portal-api": {
+    "kamino": {
         output: {
             mode: "tags-split",
             target: "./src/lib/api",

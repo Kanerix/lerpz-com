@@ -16,7 +16,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelFamily};
+use super::{Model, ModelFamily, ModelSettings};
 
 /// Parameters for updating an existing model.
 ///
@@ -38,8 +38,9 @@ pub struct UpdateModelRequest {
     /// Portkey provider slug the deployment lives under.
     #[serde(default)]
     provider: Option<String>,
-    /// Arbitrary provider/runtime settings as a JSON object.
+    /// Provider/runtime settings as a JSON object.
     #[serde(default)]
+    #[schema(value_type = Option<ModelSettings>)]
     settings: Option<serde_json::Value>,
 }
 

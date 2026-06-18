@@ -23,6 +23,17 @@ export type UseChatOptions = {
     onError?: (error: string) => void;
 };
 
+export type SendChatOptions = {
+    /** Model override for new conversations (ignored for existing ones). */
+    model?: string | null;
+    /**
+     * Reasoning level for reasoning-capable models (e.g. `low`, `medium`,
+     * `high`, or `none` to disable). Omit (or pass `null`) to use the model's
+     * default behaviour.
+     */
+    reasoning?: string | null;
+};
+
 export function createChat(options: UseChatOptions = {}) {
     let conversationId = $state<string | null>(null);
     let messages = $state<ConversationMessage[]>([]);
@@ -33,6 +44,7 @@ export function createChat(options: UseChatOptions = {}) {
 
     let closeRef: (() => void) | null = null;
     let assistantBuf = "";
+    let reasoningBuf = "";
     let assistantMsgId = tempId();
     let conversationIdRef: string | null = null;
 
@@ -44,23 +56,26 @@ export function createChat(options: UseChatOptions = {}) {
         return () => closeRef?.();
     });
 
-    function send(prompt: string) {
+    function send(prompt: string, sendOptions: SendChatOptions = {}) {
         closeRef?.();
         closeRef = null;
         assistantBuf = "";
+        reasoningBuf = "";
         assistantMsgId = tempId();
 
         const convId = conversationIdRef;
         const isNew = convId === null;
 
         const url = isNew ? getCreateChatUrl() : getSendChatMessageUrl(convId);
+        const reasoning = sendOptions.reasoning ?? null;
         const body = isNew
             ? JSON.stringify({
                   prompt,
-                  model: options.model ?? null,
+                  model: sendOptions.model ?? options.model ?? null,
+                  reasoning,
                   title: options.title ?? null,
               } satisfies ChatRequest)
-            : JSON.stringify({ prompt } satisfies MessageRequest);
+            : JSON.stringify({ prompt, reasoning } satisfies MessageRequest);
 
         const userMsg: ConversationMessage = {
             id: tempId(),
@@ -101,6 +116,30 @@ export function createChat(options: UseChatOptions = {}) {
                         case "conversation_created": {
                             conversationIdRef = data;
                             conversationId = data;
+                            break;
+                        }
+                        case "reasoning": {
+                            reasoningBuf += data;
+                            const reasoning = reasoningBuf;
+                            const id = assistantMsgId;
+                            const last = messages[messages.length - 1];
+                            if (last?.role === "assistant") {
+                                messages = [
+                                    ...messages.slice(0, -1),
+                                    { ...last, reasoning },
+                                ];
+                            } else {
+                                messages = [
+                                    ...messages,
+                                    {
+                                        id,
+                                        role: "assistant",
+                                        content: "",
+                                        reasoning,
+                                        created_at: new Date().toISOString(),
+                                    },
+                                ];
+                            }
                             break;
                         }
                         case "message": {
@@ -175,6 +214,7 @@ export function createChat(options: UseChatOptions = {}) {
         closeRef?.();
         closeRef = null;
         assistantBuf = "";
+        reasoningBuf = "";
         conversationIdRef = null;
         conversationId = null;
         messages = [];
@@ -188,6 +228,7 @@ export function createChat(options: UseChatOptions = {}) {
         closeRef?.();
         closeRef = null;
         assistantBuf = "";
+        reasoningBuf = "";
         conversationIdRef = id;
         conversationId = id;
         messages = msgs;

@@ -4,6 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "check": "svelte-check --tsconfig ./tsconfig.json",
         "lint": "biome check"
     },
     "dependencies": {
@@ -23,6 +24,7 @@
         "@turbo/gen": "^2.9.9",
         "@types/node": "^20.19.9",
         "svelte": "^5.0.0",
+        "svelte-check": "^4.0.0",
         "tailwindcss": "^4.1.11",
         "typescript": "^5.9.2"
     },

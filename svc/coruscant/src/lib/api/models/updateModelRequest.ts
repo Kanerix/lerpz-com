@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { ModelFamily } from './modelFamily';
+import type { ModelSettings } from './modelSettings';
 
 /**
  * Parameters for updating an existing model.
@@ -28,6 +29,5 @@ export interface UpdateModelRequest {
      * @nullable
      */
   provider?: string | null;
-  /** Arbitrary provider/runtime settings as a JSON object. */
-  settings?: unknown;
+  settings?: null | ModelSettings;
 }

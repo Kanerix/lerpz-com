@@ -51,7 +51,11 @@ const avatarFallback = $derived(
 
 <SidebarMenu class="w-full">
   <SidebarMenuItem>
-    <DropdownMenu>
+    <DropdownMenu
+      side={sidebar.isMobile ? "bottom" : "right"}
+      align="end"
+      sideOffset={4}
+    >
       <DropdownMenuTrigger class="w-full">
         <SidebarMenuButton size="lg" class="group-data-[state=collapsed]:size-8 group-data-[state=collapsed]:p-0">
           <Avatar class="h-8 w-8 shrink-0">
@@ -65,11 +69,7 @@ const avatarFallback = $derived(
           <Icon icon="fa6-solid:ellipsis-vertical" class="ml-auto size-4 group-data-[state=collapsed]:hidden" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side={sidebar.isMobile ? "bottom" : "right"}
-        align="end"
-        sideOffset={4}
-      >
+      <DropdownMenuContent>
         <DropdownMenuGroup>
           <DropdownMenuLabel class="p-0 font-normal">
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">

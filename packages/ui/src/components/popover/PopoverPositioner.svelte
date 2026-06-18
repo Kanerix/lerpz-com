@@ -2,28 +2,10 @@
 import { Popover } from "@ark-ui/svelte/popover";
 import type { Snippet } from "svelte";
 
-let {
-    side = "bottom",
-    sideOffset = 8,
-    align = "center",
-    anchor,
-    children,
-}: {
-    side?: "top" | "bottom" | "left" | "right";
-    sideOffset?: number;
-    align?: "start" | "center" | "end";
-    anchor?: HTMLElement | null;
-    children?: Snippet;
-} = $props();
+let { children, ...rest }: { children?: Snippet; [key: string]: unknown } =
+    $props();
 </script>
 
-<Popover.Positioner
-  data-slot="popover-positioner"
-  {side}
-  {sideOffset}
-  {align}
-  anchorElement={anchor}
-  class="isolate z-50"
->
+<Popover.Positioner data-slot="popover-positioner" class="isolate z-50" {...rest}>
   {@render children?.()}
 </Popover.Positioner>

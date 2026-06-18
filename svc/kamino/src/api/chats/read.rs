@@ -26,6 +26,9 @@ pub struct ConversationMessage {
     role: String,
     /// Raw message text.
     content: String,
+    /// Reasoning / chain-of-thought trace, when the model produced one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reasoning: Option<String>,
     /// Timestamp when the message was created.
     created_at: chrono::DateTime<Utc>,
 }
@@ -113,7 +116,7 @@ pub async fn handler(
     };
 
     let message_rows = sqlx::query!(
-        "SELECT id, role AS \"role: String\", content, created_at
+        "SELECT id, role AS \"role: String\", content, reasoning, created_at
         FROM messages
         WHERE conversation_id = $1
         ORDER BY created_at ASC",
@@ -128,6 +131,7 @@ pub async fn handler(
             id: r.id,
             role: r.role,
             content: r.content,
+            reasoning: r.reasoning,
             created_at: r.created_at.unwrap_or_default(),
         })
         .collect();

@@ -11,6 +11,8 @@ export interface ImageRequest {
   amount?: number | null;
   /**
      * What model to use.
+     *
+     * This will default to a predefined model if not provided.
      * @nullable
      */
   model?: string | null;

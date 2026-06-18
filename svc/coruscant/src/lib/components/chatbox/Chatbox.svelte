@@ -148,11 +148,11 @@ function handleEnter() {
 }
 </script>
 
-<aside class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[1024px] p-4">
+<aside class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl p-4">
   <ImageShelf />
   <ChatStatusBar {isThinking} {isSaved} {error} />
   <div bind:this={cardEl}>
-    <Card class="rounded-4xl">
+    <Card class="rounded-4xl bg-sidebar text-sidebar-foreground border-sidebar-border">
       <CardContent class="flex flex-col gap-2 p-4">
         <div class="flex items-end gap-4">
           <MarkdownEditor

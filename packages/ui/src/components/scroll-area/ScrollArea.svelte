@@ -21,7 +21,9 @@ let {
   <ScrollArea.Viewport
     class="size-full rounded-[inherit] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
   >
-    {@render children?.()}
+    <ScrollArea.Content>
+      {@render children?.()}
+    </ScrollArea.Content>
   </ScrollArea.Viewport>
   {#if orientation === "vertical" || orientation === "both"}
     <ScrollArea.Scrollbar
@@ -39,4 +41,5 @@ let {
       <ScrollArea.Thumb class="relative flex-1 bg-border rounded-full" />
     </ScrollArea.Scrollbar>
   {/if}
+  <ScrollArea.Corner />
 </ScrollArea.Root>

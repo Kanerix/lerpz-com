@@ -18,11 +18,15 @@ let {
     children?: Snippet;
     [key: string]: unknown;
 } = $props();
+
+// Ark UI's Menu.Item requires a unique `value`; fall back to a generated id
+// when the consumer does not supply one.
+const uid = $props.id();
 </script>
 
 <Menu.Item
   data-slot="dropdown-menu-item"
-  {value}
+  value={value ?? uid}
   {disabled}
   {onclick}
   class={cn(

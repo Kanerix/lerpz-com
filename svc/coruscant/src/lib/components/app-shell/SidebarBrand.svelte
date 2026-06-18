@@ -9,7 +9,7 @@ import { SidebarMenu, SidebarMenuItem } from "@lerpz/ui/components/sidebar";
       class="flex w-full items-center gap-2 overflow-hidden p-2 group-data-[state=collapsed]:size-8 group-data-[state=collapsed]:p-0"
     >
       <img src="/lerpz.svg" alt="Lerpz" class="size-12 shrink-0 p-2" />
-      <span class="text-2xl font-semibold group-data-[state=collapsed]:hidden">Lerpz AI</span>
+      <h1 class="text-2xl font-semibold group-data-[state=collapsed]:hidden">Lerpz AI</h1>
     </a>
   </SidebarMenuItem>
 </SidebarMenu>

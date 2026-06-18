@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { ModelFamily } from './modelFamily';
+import type { ModelSettings } from './modelSettings';
 
 /**
  * An AI model that can be routed to via Portkey.
@@ -22,8 +23,8 @@ export interface Model {
   id: string;
   /** Portkey provider slug the deployment lives under. */
   provider: string;
-  /** Arbitrary provider/runtime settings as a JSON object. */
-  settings: unknown;
+  /** Provider/runtime settings as a JSON object. */
+  settings: ModelSettings;
   /** Timestamp of the last update. */
   updated_at: string;
 }

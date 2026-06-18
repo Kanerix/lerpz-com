@@ -1,14 +1,31 @@
 <script lang="ts">
-import type { TooltipRootProps } from "@ark-ui/svelte/tooltip";
 import { Tooltip } from "@ark-ui/svelte/tooltip";
 import type { Snippet } from "svelte";
 
-// openDelay/closeDelay are valid zag-js props that the Svelte wrapper types don't surface directly
-const rootProps = { openDelay: 0, closeDelay: 0 } as TooltipRootProps;
+let {
+    side = "top",
+    align = "center",
+    sideOffset = 4,
+    openDelay = 0,
+    closeDelay = 0,
+    children,
+}: {
+    side?: "top" | "bottom" | "left" | "right";
+    align?: "start" | "center" | "end";
+    sideOffset?: number;
+    openDelay?: number;
+    closeDelay?: number;
+    children?: Snippet;
+} = $props();
 
-let { children }: { children?: Snippet } = $props();
+// Ark UI configures placement on the Root via the `positioning` prop; the
+// Positioner itself is a bare wrapper.
+const positioning = $derived({
+    placement: align === "center" ? side : (`${side}-${align}` as const),
+    gutter: sideOffset,
+});
 </script>
 
-<Tooltip.Root {...rootProps}>
+<Tooltip.Root {openDelay} {closeDelay} {positioning}>
   {@render children?.()}
 </Tooltip.Root>

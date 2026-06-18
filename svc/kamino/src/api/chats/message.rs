@@ -2,7 +2,7 @@ use std::convert::Infallible;
 
 use async_openai::types::chat::{
     ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestUserMessageArgs,
-    CreateChatCompletionRequestArgs, FinishReason,
+    CreateChatCompletionRequestArgs,
 };
 use axum::http::StatusCode;
 use axum::{
@@ -15,11 +15,12 @@ use lerpz_axum::{
     problem::{HandlerResult, Problem, ProblemSchema},
 };
 use serde::Deserialize;
-use tokio_stream::{Stream, StreamExt as _};
+use tokio_stream::Stream;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
+    api::chats::stream::start_completion_sse,
     oapi::CHATS_TAG,
     state::{AppState, DatabasePool, OpenAI},
 };
@@ -28,6 +29,10 @@ use crate::{
 pub struct MessageRequest {
     /// The user's message text
     prompt: String,
+    /// Reasoning level for reasoning-capable models (`none`, `minimal`, `low`,
+    /// `medium`, `high` or `xhigh`). Unknown values fall back to `low`. Uses
+    /// the model's default behaviour when omitted.
+    reasoning: Option<String>,
 }
 
 #[utoipa::path(
@@ -38,7 +43,8 @@ pub struct MessageRequest {
     summary = "Send a message in an existing chat",
     description = "Appends a new user message to the conversation and streams \
         the AI reply back via Server-Sent Events. Requires the conversation to \
-        belong to the authenticated user. SSE events emitted: `message` (token \
+        belong to the authenticated user. SSE events emitted: `reasoning` \
+        (chain-of-thought chunk, reasoning models only), `message` (answer token \
         chunk) streamed until the response ends, `saved` (conversation UUID \
         confirming persistence, sent as the final event before the stream \
         closes), `error` (error message).",
@@ -54,6 +60,7 @@ pub struct MessageRequest {
         (
             status = OK,
             description = "SSE stream of AI response chunks. Events: \
+                           reasoning (reasoning token chunk), \
                            message (token chunk), \
                            saved (conversation UUID), \
                            error (error message)",
@@ -96,6 +103,7 @@ pub async fn handler(
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let user_id = token.sub;
     let prompt = body.prompt;
+    let reasoning = body.reasoning;
 
     tracing::trace!(%conv_id, %user_id, "loading conversation");
     let conversation = sqlx::query!(
@@ -179,72 +187,18 @@ pub async fn handler(
         .messages(messages)
         .stream(true);
 
+    // Apply an explicit reasoning level when the client provides one; otherwise
+    // let the model use its default behaviour.
+    if let Some(level) = reasoning.as_deref() {
+        request_builder.reasoning_effort(super::parse_reasoning_effort(level));
+    }
+
     if let Some(upn) = token.upn {
         request_builder.user(upn);
     }
 
     let request = request_builder.build()?;
-    let mut stream = openai.chat().create_stream(request).await?;
-
-    let sse_stream = async_stream::stream! {
-        tracing::trace!(%conv_id, "starting chat stream");
-        let mut assistant_buf = String::new();
-
-        while let Some(chunk_result) = stream.next().await {
-            let chunk = match chunk_result {
-                Ok(c) => c,
-                Err(err) => {
-                    tracing::error!("{err}");
-                    yield Ok(Event::default()
-                        .event("error")
-                        .data(format!("stream error: {err}")));
-                    break;
-                }
-            };
-
-            let mut buf = String::new();
-
-            for choice in &chunk.choices {
-                if let Some(ref delta) = choice.delta.content {
-                    buf.push_str(delta);
-                }
-                if let Some(FinishReason::ContentFilter) = choice.finish_reason {
-                    tracing::warn!(%conv_id, "content filter triggered");
-                    yield Ok(Event::default()
-                        .event("error")
-                        .data("content filter triggered"));
-                    continue;
-                }
-            }
-
-            if !buf.is_empty() {
-                assistant_buf.push_str(&buf);
-                yield Ok(Event::default().event("message").data(buf));
-            }
-        }
-
-        tracing::trace!(%conv_id, "persisting assistant message");
-        let result = sqlx::query!(
-            "INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)",
-            &conv_id,
-            &assistant_buf,
-        )
-        .execute(&database)
-        .await;
-
-        match result {
-            Ok(_) => {
-                tracing::trace!(%conv_id, "saved assistant message");
-                yield Ok(Event::default().event("saved").data(conv_id.to_string()));
-            }
-            Err(err) => {
-                tracing::error!("failed to save assistant message: {err}");
-                yield Ok(Event::default()
-                    .event("error")
-                    .data(format!("failed to save message: {err}")));
-            }
-        }
-    };
+    let sse_stream = start_completion_sse(openai, request, conv_id, database).await?;
 
     Ok(Sse::new(sse_stream))
 }

@@ -22,7 +22,7 @@ $effect(() => {
 <div
   data-slot="sidebar-provider"
   data-state={ctx.state}
-  style="--sidebar-width: 16rem; --sidebar-width-icon: 3rem;"
+  style="--sidebar-width: 18rem; --sidebar-width-icon: 3rem;"
   class="group/sidebar-wrapper flex min-h-screen w-full"
 >
   {@render children?.()}

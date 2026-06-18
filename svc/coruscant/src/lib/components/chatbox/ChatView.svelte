@@ -6,6 +6,7 @@ import { cn } from "@lerpz/ui/lib/utils";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 import CopyButton from "./CopyButton.svelte";
 import Markdown from "./Markdown.svelte";
+import ThinkingBlock from "./ThinkingBlock.svelte";
 
 let {
     messages = [],
@@ -39,10 +40,18 @@ $effect(() => {
   </div>
 {:else}
   <ScrollArea orientation="vertical" class="h-[calc(100vh-220px)] w-full">
-    <div class="mx-auto max-w-[1152px] flex flex-col gap-4 pb-8">
+    <div class="mx-auto max-w-6xl flex flex-col gap-4 pb-8">
       {#each messages as message, index (message.id)}
         <div class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}>
-          <div class={cn("flex items-end gap-3 max-w-full", message.role === "user" ? "justify-end" : "justify-start")}>
+          {#if message.role === "assistant" && message.reasoning}
+            <div class="w-full max-w-[80%] pl-9">
+              <ThinkingBlock
+                reasoning={message.reasoning}
+                streaming={isStreaming && index === messages.length - 1 && !message.content}
+              />
+            </div>
+          {/if}
+          <div class={cn("flex items-end gap-3 max-w-[80%]", message.role === "user" ? "justify-end" : "justify-start")}>
             {#if message.role === "assistant"}
               <Avatar size="sm" class="shrink-0">
                 <AvatarFallback>
@@ -52,7 +61,7 @@ $effect(() => {
             {/if}
 
             <div class={cn(
-              "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
+              "min-w-0 rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
               message.role === "user"
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-muted text-foreground rounded-bl-md"

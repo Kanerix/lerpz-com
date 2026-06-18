@@ -5,12 +5,11 @@
         "esModuleInterop": true,
         "isolatedModules": true,
         "lib": ["es2022", "DOM", "DOM.Iterable"],
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
         "resolveJsonModule": true,
         "skipLibCheck": true,
         "verbatimModuleSyntax": true,
-        "baseUrl": ".",
         "paths": {
             "@lerpz/ui/*": ["./src/*"]
         }

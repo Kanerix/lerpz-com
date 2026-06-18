@@ -12,7 +12,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelFamily};
+use super::{Model, ModelFamily, ModelSettings};
 
 /// Parameters for creating a new model.
 #[derive(Debug, Deserialize, ToSchema)]
@@ -28,8 +28,9 @@ pub struct CreateModelRequest {
     deployment_name: String,
     /// Portkey provider slug the deployment lives under.
     provider: String,
-    /// Arbitrary provider/runtime settings as a JSON object. Defaults to `{}`.
+    /// Provider/runtime settings as a JSON object. Defaults to `{}`.
     #[serde(default)]
+    #[schema(value_type = Option<ModelSettings>)]
     settings: Option<serde_json::Value>,
 }
 

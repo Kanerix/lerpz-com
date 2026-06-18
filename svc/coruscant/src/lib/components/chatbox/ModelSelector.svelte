@@ -8,12 +8,16 @@ import {
     PopoverTrigger,
 } from "@lerpz/ui/components/popover";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+import { Separator } from "@lerpz/ui/components/separator";
 import { cn } from "@lerpz/ui/lib/utils";
 import { type Model, modelFamilyLogo } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import { getChatboxContext } from "./chatbox-context.svelte.js";
 
 const chatbox = getChatboxContext();
+
+const REASONING_KEY = "reasoning";
+const REASONING_DISABLED = "none";
 
 const sortedModels = $derived<Model[]>(
     [...chatbox.models].sort(
@@ -44,6 +48,24 @@ function handleOpenChange(details: { open: boolean }) {
 function selectModel(value: string | null) {
     chatboxStore.setModel(value);
     open = false;
+}
+
+const reasoningEnabled = $derived(
+    previewModel?.reasoning
+        ? chatboxStore.getModelSetting(
+              previewModel.value ?? undefined,
+              REASONING_KEY,
+          ) !== REASONING_DISABLED
+        : false,
+);
+
+function toggleReasoning() {
+    if (!previewModel?.value || !previewModel.reasoning) return;
+    chatboxStore.setModelSetting(
+        previewModel.value,
+        REASONING_KEY,
+        reasoningEnabled ? REASONING_DISABLED : null,
+    );
 }
 
 function handleListKeydown(e: KeyboardEvent) {
@@ -80,8 +102,8 @@ function handleListKeydown(e: KeyboardEvent) {
     class={cn(
       "inline-flex h-9 items-center gap-1.5 rounded-4xl px-3 text-sm",
       "border border-transparent bg-transparent transition-colors",
-      "hover:bg-muted dark:hover:bg-muted/50",
-      "data-[state=open]:bg-muted dark:data-[state=open]:bg-muted/50",
+      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+      "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
     )}
     aria-label="Select model"
   >
@@ -104,10 +126,10 @@ function handleListKeydown(e: KeyboardEvent) {
 
   <PopoverPositioner>
     <PopoverContent
-      class="flex h-[360px] w-full max-w-[760px] overflow-hidden p-0"
+      class="flex h-2xl w-full max-w-4xl overflow-hidden p-0 text-left"
     >
       <!-- Model list -->
-      <div class="flex w-fit max-w-[250px] shrink-0 flex-col border-r">
+      <div class="flex w-fit max-w-3xl shrink-0 flex-col border-r">
         <div class="px-3 pt-3 pb-1.5 text-xs font-medium text-muted-foreground">
           Models
         </div>
@@ -220,6 +242,50 @@ function handleListKeydown(e: KeyboardEvent) {
                   </div>
                 </div>
               {/if}
+
+              <Separator />
+
+              <div class="flex flex-col gap-3">
+                <span class="text-xs font-medium text-muted-foreground">
+                  Settings
+                </span>
+                {#if previewModel.reasoning}
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex flex-col">
+                      <span class="text-sm font-medium">Reasoning</span>
+                      <span class="text-xs text-muted-foreground">
+                        Let the model think through problems step by step.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={reasoningEnabled}
+                      aria-label="Toggle reasoning"
+                      onclick={toggleReasoning}
+                      class={cn(
+                        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                        reasoningEnabled
+                          ? "bg-primary"
+                          : "bg-muted-foreground/30",
+                      )}
+                    >
+                      <span
+                        class={cn(
+                          "inline-block size-4 rounded-full bg-white shadow transition-transform",
+                          reasoningEnabled
+                            ? "translate-x-4"
+                            : "translate-x-0.5",
+                        )}
+                      ></span>
+                    </button>
+                  </div>
+                {:else}
+                  <p class="text-xs text-muted-foreground">
+                    This model has no configurable settings.
+                  </p>
+                {/if}
+              </div>
             </div>
           </ScrollArea>
 

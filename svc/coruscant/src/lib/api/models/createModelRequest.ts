@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { ModelFamily } from './modelFamily';
+import type { ModelSettings } from './modelSettings';
 
 /**
  * Parameters for creating a new model.
@@ -18,6 +19,5 @@ export interface CreateModelRequest {
   family: ModelFamily;
   /** Portkey provider slug the deployment lives under. */
   provider: string;
-  /** Arbitrary provider/runtime settings as a JSON object. Defaults to `{}`. */
-  settings?: unknown;
+  settings?: null | ModelSettings;
 }

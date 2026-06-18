@@ -3,11 +3,27 @@ import { Popover } from "@ark-ui/svelte/popover";
 import type { Snippet } from "svelte";
 
 let {
+    side = "bottom",
+    align = "center",
+    sideOffset = 8,
     children,
     ...rest
-}: { children?: Snippet; [key: string]: unknown } = $props();
+}: {
+    side?: "top" | "bottom" | "left" | "right";
+    align?: "start" | "center" | "end";
+    sideOffset?: number;
+    children?: Snippet;
+    [key: string]: unknown;
+} = $props();
+
+// Ark UI configures placement on the Root via the `positioning` prop; the
+// Positioner itself is a bare wrapper.
+const positioning = $derived({
+    placement: align === "center" ? side : (`${side}-${align}` as const),
+    gutter: sideOffset,
+});
 </script>
 
-<Popover.Root {...rest}>
+<Popover.Root {positioning} {...rest}>
   {@render children?.()}
 </Popover.Root>

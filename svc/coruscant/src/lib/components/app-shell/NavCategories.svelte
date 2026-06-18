@@ -3,12 +3,10 @@ import Icon from "@iconify/svelte";
 import {
     SidebarGroup,
     SidebarGroupContent,
+    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
     useSidebar,
 } from "@lerpz/ui/components/sidebar";
 import { page } from "$app/state";
@@ -79,13 +77,25 @@ const categories: Category[] = [
             },
         ],
     },
+    {
+        name: "Agents",
+        icon: "fa6-solid:robot",
+        href: "/ai/agents",
+        items: [
+            { title: "New agent", href: "/ai/agents", icon: "fa6-solid:plus" },
+            {
+                title: "Sessions",
+                href: "/ai/agents/sessions",
+                icon: "fa6-solid:clock-rotate-left",
+            },
+        ],
+    },
 ];
 
 function isCategoryActive(category: Category): boolean {
     return pathname.startsWith(category.href);
 }
 
-// Manual overrides win; otherwise a category defaults to open when it's active.
 const overrides = $state<Record<string, boolean>>({});
 
 function isOpen(category: Category): boolean {
@@ -98,16 +108,18 @@ function toggle(category: Category) {
 </script>
 
 <SidebarGroup class={className}>
+  <SidebarGroupLabel>Navigation</SidebarGroupLabel>
   <SidebarGroupContent>
-    <SidebarMenu>
+    <SidebarMenu class="gap-1">
       {#each categories as category (category.name)}
         {@const open = isOpen(category)}
+        {@const active = isCategoryActive(category)}
         <SidebarMenuItem>
           {#if sidebar.state === "collapsed"}
             <!-- Collapsed: icon links straight to the category landing page. -->
             <SidebarMenuButton
               href={category.href}
-              isActive={isCategoryActive(category)}
+              isActive={active}
               class="justify-center"
               title={category.name}
               aria-label={category.name}
@@ -116,33 +128,50 @@ function toggle(category: Category) {
             </SidebarMenuButton>
           {:else}
             <SidebarMenuButton
-              isActive={isCategoryActive(category)}
               onclick={() => toggle(category)}
               aria-expanded={open}
+              class="h-10 gap-2.5 rounded-lg px-2.5 {active ? 'bg-sidebar-accent' : ''}"
             >
-              <Icon icon={category.icon} class="size-4 shrink-0" />
-              <span class="flex-1">{category.name}</span>
+              <span
+                class="flex size-7 shrink-0 items-center justify-center rounded-md transition-colors
+                {active ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60'}"
+              >
+                <Icon icon={category.icon} class="size-4" />
+              </span>
+              <span class="flex-1 {active ? 'font-medium' : 'font-normal'}">
+                  {category.name}
+              </span>
               <Icon
                 icon="fa6-solid:angle-right"
-                class="size-4 shrink-0 text-sidebar-foreground/70 transition-transform duration-200 {open
-                  ? 'rotate-90'
-                  : ''}"
+                class="size-3.5 shrink-0 transition-transform duration-200
+                {active ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60'}
+                {open ? 'rotate-90' : ''}"
               />
             </SidebarMenuButton>
             {#if open}
-              <SidebarMenuSub>
+              <ul class="mt-1 ml-6 flex flex-col gap-1 border-l border-sidebar-border pl-3">
                 {#each category.items as item (item.href)}
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
+                  {@const subActive = pathname === item.href}
+                  <li>
+                    <a
                       href={item.href}
-                      isActive={pathname === item.href}
+                      aria-current={subActive ? "page" : undefined}
+                      class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm outline-none transition-colors
+                        focus-visible:ring-2 focus-visible:ring-sidebar-ring
+                        {subActive
+                          ? 'bg-sidebar-accent font-medium text-sidebar-foreground'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'}"
                     >
-                      <Icon icon={item.icon} class="shrink-0" />
+                      <Icon
+                          icon={item.icon}
+                          class="size-3.5 shrink-0
+                            {subActive ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60'}"
+                        />
                       <span class="truncate">{item.title}</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                    </a>
+                  </li>
                 {/each}
-              </SidebarMenuSub>
+              </ul>
             {/if}
           {/if}
         </SidebarMenuItem>

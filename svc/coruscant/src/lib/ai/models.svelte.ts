@@ -21,6 +21,8 @@ export type Model = {
     modalities: string[];
     features: string[];
     settings: ModelSetting[];
+    /** Whether the model can produce reasoning / chain-of-thought output. */
+    reasoning: boolean;
 };
 
 // Maps a model family to its logo in `static/`.
@@ -46,6 +48,7 @@ function toModel(model: ApiModel): Model {
         modalities: [],
         features: [],
         settings: [],
+        reasoning: model.settings?.reasoning ?? false,
     };
 }
 

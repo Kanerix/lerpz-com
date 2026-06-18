@@ -5,20 +5,12 @@ import { cn } from "../../lib/utils.js";
 
 let {
     class: className = "",
-    align = "start",
-    side = "bottom",
-    sideOffset = 4,
     children,
-}: {
-    class?: string;
-    align?: "start" | "center" | "end";
-    side?: "top" | "bottom" | "left" | "right";
-    sideOffset?: number;
-    children?: Snippet;
-} = $props();
+    ...rest
+}: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Menu.Positioner {align} {side} {sideOffset} class="isolate z-50">
+<Menu.Positioner class="isolate z-50">
   <Menu.Content
     data-slot="dropdown-menu-content"
     class={cn(
@@ -28,6 +20,7 @@ let {
       "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
       className
     )}
+    {...rest}
   >
     {@render children?.()}
   </Menu.Content>

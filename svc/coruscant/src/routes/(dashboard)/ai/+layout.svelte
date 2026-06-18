@@ -78,7 +78,14 @@ const isPending = $derived(
 <Chatbox
   onSubmit={async (args) => {
     switch (args.mode) {
-      case "chat": chat.send(args.prompt); break;
+      case "chat": {
+        const model = modelsHook.models.find((m) => m.value === args.model);
+        const reasoning = model?.reasoning
+          ? (args.modelSettings.reasoning ?? null)
+          : null;
+        chat.send(args.prompt, { model: args.model, reasoning });
+        break;
+      }
       case "image": image.start(args.prompt); break;
       case "video": break; // Video generation is not yet available.
     }
