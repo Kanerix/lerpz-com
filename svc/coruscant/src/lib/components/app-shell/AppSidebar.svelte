@@ -8,7 +8,7 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@lerpz/ui/components/sidebar";
-import NavModes from "./NavModes.svelte";
+import NavCategories from "./NavCategories.svelte";
 import NavSecondary from "./NavSecondary.svelte";
 import NewChatButton from "./NewChatButton.svelte";
 import SidebarBrand from "./SidebarBrand.svelte";
@@ -22,8 +22,8 @@ import UserInfo from "./UserInfo.svelte";
   </SidebarHeader>
   <SeparatorComp />
   <SidebarContent class="overflow-hidden">
-    <NavModes />
-    <ScrollArea class="min-h-0 flex-1" orientation="vertical">
+    <NavCategories />
+    <ScrollArea class="min-h-0 shrink" orientation="vertical">
       <SidebarChats />
     </ScrollArea>
     <NewChatButton />

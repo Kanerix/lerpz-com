@@ -8,6 +8,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "start": "node build/index.js",
+        "check": "svelte-kit check",
         "lint": "biome check",
         "format": "biome format --write",
         "generate:api": "orval"

@@ -23,7 +23,7 @@ import { msalStore } from "$lib/auth/msal.svelte.js";
   <div class="flex items-center gap-3 pt-2">
     <Button size="lg" onclick={() => msalStore.loginRedirect()}>
       Sign in
-      <Icon icon="mdi:arrow-right" class="size-4" />
+      <Icon icon="fa6-solid:arrow-right" class="size-4" />
     </Button>
     <Button variant="ghost" size="lg" href="/docs">Documentation</Button>
   </div>

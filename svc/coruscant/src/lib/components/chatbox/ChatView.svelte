@@ -20,7 +20,7 @@ let {
 let bottomRef = $state<HTMLDivElement | null>(null);
 
 $effect(() => {
-    messages; // track
+    messages;
     bottomRef?.scrollIntoView({ behavior: "smooth" });
 });
 </script>
@@ -29,7 +29,7 @@ $effect(() => {
   <div class="flex flex-col items-center justify-center h-[calc(100vh-220px)] text-center gap-4">
     <div class="flex flex-col items-center gap-3">
       <div class="bg-muted rounded-full p-4">
-        <Icon icon="mdi:robot-outline" class="size-8 text-muted-foreground" />
+        <Icon icon="fa6-solid:robot" class="size-8 text-muted-foreground" />
       </div>
       <h2 class="text-xl font-semibold tracking-tight">Start a conversation</h2>
       <p class="text-sm text-muted-foreground max-w-sm">
@@ -39,14 +39,14 @@ $effect(() => {
   </div>
 {:else}
   <ScrollArea orientation="vertical" class="h-[calc(100vh-220px)] w-full">
-    <div class="mx-auto max-w-[750px] flex flex-col gap-4 pb-8">
+    <div class="mx-auto max-w-[1152px] flex flex-col gap-4 pb-8">
       {#each messages as message, index (message.id)}
         <div class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}>
           <div class={cn("flex items-end gap-3 max-w-full", message.role === "user" ? "justify-end" : "justify-start")}>
             {#if message.role === "assistant"}
               <Avatar size="sm" class="shrink-0">
                 <AvatarFallback>
-                  <Icon icon="mdi:robot-outline" class="size-3.5" />
+                  <Icon icon="fa6-solid:robot" class="size-3.5" />
                 </AvatarFallback>
               </Avatar>
             {/if}
@@ -69,7 +69,7 @@ $effect(() => {
             {#if message.role === "user"}
               <Avatar size="sm" class="shrink-0">
                 <AvatarFallback>
-                  <Icon icon="mdi:person" class="size-3.5" />
+                  <Icon icon="fa6-solid:user" class="size-3.5" />
                 </AvatarFallback>
               </Avatar>
             {/if}
@@ -88,11 +88,11 @@ $effect(() => {
         <div class="flex gap-3 justify-start">
           <Avatar size="sm" class="shrink-0">
             <AvatarFallback>
-              <Icon icon="mdi:robot-outline" class="size-3.5" />
+              <Icon icon="fa6-solid:robot" class="size-3.5" />
             </AvatarFallback>
           </Avatar>
           <div class="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-            <Icon icon="mdi:loading" class="size-4 animate-spin text-muted-foreground" />
+            <Icon icon="fa6-solid:spinner" class="size-4 animate-spin text-muted-foreground" />
           </div>
         </div>
       {/if}

@@ -16,7 +16,7 @@ let { class: className = "" }: { class?: string } = $props();
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton href="/ai/chats" class="font-medium">
-          <Icon icon="mdi:plus" class="shrink-0" />
+          <Icon icon="fa6-solid:plus" class="shrink-0" />
           <span class="group-data-[state=collapsed]:hidden">New chat</span>
         </SidebarMenuButton>
       </SidebarMenuItem>

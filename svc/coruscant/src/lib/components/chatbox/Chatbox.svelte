@@ -7,15 +7,13 @@ import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ChatboxSettings from "./ChatboxSettings.svelte";
 import ChatStatusBar from "./ChatStatusBar.svelte";
-import MarkdownEditor from "./MarkdownEditor.svelte";
 import type {
     ChatboxMode,
     ChatboxSubmitArgs,
 } from "./chatbox-context.svelte.js";
-import {
-    setChatboxContext,
-} from "./chatbox-context.svelte.js";
+import { setChatboxContext } from "./chatbox-context.svelte.js";
 import ImageShelf from "./ImageShelf.svelte";
+import MarkdownEditor from "./MarkdownEditor.svelte";
 
 const placeholders: Record<ChatboxMode, string> = {
     chat: "Send a message!",
@@ -150,12 +148,12 @@ function handleEnter() {
 }
 </script>
 
-<aside class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[750px] p-4">
+<aside class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[1024px] p-4">
   <ImageShelf />
   <ChatStatusBar {isThinking} {isSaved} {error} />
   <div bind:this={cardEl}>
     <Card class="rounded-4xl">
-      <CardContent class="flex flex-col gap-3 p-3">
+      <CardContent class="flex flex-col gap-2 p-4">
         <div class="flex items-end gap-4">
           <MarkdownEditor
             value={chatboxStore.prompt}
@@ -167,15 +165,16 @@ function handleEnter() {
             class="grow self-stretch px-1 py-1.5"
           />
           <Button
+            variant="ghost"
             size="icon"
             onclick={submit}
             disabled={isPending || !chatboxStore.prompt.trim()}
             aria-label="Send prompt"
           >
             {#if isPending}
-              <Icon icon="mdi:loading" class="animate-spin" />
+              <Icon icon="fa6-solid:spinner" class="animate-spin" />
             {:else}
-              <Icon icon="mdi:arrow-up" />
+              <Icon icon="fa6-solid:arrow-up" />
             {/if}
           </Button>
         </div>

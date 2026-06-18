@@ -54,15 +54,15 @@ const avatarFallback = $derived(
     <DropdownMenu>
       <DropdownMenuTrigger class="w-full">
         <SidebarMenuButton size="lg" class="group-data-[state=collapsed]:size-8 group-data-[state=collapsed]:p-0">
-          <Avatar class="h-8 w-8 shrink-0 rounded-lg">
+          <Avatar class="h-8 w-8 shrink-0">
             <AvatarImage src={avatarSrc ?? ""} alt={account?.name ?? ""} />
-            <AvatarFallback class="rounded-lg">{avatarFallback}</AvatarFallback>
+            <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
           <div class="grid flex-1 text-left text-sm leading-tight group-data-[state=collapsed]:hidden">
             <span class="truncate font-medium">{account?.name}</span>
-            <span class="truncate text-xs">{account?.username}</span>
+            <span class="truncate text-xs text-muted-foreground">{account?.username}</span>
           </div>
-          <Icon icon="mdi:unfold-more-horizontal" class="ml-auto size-4 group-data-[state=collapsed]:hidden" />
+          <Icon icon="fa6-solid:ellipsis-vertical" class="ml-auto size-4 group-data-[state=collapsed]:hidden" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -79,7 +79,7 @@ const avatarFallback = $derived(
               </Avatar>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-medium">{account?.name}</span>
-                <span class="truncate text-xs">{account?.username}</span>
+                <span class="truncate text-xs text-muted-foreground">{account?.username}</span>
               </div>
             </div>
           </DropdownMenuLabel>
@@ -87,22 +87,22 @@ const avatarFallback = $derived(
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem value="upgrade">
-            <Icon icon="mdi:auto-awesome" />
+            <Icon icon="fa6-solid:wand-magic-sparkles" />
             Upgrade to Pro
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem value="account"><Icon icon="mdi:verified" />Account</DropdownMenuItem>
-          <DropdownMenuItem value="notifications"><Icon icon="mdi:bell-outline" />Notifications</DropdownMenuItem>
+          <DropdownMenuItem value="account"><Icon icon="fa6-solid:user-check" />Account</DropdownMenuItem>
+          <DropdownMenuItem value="notifications"><Icon icon="fa6-regular:bell" />Notifications</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem value="switch" onclick={() => msalStore.switchAccount()}>
-          <Icon icon="mdi:account-switch-outline" />
+          <Icon icon="fa6-solid:arrow-right-arrow-left" />
           Switch Account
         </DropdownMenuItem>
         <DropdownMenuItem value="logout" onclick={() => msalStore.logoutRedirect()}>
-          <Icon icon="mdi:logout" />
+          <Icon icon="fa6-solid:right-from-bracket" />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

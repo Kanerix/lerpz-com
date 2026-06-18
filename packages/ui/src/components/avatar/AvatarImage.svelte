@@ -17,7 +17,7 @@ let {
 
 <Avatar.Image
   data-slot="avatar-image"
-  class={cn("aspect-square size-full object-cover", className)}
+  class={cn("aspect-square size-full rounded-[inherit] object-cover", className)}
   {src}
   {alt}
   {...rest}

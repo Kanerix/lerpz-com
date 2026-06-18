@@ -10,8 +10,10 @@ const marked = new Marked(
             if (lang && hljs.getLanguage(lang)) {
                 return hljs.highlight(code, { language: lang }).value;
             }
-            // No language hint (or an unknown one): let highlight.js guess.
-            return hljs.highlightAuto(code).value;
+            // No language hint (or an unknown one): don't guess. Returning the
+            // code unchanged leaves it un-highlighted (and safely escaped by
+            // marked) so we never mislabel or mis-highlight a block.
+            return code;
         },
     }),
 );

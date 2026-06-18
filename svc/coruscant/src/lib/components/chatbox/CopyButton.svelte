@@ -39,6 +39,6 @@ async function copy() {
     className,
   )}
 >
-  <Icon icon={copied ? "mdi:check" : "mdi:content-copy"} class="size-3.5 shrink-0" />
+  <Icon icon={copied ? "fa6-solid:check" : "fa6-regular:copy"} class="size-3.5 shrink-0" />
   <span>{copied ? "Copied" : "Copy"}</span>
 </button>

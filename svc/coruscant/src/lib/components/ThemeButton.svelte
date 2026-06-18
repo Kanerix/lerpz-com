@@ -20,9 +20,9 @@ import { mode, toggleMode } from "mode-watcher";
         aria-label="Toggle theme"
       >
         {#if $mode === "dark"}
-          <Icon icon="mdi:weather-sunny" class="h-5 w-5" />
+          <Icon icon="fa6-solid:sun" class="h-5 w-5" />
         {:else}
-          <Icon icon="mdi:weather-night" class="h-5 w-5" />
+          <Icon icon="fa6-solid:moon" class="h-5 w-5" />
         {/if}
         <span class="sr-only">Toggle theme</span>
       </Button>

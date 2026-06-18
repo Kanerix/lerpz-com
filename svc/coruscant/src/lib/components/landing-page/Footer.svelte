@@ -36,7 +36,7 @@ const footerLinks = {
           The AI portal for your organisation. Maintained centrally so everyone works from the same tooling.
         </p>
         <a href="https://github.com/lerpz" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="w-fit text-muted-foreground transition-colors hover:text-foreground">
-          <Icon icon="mdi:github" class="size-4" />
+          <Icon icon="fa6-brands:github" class="size-4" />
         </a>
       </div>
 
@@ -59,7 +59,7 @@ const footerLinks = {
     <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row">
       <p>© 2026 Lerpz AI. All rights reserved.</p>
       <p class="flex items-center gap-1">
-        Made with <Icon icon="mdi:heart" class="size-3.5 text-destructive" aria-label="love" /> by the Lerpz team
+        Made with <Icon icon="fa6-solid:heart" class="size-3.5 text-destructive" aria-label="love" /> by the Lerpz team
       </p>
     </div>
   </div>

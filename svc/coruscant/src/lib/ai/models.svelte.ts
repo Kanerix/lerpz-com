@@ -1,12 +1,12 @@
-import { listModels } from "$lib/api/models/models.js";
 import type { Model as ApiModel } from "$lib/api/models/index.js";
+import { listModels } from "$lib/api/models/models.js";
 
 export type ChatboxVariant = "chat" | "image" | "video";
 
 export type ModelSetting = {
     key: string;
     name: string;
-    icon: string; // iconify icon name e.g. "mdi:photo-size-select-large"
+    icon: string;
     tooltip: string;
     defaultValue: string;
     values: { value: string | number; label: string }[];
@@ -16,16 +16,33 @@ export type Model = {
     label: string;
     value: string | null;
     description: string;
+    family: string;
+    provider: string;
     modalities: string[];
     features: string[];
     settings: ModelSetting[];
 };
+
+// Maps a model family to its logo in `static/`.
+const MODEL_FAMILY_LOGOS: Record<string, string> = {
+    openai: "/openai.webp",
+    anthropic: "/claude.svg",
+    google: "/gemini.png",
+};
+
+export const FALLBACK_MODEL_LOGO = "/lerpz.svg";
+
+export function modelFamilyLogo(family: string): string {
+    return MODEL_FAMILY_LOGOS[family.toLowerCase()] ?? FALLBACK_MODEL_LOGO;
+}
 
 function toModel(model: ApiModel): Model {
     return {
         label: model.display_name,
         value: model.deployment_name,
         description: model.description ?? "",
+        family: model.family ?? "",
+        provider: model.provider ?? "",
         modalities: [],
         features: [],
         settings: [],
@@ -40,8 +57,7 @@ export function createModels() {
         isLoading = true;
         try {
             const response = await listModels();
-            models =
-                response.status === 200 ? response.data.map(toModel) : [];
+            models = response.status === 200 ? response.data.map(toModel) : [];
         } catch (error) {
             console.error("Failed to load models", error);
             models = [];

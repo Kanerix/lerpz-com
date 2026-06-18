@@ -6,6 +6,7 @@
         "dev": "bun --filter @lerpz/coruscant dev",
         "build": "bun --filter @lerpz/coruscant build",
         "start": "bun --filter @lerpz/coruscant start",
+        "check": "bun --filter @lerpz/coruscant check",
         "lint": "bun --filter @lerpz/coruscant lint",
         "format": "bun --filter @lerpz/coruscant format",
         "generate:api": "bun --filter @lerpz/coruscant generate:api"

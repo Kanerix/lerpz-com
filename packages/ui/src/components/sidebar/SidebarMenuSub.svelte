@@ -1,5 +1,4 @@
 <script lang="ts">
-import { Avatar } from "@ark-ui/svelte/avatar";
 import type { Snippet } from "svelte";
 import { cn } from "../../lib/utils.js";
 
@@ -10,14 +9,14 @@ let {
 }: { class?: string; children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Avatar.Fallback
-  data-slot="avatar-fallback"
+<ul
+  data-slot="sidebar-menu-sub"
   class={cn(
-    "flex size-full items-center justify-center text-sm",
-    "bg-muted text-muted-foreground rounded-[inherit]",
+    "mx-3.5 flex min-w-0 flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
+    "group-data-[state=collapsed]:hidden",
     className
   )}
   {...rest}
 >
   {@render children?.()}
-</Avatar.Fallback>
+</ul>

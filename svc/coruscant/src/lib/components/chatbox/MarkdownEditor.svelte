@@ -38,8 +38,6 @@ $effect(() => {
     handlers.onEnter = onEnter;
 });
 
-// Submit on Enter, newline on Shift+Enter (Shift+Enter falls through to
-// StarterKit's HardBreak shortcut).
 const SubmitOnEnter = Extension.create({
     name: "submitOnEnter",
     addKeyboardShortcuts() {
@@ -52,9 +50,6 @@ const SubmitOnEnter = Extension.create({
     },
 });
 
-// Create the editor once the mount target exists. Only `element` is tracked
-// here; initial `value`/`disabled` are read untracked so prop changes don't
-// tear down and rebuild the editor.
 $effect(() => {
     const el = element;
     if (!el) return;
@@ -94,8 +89,6 @@ $effect(() => {
     };
 });
 
-// Push external `value` changes (e.g. cleared after submit, or replaced by the
-// enhance action) back into the editor, skipping echoes of our own updates.
 $effect(() => {
     const next = value;
     const instance = editor;

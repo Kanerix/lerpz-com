@@ -10,7 +10,7 @@ import {
 
 const tools = [
     {
-        icon: "mdi:chat-outline",
+        icon: "fa6-regular:comment",
         title: "AI Chat",
         description:
             "Have conversations with large language models. Ask questions, summarise documents, or draft content — directly in your browser.",
@@ -18,7 +18,7 @@ const tools = [
         badgeVariant: "default" as const,
     },
     {
-        icon: "mdi:image-outline",
+        icon: "fa6-regular:image",
         title: "Image Generation",
         description:
             "Generate images from text prompts. Useful for mockups, visual references, and creative work without needing external tools.",
@@ -26,7 +26,7 @@ const tools = [
         badgeVariant: "outline" as const,
     },
     {
-        icon: "mdi:magnify",
+        icon: "fa6-solid:magnifying-glass",
         title: "Semantic Search",
         description:
             "Search internal documents and knowledge bases by meaning rather than exact keywords.",

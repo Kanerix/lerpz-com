@@ -12,7 +12,6 @@ let {
     error?: string | null;
 } = $props();
 
-// Small, deliberately silly status lines shown while the agent is working.
 const quotes = [
     "Thinking really hard…",
     "Consulting the rubber duck…",
@@ -30,7 +29,6 @@ const quotes = [
 
 let quoteIndex = $state(0);
 
-// Rotate quotes only while thinking; clean up the interval when it stops.
 $effect(() => {
     if (!isThinking) return;
     quoteIndex = Math.floor(Math.random() * quotes.length);
@@ -40,10 +38,20 @@ $effect(() => {
     return () => clearInterval(interval);
 });
 
-// "Saved" is a sticky flag, so surface it as a brief transient confirmation.
 let showSaved = $state(false);
+let sawActivity = false;
+let prevSaved = false;
+
 $effect(() => {
-    if (!isSaved) return;
+    if (isThinking) sawActivity = true;
+});
+
+$effect(() => {
+    const saved = isSaved;
+    const isFreshSave = saved && !prevSaved && sawActivity;
+    prevSaved = saved;
+    if (!isFreshSave) return;
+    sawActivity = false;
     showSaved = true;
     const timeout = setTimeout(() => {
         showSaved = false;
@@ -66,7 +74,7 @@ const status = $derived<Status>(
       role="alert"
       class="pointer-events-auto flex max-w-full items-center gap-1.5 rounded-full bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground shadow-sm"
     >
-      <Icon icon="mdi:alert-circle" class="size-3.5 shrink-0" />
+      <Icon icon="fa6-solid:circle-exclamation" class="size-3.5 shrink-0" />
       <span class="truncate">{error}</span>
     </div>
   {:else if status === "thinking"}
@@ -75,7 +83,7 @@ const status = $derived<Status>(
       out:fade={{ duration: 150 }}
       class="flex items-center gap-1.5 text-xs text-muted-foreground/70"
     >
-      <Icon icon="mdi:loading" class="size-3 shrink-0 animate-spin" />
+      <Icon icon="fa6-solid:spinner" class="size-3 shrink-0 animate-spin" />
       {#key quoteIndex}
         <span in:fade={{ duration: 250 }}>{quotes[quoteIndex]}</span>
       {/key}
@@ -86,7 +94,7 @@ const status = $derived<Status>(
       out:fade={{ duration: 300 }}
       class="flex items-center gap-1.5 text-xs text-muted-foreground/70"
     >
-      <Icon icon="mdi:check-circle-outline" class="size-3 shrink-0" />
+      <Icon icon="fa6-regular:circle-check" class="size-3 shrink-0" />
       <span>Saved</span>
     </div>
   {/if}

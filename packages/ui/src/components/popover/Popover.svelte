@@ -2,9 +2,12 @@
 import { Popover } from "@ark-ui/svelte/popover";
 import type { Snippet } from "svelte";
 
-let { children }: { children?: Snippet } = $props();
+let {
+    children,
+    ...rest
+}: { children?: Snippet; [key: string]: unknown } = $props();
 </script>
 
-<Popover.Root>
+<Popover.Root {...rest}>
   {@render children?.()}
 </Popover.Root>

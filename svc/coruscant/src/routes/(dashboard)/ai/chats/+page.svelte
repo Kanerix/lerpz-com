@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
-import ChatView from "$lib/components/chatbox/ChatView.svelte";
 import { getAiContext } from "$lib/ai/context.svelte.js";
+import ChatView from "$lib/components/chatbox/ChatView.svelte";
 
 let { children }: { children: Snippet } = $props();
 const ai = getAiContext();

@@ -14,9 +14,9 @@ let { class: className = "" }: { class?: string } = $props();
 const pathname = $derived(page.url.pathname);
 
 const pages = [
-    { title: "Docs", url: "/docs", icon: "mdi:file-document-outline" },
-    { title: "Settings", url: "/settings", icon: "mdi:cog-outline" },
-    { title: "Roadmap", url: "/roadmap", icon: "mdi:road-variant" },
+    { title: "Docs", url: "/docs", icon: "fa6-regular:file-lines" },
+    { title: "Settings", url: "/settings", icon: "fa6-solid:gear" },
+    { title: "Roadmap", url: "/roadmap", icon: "fa6-solid:road" },
 ];
 </script>
 
