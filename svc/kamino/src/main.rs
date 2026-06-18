@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::from(format!(
-                "{}=debug,lerpz=debug,none",
+                "off,{}=debug,lerpz=debug",
                 env!("CARGO_CRATE_NAME")
             ))
         }))
