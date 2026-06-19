@@ -1,8 +1,8 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
     "files": {
         "ignoreUnknown": true,
-        "includes": ["**", "!svc/portal/src/services/api", "!**/.svelte-kit"]
+        "includes": ["**"]
     },
     "vcs": {
         "enabled": true,
@@ -16,30 +16,13 @@
             "semicolons": "always"
         }
     },
-    "css": {
-        "parser": {
-            "cssModules": false,
-            "tailwindDirectives": true
-        },
-        "formatter": {
-            "enabled": true,
-            "indentStyle": "space",
-            "indentWidth": 4
-        }
-    },
     "linter": {
         "enabled": true,
         "rules": {
             "recommended": true,
             "correctness": {
                 "useExhaustiveDependencies": "info"
-            },
-            "suspicious": {
-                "noUnknownAtRules": "off"
             }
-        },
-        "domains": {
-            "svelte": "recommended"
         }
     },
     "formatter": {
@@ -47,23 +30,6 @@
         "indentStyle": "space",
         "indentWidth": 4
     },
-    "overrides": [
-        {
-            "includes": ["**/*.svelte"],
-            "formatter": {
-                "enabled": true
-            },
-            "linter": {
-                "rules": {
-                    "correctness": {
-                        "noUnusedImports": "off",
-                        "noUnusedVariables": "off",
-                        "useHookAtTopLevel": "off"
-                    }
-                }
-            }
-        }
-    ],
     "assist": {
         "actions": {
             "source": {

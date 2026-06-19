@@ -1,0 +1,13 @@
+{
+    "name": "@lerpz/biome-config",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "license": "PROPRIETARY",
+    "publishConfig": {
+        "access": "public"
+    },
+    "exports": {
+        "./svelte": "./svelte.json"
+    }
+}

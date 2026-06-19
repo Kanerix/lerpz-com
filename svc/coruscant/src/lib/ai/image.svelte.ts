@@ -1,6 +1,21 @@
 import { createSseConnection } from "$lib/http/sse.js";
+import { getCreateImageUrl } from "$lib/api/images/images.js";
+import type { ImageRequest } from "$lib/api/models/index.js";
 
-export function createImageSse() {
+export type UseImageOptions = {
+    model?: string;
+    onDone?: (image: string) => void;
+    onError?: (error: string) => void;
+};
+
+export type StartImageOptions = {
+    /** Model override for this request. */
+    model?: string | null;
+    /** Number of images to generate. Omit (or pass `null`) for the default. */
+    amount?: number | null;
+};
+
+export function createImage(options: UseImageOptions = {}) {
     let image = $state<string | null>(null);
     let isLoading = $state(false);
     let isDone = $state(false);
@@ -8,11 +23,15 @@ export function createImageSse() {
 
     let closeRef: (() => void) | null = null;
 
+    // Callbacks via refs to avoid stale closures
+    let onDone = options.onDone;
+    let onError = options.onError;
+
     $effect(() => {
         return () => closeRef?.();
     });
 
-    function start(prompt: string) {
+    function start(prompt: string, startOptions: StartImageOptions = {}) {
         closeRef?.();
         closeRef = null;
         image = null;
@@ -20,32 +39,40 @@ export function createImageSse() {
         isDone = false;
         error = null;
 
+        const body = JSON.stringify({
+            prompt,
+            model: startOptions.model ?? options.model ?? null,
+            amount: startOptions.amount ?? null,
+        } satisfies ImageRequest);
+
         const { close } = createSseConnection(
-            "/api/v1/images",
+            getCreateImageUrl(),
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt }),
+                body,
             },
             {
-                onOpen: () => {
-                    console.log("Image stream opened");
-                },
+                doneSignal: null,
                 onMessage: (data) => {
                     const stripped = data.startsWith("data:")
                         ? data.slice(5).trimStart()
                         : data;
                     image = `data:image/png;base64,${stripped}`;
                 },
-                onError: (_err) => {
+                onError: (err) => {
                     isLoading = false;
                     isDone = true;
-                    error = "An error occurred while streaming the image.";
+                    error =
+                        err.message ||
+                        "An error occurred while streaming the image.";
+                    onError?.(error ?? "");
                     closeRef = null;
                 },
                 onClose: () => {
                     isLoading = false;
                     isDone = true;
+                    if (image !== null) onDone?.(image);
                     closeRef = null;
                 },
             },

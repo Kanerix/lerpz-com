@@ -6,8 +6,13 @@
       "name": "lerpz-ai",
       "devDependencies": {
         "@biomejs/biome": "2.5.0",
+        "@lerpz/biome-config": "workspace:*",
         "@lerpz/typescript-config": "workspace:*",
       },
+    },
+    "packages/biome-config": {
+      "name": "@lerpz/biome-config",
+      "version": "0.0.0",
     },
     "packages/typescript-config": {
       "name": "@lerpz/typescript-config",
@@ -28,6 +33,7 @@
         "tw-animate-css": "^1.3.6",
       },
       "devDependencies": {
+        "@lerpz/biome-config": "workspace:*",
         "@lerpz/typescript-config": "workspace:*",
         "@tailwindcss/postcss": "^4.1.11",
         "@turbo/gen": "^2.9.9",
@@ -63,6 +69,7 @@
         "svelte-sonner": "^0.3.28",
       },
       "devDependencies": {
+        "@lerpz/biome-config": "workspace:*",
         "@sveltejs/adapter-node": "^5.0.0",
         "@sveltejs/kit": "^2.0.0",
         "@sveltejs/vite-plugin-svelte": "^7.0.0",
@@ -222,6 +229,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@lerpz/biome-config": ["@lerpz/biome-config@workspace:packages/biome-config"],
 
     "@lerpz/coruscant": ["@lerpz/coruscant@workspace:svc/coruscant"],
 

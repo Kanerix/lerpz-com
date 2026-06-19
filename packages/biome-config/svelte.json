@@ -1,0 +1,71 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "trailingCommas": "all",
+            "semicolons": "always"
+        }
+    },
+    "css": {
+        "parser": {
+            "cssModules": false,
+            "tailwindDirectives": true
+        },
+        "formatter": {
+            "enabled": true,
+            "indentStyle": "space",
+            "indentWidth": 4
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "domains": {
+            "svelte": "recommended"
+        },
+        "rules": {
+            "recommended": true,
+            "suspicious": {
+                "noUnknownAtRules": "off"
+            },
+            "nursery": {
+                "useSortedClasses": {
+                    "level": "info",
+                    "options": {
+                        "attributes": ["class", "className"],
+                        "functions": ["clsx", "cva", "cn", "tw", "twMerge"]
+                    }
+                }
+            }
+        }
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4
+    },
+    "overrides": [
+        {
+            "includes": ["**/*.svelte"],
+            "formatter": {
+                "enabled": true
+            },
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "noUnusedImports": "off",
+                        "noUnusedVariables": "off",
+                        "useHookAtTopLevel": "off"
+                    }
+                }
+            }
+        }
+    ],
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    }
+}

@@ -32,6 +32,7 @@
         "svelte-sonner": "^0.3.28"
     },
     "devDependencies": {
+        "@lerpz/biome-config": "workspace:*",
         "@sveltejs/adapter-node": "^5.0.0",
         "@sveltejs/kit": "^2.0.0",
         "@sveltejs/vite-plugin-svelte": "^7.0.0",

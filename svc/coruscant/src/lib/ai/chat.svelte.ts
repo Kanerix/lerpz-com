@@ -27,9 +27,9 @@ export type SendChatOptions = {
     /** Model override for new conversations (ignored for existing ones). */
     model?: string | null;
     /**
-     * Reasoning level for reasoning-capable models (e.g. `low`, `medium`,
-     * `high`, or `none` to disable). Omit (or pass `null`) to use the model's
-     * default behaviour.
+     * Reasoning level for reasoning-capable models
+     * (e.g. `low`, `medium`, `high`, or `none` to disable).
+     * Omit (or pass `null`) to use the model's default behaviour.
      */
     reasoning?: string | null;
 };
