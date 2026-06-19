@@ -3,16 +3,18 @@
 //! Both creating a chat and sending a message in an existing chat stream the
 //! assistant reply back the same way, so the streaming loop lives here.
 //!
-//! Reasoning models (routed through Portkey) emit their chain-of-thought in a
-//! `reasoning_content` (a.k.a. `reasoning`) delta field that the typed
-//! `async-openai` stream drops. We therefore use the `byot` ("bring your own
-//! type") API with a minimal [`StreamChunk`] type that preserves that field.
+//! Reasoning models routed through Portkey emit their chain-of-thought in one
+//! of two shapes the typed `async-openai` stream drops: a flat
+//! `reasoning_content` (a.k.a. `reasoning`) delta field, or Anthropic-style
+//! incremental `content_blocks` carrying `thinking` deltas. We therefore use
+//! the `byot` ("bring your own type") API with a minimal [`StreamChunk`] type
+//! that preserves both.
 
 use std::convert::Infallible;
 use std::pin::Pin;
 
 use async_openai::error::OpenAIError;
-use async_openai::types::chat::{CreateChatCompletionRequest, FinishReason};
+use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::response::sse::Event;
 use lerpz_axum::problem::HandlerResult;
 use serde::Deserialize;
@@ -36,7 +38,7 @@ struct StreamChoice {
     #[serde(default)]
     delta: StreamDelta,
     #[serde(default)]
-    finish_reason: Option<FinishReason>,
+    finish_reason: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -48,6 +50,26 @@ struct StreamDelta {
     /// the field name, so accept both `reasoning_content` and `reasoning`.
     #[serde(default, alias = "reasoning")]
     reasoning_content: Option<String>,
+    /// Anthropic-style streaming (via Portkey) delivers incremental reasoning
+    /// and answer text as `content_blocks` instead of `reasoning_content`. We
+    /// read the `thinking` deltas from here; the answer text is already
+    /// mirrored in `content`, so we ignore the `text` blocks to avoid
+    /// duplicating it.
+    #[serde(default)]
+    content_blocks: Vec<ContentBlock>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ContentBlock {
+    #[serde(default)]
+    delta: ContentBlockDelta,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct ContentBlockDelta {
+    /// Incremental reasoning / chain-of-thought tokens.
+    #[serde(default)]
+    thinking: Option<String>,
 }
 
 type ChunkStream = Pin<Box<dyn Stream<Item = Result<StreamChunk, OpenAIError>> + Send>>;
@@ -68,6 +90,13 @@ pub(super) async fn start_completion_sse(
     conv_id: Uuid,
     database: DatabasePool,
 ) -> HandlerResult<impl Stream<Item = Result<Event, Infallible>>> {
+    tracing::trace!(
+        %conv_id,
+        model = ?request.model,
+        reasoning = ?request.reasoning_effort,
+        "starting chat stream"
+    );
+
     let stream = openai
         .chat()
         .create_stream_byot::<_, StreamChunk>(request)
@@ -82,7 +111,6 @@ fn completion_sse(
     database: DatabasePool,
 ) -> impl Stream<Item = Result<Event, Infallible>> {
     async_stream::stream! {
-        tracing::trace!(%conv_id, "starting chat stream");
         let mut content_buf = String::new();
         let mut reasoning_buf = String::new();
 
@@ -106,10 +134,15 @@ fn completion_sse(
                 if let Some(ref delta) = choice.delta.reasoning_content {
                     reasoning.push_str(delta);
                 }
+                for block in &choice.delta.content_blocks {
+                    if let Some(ref delta) = block.delta.thinking {
+                        reasoning.push_str(delta);
+                    }
+                }
                 if let Some(ref delta) = choice.delta.content {
                     content.push_str(delta);
                 }
-                if let Some(FinishReason::ContentFilter) = choice.finish_reason {
+                if choice.finish_reason.as_deref() == Some("content_filter") {
                     tracing::warn!(%conv_id, "content filter triggered");
                     filtered = true;
                 }

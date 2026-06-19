@@ -37,7 +37,7 @@ const contentId = `thinking-${Math.random().toString(36).slice(2)}`;
     <div
       id={contentId}
       transition:slide={{ duration: 200 }}
-      class="border-l border-border pl-4 text-xs leading-relaxed"
+      class="border-l border-border ml-1.5 pl-4 text-xs leading-relaxed"
     >
       <Markdown content={reasoning} />
     </div>

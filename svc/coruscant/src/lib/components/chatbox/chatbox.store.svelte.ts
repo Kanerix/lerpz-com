@@ -8,6 +8,16 @@ export type ChatboxUploadedImage = {
 export type ChatboxModelSettingsForModel = Record<string, string | null>;
 export type ChatboxModelSettings = Record<string, ChatboxModelSettingsForModel>;
 
+export const REASONING_KEY = "reasoning";
+export const REASONING_LEVELS = [
+    { value: "none", label: "None" },
+    { value: "low", label: "Low" },
+    { value: "medium", label: "Medium" },
+    { value: "high", label: "High" },
+] as const;
+
+export const DEFAULT_REASONING_LEVEL = "medium";
+
 function generateImageId(): string {
     return `img_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 }

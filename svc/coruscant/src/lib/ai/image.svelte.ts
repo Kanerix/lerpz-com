@@ -23,7 +23,6 @@ export function createImage(options: UseImageOptions = {}) {
 
     let closeRef: (() => void) | null = null;
 
-    // Callbacks via refs to avoid stale closures
     let onDone = options.onDone;
     let onError = options.onError;
 

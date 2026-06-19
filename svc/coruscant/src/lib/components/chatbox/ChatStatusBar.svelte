@@ -66,7 +66,7 @@ const status = $derived<Status>(
 </script>
 
 <!-- Reserve a little vertical space so the composer doesn't jump as status changes. -->
-<div class="pointer-events-none flex min-h-5 items-center justify-center px-4">
+<div class="pointer-events-none flex min-h-5 items-center justify-center px-4 mb-1">
   {#if status === "error"}
     <div
       in:fade={{ duration: 120 }}

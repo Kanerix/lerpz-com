@@ -2,7 +2,9 @@
 import Icon from "@iconify/svelte";
 import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
+import { cubicOut } from "svelte/easing";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 import CopyButton from "./CopyButton.svelte";
 import Markdown from "./Markdown.svelte";
@@ -24,6 +26,17 @@ $effect(() => {
     messages;
     bottomRef?.scrollIntoView({ behavior: "smooth" });
 });
+
+function bubbleIn(_node: Element, { role }: { role: string }) {
+    const x = role === "user" ? 16 : -16;
+    return {
+        duration: 350,
+        easing: cubicOut,
+        css: (t: number, u: number) =>
+            `opacity: ${t};
+             transform: translateY(${u * 10}px) translateX(${u * x}px) scale(${0.95 + t * 0.05});`,
+    };
+}
 </script>
 
 {#if messages.length === 0}
@@ -42,7 +55,10 @@ $effect(() => {
   <ScrollArea orientation="vertical" class="h-[calc(100vh-220px)] w-full">
     <div class="mx-auto max-w-6xl flex flex-col gap-4 pb-8">
       {#each messages as message, index (message.id)}
-        <div class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}>
+        <div
+          in:bubbleIn={{ role: message.role }}
+          class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}
+        >
           {#if message.role === "assistant" && message.reasoning}
             <div class="w-full max-w-[80%] pl-9">
               <ThinkingBlock
@@ -66,10 +82,17 @@ $effect(() => {
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-muted text-foreground rounded-bl-md"
             )}>
-              <Markdown
-                content={message.content}
-                class={message.role === "user" ? "markdown-on-primary" : ""}
-              />
+              <Typewriter
+                text={message.content}
+                animate={message.role === "assistant" && isStreaming && index === messages.length - 1}
+              >
+                {#snippet children(revealed)}
+                  <Markdown
+                    content={revealed}
+                    class={message.role === "user" ? "markdown-on-primary" : ""}
+                  />
+                {/snippet}
+              </Typewriter>
               {#if message.role === "assistant" && isStreaming && index === messages.length - 1}
                 <span class="inline-block w-1.5 h-4 ml-0.5 bg-foreground/70 animate-pulse rounded-sm align-text-bottom"></span>
               {/if}
@@ -94,7 +117,7 @@ $effect(() => {
       {/each}
 
       {#if isStreaming && messages[messages.length - 1]?.role === "user"}
-        <div class="flex gap-3 justify-start">
+        <div in:bubbleIn={{ role: "assistant" }} class="flex gap-3 justify-start">
           <Avatar size="sm" class="shrink-0">
             <AvatarFallback>
               <Icon icon="fa6-solid:robot" class="size-3.5" />

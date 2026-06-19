@@ -27,11 +27,8 @@ let {
 let element = $state<HTMLDivElement | null>(null);
 let editor = $state<Editor | null>(null);
 
-// The last markdown string we either emitted upward or pushed into the editor.
-// Used to break the value <-> editor feedback loop.
 let lastSynced = untrack(() => value);
 
-// Keep callbacks current without re-creating the editor when props change.
 const handlers = untrack(() => ({ onChange, onEnter }));
 $effect(() => {
     handlers.onChange = onChange;
@@ -42,7 +39,14 @@ const SubmitOnEnter = Extension.create({
     name: "submitOnEnter",
     addKeyboardShortcuts() {
         return {
-            Enter: () => {
+            "Mod-Enter": () => {
+                handlers.onEnter?.();
+                return true;
+            },
+            Enter: ({ editor }) => {
+                if (editor.isActive("codeBlock")) {
+                    return false;
+                }
                 handlers.onEnter?.();
                 return true;
             },
@@ -73,6 +77,24 @@ $effect(() => {
         editorProps: {
             attributes: {
                 class: "markdown-editor focus:outline-none",
+            },
+            // Parse pasted plain text as markdown so fenced code blocks, lists,
+            // etc. become real nodes instead of escaped paragraphs.
+            handlePaste: (view, event) => {
+                const clipboard = event.clipboardData;
+                if (!clipboard) return false;
+                // Inside a code block, paste literally (no markdown parsing).
+                if (view.state.selection.$head.parent.type.spec.code) {
+                    return false;
+                }
+                // Defer to the default handler when richer HTML is available.
+                if (clipboard.types.includes("text/html")) return false;
+                const text = clipboard.getData("text/plain");
+                if (!text.trim()) return false;
+                editor?.commands.insertContent(text, {
+                    contentType: "markdown",
+                });
+                return true;
             },
         },
         onUpdate: ({ editor }) => {
@@ -113,6 +135,23 @@ $effect(() => {
     font-size: 0.875rem;
     line-height: 1.6;
     word-break: break-word;
+    /* Match the ScrollArea component's thumb (Firefox). */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+/* Match the ScrollArea component's thumb (WebKit/Chromium). */
+.markdown-editor-root :global(.markdown-editor::-webkit-scrollbar) {
+    height: 0.625rem;
+    width: 0.625rem;
+}
+.markdown-editor-root :global(.markdown-editor::-webkit-scrollbar-track) {
+    background: transparent;
+}
+.markdown-editor-root :global(.markdown-editor::-webkit-scrollbar-thumb) {
+    background: var(--border);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 /* Placeholder shown on the first empty block. */

@@ -24,13 +24,7 @@ export type UseChatOptions = {
 };
 
 export type SendChatOptions = {
-    /** Model override for new conversations (ignored for existing ones). */
     model?: string | null;
-    /**
-     * Reasoning level for reasoning-capable models
-     * (e.g. `low`, `medium`, `high`, or `none` to disable).
-     * Omit (or pass `null`) to use the model's default behaviour.
-     */
     reasoning?: string | null;
 };
 
@@ -67,15 +61,17 @@ export function createChat(options: UseChatOptions = {}) {
         const isNew = convId === null;
 
         const url = isNew ? getCreateChatUrl() : getSendChatMessageUrl(convId);
-        const reasoning = sendOptions.reasoning ?? null;
         const body = isNew
             ? JSON.stringify({
                   prompt,
                   model: sendOptions.model ?? options.model ?? null,
-                  reasoning,
+                  reasoning: sendOptions.reasoning ?? null,
                   title: options.title ?? null,
               } satisfies ChatRequest)
-            : JSON.stringify({ prompt, reasoning } satisfies MessageRequest);
+            : JSON.stringify({
+                  prompt,
+                  reasoning: sendOptions.reasoning ?? null,
+              } satisfies MessageRequest);
 
         const userMsg: ConversationMessage = {
             id: tempId(),

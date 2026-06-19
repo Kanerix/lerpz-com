@@ -3,6 +3,6 @@
     "root": false,
     "extends": ["@lerpz/biome-config/svelte"],
     "files": {
-        "includes": ["**", "!src/lib/api", "!**/.svelte-kit"]
+        "includes": ["**", "!src/lib/api", "!**/.svelte-kit", "!**/static"]
     }
 }

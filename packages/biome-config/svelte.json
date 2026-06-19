@@ -24,18 +24,12 @@
             "svelte": "recommended"
         },
         "rules": {
-            "recommended": true,
+            "preset": "recommended",
             "suspicious": {
                 "noUnknownAtRules": "off"
             },
             "nursery": {
-                "useSortedClasses": {
-                    "level": "info",
-                    "options": {
-                        "attributes": ["class", "className"],
-                        "functions": ["clsx", "cva", "cn", "tw", "twMerge"]
-                    }
-                }
+                "useSortedClasses": "off"
             }
         }
     },

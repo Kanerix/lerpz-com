@@ -135,10 +135,9 @@ pub async fn handler(
             .into()])
         .stream(true);
 
-    // Apply an explicit reasoning level when the client provides one; otherwise
-    // let the model use its default behaviour.
     if let Some(level) = reasoning.as_deref() {
-        request_builder.reasoning_effort(super::parse_reasoning_effort(level));
+        let reasoning_level = super::parse_reasoning_effort(level);
+        request_builder.reasoning_effort(reasoning_level);
     }
 
     if let Some(upn) = token.upn {

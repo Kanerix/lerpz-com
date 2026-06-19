@@ -32,6 +32,12 @@ impl Config for PortkeyConfig {
                 .parse()
                 .expect("Invalid x-portkey-config header value for PortkeyConfig"),
         );
+        headers.insert(
+            "x-portkey-strict-open-ai-compliance",
+            "false".parse().expect(
+                "Invalid x-portkey-strict-open-ai-compliance header value for PortkeyConfig",
+            ),
+        );
 
         headers
     }

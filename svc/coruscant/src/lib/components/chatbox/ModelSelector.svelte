@@ -10,14 +10,17 @@ import {
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Separator } from "@lerpz/ui/components/separator";
 import { cn } from "@lerpz/ui/lib/utils";
+import { modelFavoritesStore } from "$lib/ai/model-favorites.svelte.js";
 import { type Model, modelFamilyLogo } from "$lib/ai/models.svelte.js";
-import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
+import {
+    chatboxStore,
+    DEFAULT_REASONING_LEVEL,
+    REASONING_KEY,
+    REASONING_LEVELS,
+} from "$lib/components/chatbox/chatbox.store.svelte.js";
 import { getChatboxContext } from "./chatbox-context.svelte.js";
 
 const chatbox = getChatboxContext();
-
-const REASONING_KEY = "reasoning";
-const REASONING_DISABLED = "none";
 
 const sortedModels = $derived<Model[]>(
     [...chatbox.models].sort(
@@ -27,22 +30,53 @@ const sortedModels = $derived<Model[]>(
 );
 
 let open = $state(false);
+// Which screen the popover is showing: the model list or a single model's page.
+let view = $state<"list" | "detail">("list");
+// Model highlighted by keyboard navigation while on the list.
 let previewValue = $state<string | null>(null);
+// Model whose detail page is currently open.
+let detailValue = $state<string | null>(null);
 
 const selectedModel = $derived<Model | null>(
     sortedModels.find((m) => m.value === chatboxStore.model) ?? null,
 );
 
-const previewModel = $derived<Model | null>(
-    sortedModels.find((m) => m.value === previewValue) ??
-        selectedModel ??
-        sortedModels[0] ??
-        null,
+const favoriteModels = $derived<Model[]>(
+    sortedModels.filter((m) => modelFavoritesStore.isFavorite(m.value)),
+);
+
+const nonFavoriteModels = $derived<Model[]>(
+    sortedModels.filter((m) => !modelFavoritesStore.isFavorite(m.value)),
+);
+
+// Models in the order they appear in the list (favorites first).
+const visibleModels = $derived<Model[]>([
+    ...favoriteModels,
+    ...nonFavoriteModels,
+]);
+
+const detailModel = $derived<Model | null>(
+    sortedModels.find((m) => m.value === detailValue) ?? null,
 );
 
 function handleOpenChange(details: { open: boolean }) {
     open = details.open;
-    if (details.open) previewValue = chatboxStore.model;
+    if (details.open) {
+        view = "list";
+        detailValue = null;
+        previewValue = chatboxStore.model;
+    }
+}
+
+function openDetail(value: string | null) {
+    if (!value) return;
+    detailValue = value;
+    view = "detail";
+}
+
+function backToList() {
+    view = "list";
+    previewValue = detailValue ?? chatboxStore.model;
 }
 
 function selectModel(value: string | null) {
@@ -50,26 +84,22 @@ function selectModel(value: string | null) {
     open = false;
 }
 
-const reasoningEnabled = $derived(
-    previewModel?.reasoning
-        ? chatboxStore.getModelSetting(
-              previewModel.value ?? undefined,
+const reasoningLevel = $derived<string | null>(
+    detailModel?.reasoning
+        ? (chatboxStore.getModelSetting(
+              detailModel.value ?? undefined,
               REASONING_KEY,
-          ) !== REASONING_DISABLED
-        : false,
+          ) ?? DEFAULT_REASONING_LEVEL)
+        : null,
 );
 
-function toggleReasoning() {
-    if (!previewModel?.value || !previewModel.reasoning) return;
-    chatboxStore.setModelSetting(
-        previewModel.value,
-        REASONING_KEY,
-        reasoningEnabled ? REASONING_DISABLED : null,
-    );
+function setReasoningLevel(level: string) {
+    if (!detailModel?.value || !detailModel.reasoning) return;
+    chatboxStore.setModelSetting(detailModel.value, REASONING_KEY, level);
 }
 
 function handleListKeydown(e: KeyboardEvent) {
-    const models = sortedModels;
+    const models = visibleModels;
     if (models.length === 0) return;
     const currentIndex = models.findIndex((m) => m.value === previewValue);
     if (e.key === "ArrowDown") {
@@ -80,12 +110,65 @@ function handleListKeydown(e: KeyboardEvent) {
         e.preventDefault();
         const prev = models[(currentIndex - 1 + models.length) % models.length];
         if (prev) previewValue = prev.value;
-    } else if (e.key === "Enter" && previewModel) {
+    } else if (e.key === "Enter" && previewValue) {
         e.preventDefault();
-        selectModel(previewModel.value);
+        openDetail(previewValue);
     }
 }
 </script>
+
+{#snippet modelRow(model: Model)}
+  {@const isSelected = model.value === chatboxStore.model}
+  {@const isPreview = model.value === previewValue}
+  {@const isFavorite = modelFavoritesStore.isFavorite(model.value)}
+  <li role="option" aria-selected={isSelected}>
+    <div
+      class={cn(
+        "flex w-full items-center gap-1 rounded-md pr-1 transition-colors",
+        "hover:bg-muted dark:hover:bg-muted/50",
+        isPreview && "bg-muted dark:bg-muted/50",
+      )}
+    >
+      <button
+        type="button"
+        class="flex min-w-0 grow items-center gap-2 rounded-md py-2 pl-2.5 text-left text-sm"
+        onmouseenter={() => (previewValue = model.value)}
+        onfocus={() => (previewValue = model.value)}
+        onclick={() => openDetail(model.value)}
+      >
+        <img
+          src={modelFamilyLogo(model.family)}
+          alt=""
+          class="size-4 shrink-0 object-contain"
+        />
+        <span class="min-w-0 grow truncate">{model.label}</span>
+        {#if isSelected}
+          <Icon icon="fa6-solid:check" class="size-4 shrink-0 text-primary" />
+        {/if}
+        <Icon
+          icon="fa6-solid:angle-right"
+          class="size-3.5 shrink-0 opacity-40"
+        />
+      </button>
+      <button
+        type="button"
+        class={cn(
+          "flex size-7 shrink-0 items-center justify-center rounded-md transition-colors",
+          "text-muted-foreground hover:bg-background/80 hover:text-foreground",
+          isFavorite && "text-amber-500 hover:text-amber-500",
+        )}
+        aria-pressed={isFavorite}
+        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        onclick={() => modelFavoritesStore.toggle(model.value)}
+      >
+        <Icon
+          icon={isFavorite ? "fa6-solid:star" : "fa6-regular:star"}
+          class="size-3.5"
+        />
+      </button>
+    </div>
+  </li>
+{/snippet}
 
 <Popover
   {open}
@@ -93,7 +176,6 @@ function handleListKeydown(e: KeyboardEvent) {
   positioning={{
     placement: "top",
     gutter: 8,
-    sameWidth: true,
     getAnchorRect: () =>
       chatboxStore.chatboxAnchor?.getBoundingClientRect() ?? null,
   }}
@@ -126,24 +208,15 @@ function handleListKeydown(e: KeyboardEvent) {
 
   <PopoverPositioner>
     <PopoverContent
-      class="flex h-2xl w-full max-w-4xl overflow-hidden p-0 text-left"
+      class="flex h-2xl w-full max-w-lg flex-col overflow-hidden rounded-xl p-0 text-left"
     >
-      <!-- Model list -->
-      <div class="flex w-fit max-w-3xl shrink-0 flex-col border-r">
-        <div class="px-3 pt-3 pb-1.5 text-xs font-medium text-muted-foreground">
+      {#if view === "list"}
+        <!-- Model list -->
+        <div
+          class="px-3 pt-3 pb-1.5 text-xs font-medium text-muted-foreground"
+        >
           Models
         </div>
-        <ul aria-hidden="true" class="invisible h-0 shrink-0 p-1.5">
-          {#each sortedModels as model (model.value)}
-            <li class="flex items-center gap-2 px-2.5 py-2 text-sm">
-              <span class="size-4 shrink-0"></span>
-              <span class="whitespace-nowrap">{model.label}</span>
-              {#if model.value === chatboxStore.model}
-                <span class="size-4 shrink-0"></span>
-              {/if}
-            </li>
-          {/each}
-        </ul>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <ul
           class="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-1.5"
@@ -162,161 +235,178 @@ function handleListKeydown(e: KeyboardEvent) {
               No models available
             </li>
           {:else}
-            {#each sortedModels as model (model.value)}
-              {@const isSelected = model.value === chatboxStore.model}
-              {@const isPreview = model.value === previewModel?.value}
-              <li role="option" aria-selected={isSelected}>
-                <button
-                  type="button"
-                  class={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors",
-                    "hover:bg-muted dark:hover:bg-muted/50",
-                    isPreview && "bg-muted dark:bg-muted/50",
-                  )}
-                  onmouseenter={() => (previewValue = model.value)}
-                  onfocus={() => (previewValue = model.value)}
-                  onclick={() => selectModel(model.value)}
-                >
-                  <img
-                    src={modelFamilyLogo(model.family)}
-                    alt=""
-                    class="size-4 shrink-0 object-contain"
-                  />
-                  <span class="min-w-0 grow truncate">{model.label}</span>
-                  {#if isSelected}
-                    <Icon
-                      icon="fa6-solid:check"
-                      class="size-4 shrink-0 text-primary"
-                    />
-                  {/if}
-                </button>
+            {#if favoriteModels.length > 0}
+              <li
+                aria-hidden="true"
+                class="px-2.5 pt-1 pb-1 text-xs font-medium text-muted-foreground"
+              >
+                Favorites
               </li>
+              {#each favoriteModels as model (`fav-${model.value}`)}
+                {@render modelRow(model)}
+              {/each}
+              <li
+                aria-hidden="true"
+                class="px-2.5 pt-2 pb-1 text-xs font-medium text-muted-foreground"
+              >
+                All models
+              </li>
+            {/if}
+            {#each nonFavoriteModels as model (model.value)}
+              {@render modelRow(model)}
             {/each}
           {/if}
         </ul>
-      </div>
+      {:else if detailModel}
+        {@const isDetailFavorite = modelFavoritesStore.isFavorite(
+          detailModel.value,
+        )}
+        <!-- Single model page -->
+        <div class="flex items-center gap-2 border-b p-2">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onclick={backToList}
+          >
+            <Icon icon="fa6-solid:angle-left" class="size-3.5" />
+            Models
+          </button>
+          <button
+            type="button"
+            class={cn(
+              "ml-auto flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
+              "text-muted-foreground hover:bg-muted hover:text-foreground",
+              isDetailFavorite && "text-amber-500 hover:text-amber-500",
+            )}
+            aria-pressed={isDetailFavorite}
+            aria-label={isDetailFavorite
+              ? "Remove from favorites"
+              : "Add to favorites"}
+            onclick={() => modelFavoritesStore.toggle(detailModel.value)}
+          >
+            <Icon
+              icon={isDetailFavorite ? "fa6-solid:star" : "fa6-regular:star"}
+              class="size-4"
+            />
+          </button>
+        </div>
 
-      <!-- Model details -->
-      <div class="flex flex-1 flex-col">
-        {#if previewModel}
-          <ScrollArea orientation="vertical" class="flex-1">
-            <div class="flex flex-col gap-4 p-4">
-              <div class="flex items-start gap-3">
-                <img
-                  src={modelFamilyLogo(previewModel.family)}
-                  alt=""
-                  class="size-9 shrink-0 object-contain"
-                />
-                <div class="flex flex-col gap-1">
-                  <h3 class="text-base leading-tight font-semibold">
-                    {previewModel.label}
-                  </h3>
-                  {#if previewModel.provider || previewModel.family}
-                    <p class="text-xs text-muted-foreground">
-                      {[previewModel.provider, previewModel.family]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  {/if}
-                </div>
-              </div>
-
-              {#if previewModel.description}
-                <p class="text-sm leading-relaxed text-muted-foreground">
-                  {previewModel.description}
-                </p>
-              {/if}
-
-              {#if previewModel.modalities.length > 0 || previewModel.features.length > 0}
-                <div class="flex flex-col gap-2">
-                  <span class="text-xs font-medium text-muted-foreground">
-                    Tags
-                  </span>
-                  <div class="flex flex-wrap gap-1.5">
-                    {#each previewModel.modalities as modality (modality)}
-                      <Badge variant="secondary">{modality}</Badge>
-                    {/each}
-                    {#each previewModel.features as feature (feature)}
-                      <Badge variant="outline">{feature}</Badge>
-                    {/each}
-                  </div>
-                </div>
-              {/if}
-
-              <Separator />
-
-              <div class="flex flex-col gap-3">
-                <span class="text-xs font-medium text-muted-foreground">
-                  Settings
-                </span>
-                {#if previewModel.reasoning}
-                  <div class="flex items-center justify-between gap-3">
-                    <div class="flex flex-col">
-                      <span class="text-sm font-medium">Reasoning</span>
-                      <span class="text-xs text-muted-foreground">
-                        Let the model think through problems step by step.
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={reasoningEnabled}
-                      aria-label="Toggle reasoning"
-                      onclick={toggleReasoning}
-                      class={cn(
-                        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-                        reasoningEnabled
-                          ? "bg-primary"
-                          : "bg-muted-foreground/30",
-                      )}
-                    >
-                      <span
-                        class={cn(
-                          "inline-block size-4 rounded-full bg-white shadow transition-transform",
-                          reasoningEnabled
-                            ? "translate-x-4"
-                            : "translate-x-0.5",
-                        )}
-                      ></span>
-                    </button>
-                  </div>
-                {:else}
+        <ScrollArea orientation="vertical" class="flex-1">
+          <div class="flex flex-col gap-4 p-4">
+            <div class="flex items-start gap-3">
+              <img
+                src={modelFamilyLogo(detailModel.family)}
+                alt=""
+                class="size-9 shrink-0 object-contain"
+              />
+              <div class="flex min-w-0 grow flex-col gap-1">
+                <h3 class="text-base leading-tight font-semibold">
+                  {detailModel.label}
+                </h3>
+                {#if detailModel.provider || detailModel.family}
                   <p class="text-xs text-muted-foreground">
-                    This model has no configurable settings.
+                    {[detailModel.provider, detailModel.family]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 {/if}
               </div>
             </div>
-          </ScrollArea>
 
-          <div class="border-t p-3">
-            <button
-              type="button"
-              class={cn(
-                "flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                previewModel.value === chatboxStore.model
-                  ? "bg-muted text-muted-foreground"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90",
-              )}
-              disabled={previewModel.value === chatboxStore.model}
-              onclick={() => selectModel(previewModel.value)}
-            >
-              {#if previewModel.value === chatboxStore.model}
-                <Icon icon="fa6-solid:check" class="size-4" />
-                Selected
+            {#if detailModel.description}
+              <p class="text-sm leading-relaxed text-muted-foreground">
+                {detailModel.description}
+              </p>
+            {/if}
+
+            {#if detailModel.modalities.length > 0 || detailModel.features.length > 0}
+              <div class="flex flex-col gap-2">
+                <span class="text-xs font-medium text-muted-foreground">
+                  Tags
+                </span>
+                <div class="flex flex-wrap gap-1.5">
+                  {#each detailModel.modalities as modality (modality)}
+                    <Badge variant="secondary">{modality}</Badge>
+                  {/each}
+                  {#each detailModel.features as feature (feature)}
+                    <Badge variant="outline">{feature}</Badge>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+
+            <Separator />
+
+            <div class="flex flex-col gap-3">
+              <span class="text-xs font-medium text-muted-foreground">
+                Settings
+              </span>
+              {#if detailModel.reasoning}
+                <div class="flex flex-col gap-2">
+                  <div class="flex flex-col">
+                    <span class="text-sm font-medium">Reasoning</span>
+                    <span class="text-xs text-muted-foreground">
+                      Let the model think through problems step by step.
+                    </span>
+                  </div>
+                  <div
+                    class="inline-flex gap-0.5 rounded-md border p-0.5"
+                    role="group"
+                    aria-label="Reasoning level"
+                  >
+                    {#each REASONING_LEVELS as level (level.value)}
+                      <button
+                        type="button"
+                        aria-pressed={reasoningLevel === level.value}
+                        onclick={() => setReasoningLevel(level.value)}
+                        class={cn(
+                          "flex-1 rounded-sm px-2.5 py-1 text-xs font-medium transition-colors",
+                          reasoningLevel === level.value
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        {level.label}
+                      </button>
+                    {/each}
+                  </div>
+                </div>
               {:else}
-                Use this model
+                <p class="text-xs text-muted-foreground">
+                  This model has no configurable settings.
+                </p>
               {/if}
-            </button>
+            </div>
           </div>
-        {:else}
-          <div
-            class="flex flex-1 items-center justify-center p-4 text-sm text-muted-foreground"
+        </ScrollArea>
+
+        <div class="border-t p-3">
+          <button
+            type="button"
+            class={cn(
+              "flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              detailModel.value === chatboxStore.model
+                ? "bg-muted text-muted-foreground"
+                : "bg-primary text-primary-foreground hover:bg-primary/90",
+            )}
+            disabled={detailModel.value === chatboxStore.model}
+            onclick={() => selectModel(detailModel.value)}
           >
-            Select a model to see details
-          </div>
-        {/if}
-      </div>
+            {#if detailModel.value === chatboxStore.model}
+              <Icon icon="fa6-solid:check" class="size-4" />
+              Selected
+            {:else}
+              Use this model
+            {/if}
+          </button>
+        </div>
+      {:else}
+        <div
+          class="flex flex-1 items-center justify-center p-4 text-sm text-muted-foreground"
+        >
+          Select a model to see details
+        </div>
+      {/if}
     </PopoverContent>
   </PopoverPositioner>
 </Popover>
