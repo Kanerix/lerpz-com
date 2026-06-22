@@ -1,5 +1,5 @@
 use crate::config::CONFIG;
-use crate::oapi::ApiDoc;
+use crate::oapi::api_doc;
 use crate::portkey::PortkeyConfig;
 use crate::state::AppState;
 
@@ -21,7 +21,6 @@ use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
-use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 
 mod api;
@@ -105,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers(Any);
 
-    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+    let (router, api) = OpenApiRouter::with_openapi(api_doc())
         .nest("/api/v1", api::router(state.clone()))
         .with_state(state)
         .layer(cors)
