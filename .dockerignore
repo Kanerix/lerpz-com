@@ -1,0 +1,11 @@
+**/node_modules
+**/.svelte-kit
+**/build
+**/.turbo
+**/.vite
+**/.vite-cache
+**/.git
+**/.gitignore
+**/.env
+**/.env.*
+**/.DS_Store
