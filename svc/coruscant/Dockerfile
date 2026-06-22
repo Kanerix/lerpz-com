@@ -22,6 +22,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock ./
 COPY svc/coruscant ./svc/coruscant
 COPY packages/ui ./packages/ui
+COPY packages/biome-config ./packages/biome-config
 COPY packages/typescript-config ./packages/typescript-config
 
 ENV SKIP_ENV_VALIDATION=1
@@ -41,7 +42,7 @@ ENV PUBLIC_API_URL=$PUBLIC_API_URL \
     PUBLIC_ENTRA_ID_LOGOUT_URI=$PUBLIC_ENTRA_ID_LOGOUT_URI
 
 RUN --mount=type=cache,id=vite,target=/app/svc/coruscant/.vite-cache \
-    bun --filter @lerpz/coruscant run build
+    bun --filter coruscant run build
 
 
 FROM base AS prod-deps
