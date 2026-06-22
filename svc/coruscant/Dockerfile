@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY svc/coruscant/package.json ./svc/coruscant/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/biome-config/package.json ./packages/biome-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 
 RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
@@ -40,7 +41,20 @@ ENV PUBLIC_API_URL=$PUBLIC_API_URL \
     PUBLIC_ENTRA_ID_LOGOUT_URI=$PUBLIC_ENTRA_ID_LOGOUT_URI
 
 RUN --mount=type=cache,id=vite,target=/app/svc/coruscant/.vite-cache \
-    bun --filter coruscant run build
+    bun --filter @lerpz/coruscant run build
+
+
+FROM base AS prod-deps
+WORKDIR /app
+
+COPY package.json bun.lock ./
+COPY svc/coruscant/package.json ./svc/coruscant/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/biome-config/package.json ./packages/biome-config/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --production --frozen-lockfile
 
 
 FROM base AS runner
@@ -52,11 +66,9 @@ ENV NODE_ENV=production \
 RUN groupadd --system --gid 1001 app && \
     useradd --system --uid 1001 --gid app lerpz
 
+COPY --from=prod-deps --chown=lerpz:app /app/node_modules ./node_modules
 COPY --from=builder --chown=lerpz:app /app/svc/coruscant/build ./build
 COPY --from=builder --chown=lerpz:app /app/svc/coruscant/package.json ./package.json
-
-RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
-    bun install --production --frozen-lockfile
 
 USER lerpz
 
