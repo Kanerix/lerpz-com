@@ -29,6 +29,15 @@ export type SSEDataOnlyHandler = (data: string) => void;
  *
  * ReadableStream chunks do NOT align with event boundaries, so we buffer
  * incoming text and only emit once we see a complete event.
+ *
+ * Field parsing follows the WHATWG HTML "server-sent events" specification's
+ * event-stream interpretation algorithm
+ * (https://html.spec.whatwg.org/multipage/server-sent-events.html): each
+ * `data:` line appends its value plus a newline to the data buffer, and the
+ * single trailing newline is stripped before the event is dispatched. This is
+ * what preserves payloads that are only newlines (e.g. a streamed `\n` or
+ * `\n\n` token) instead of collapsing them to an empty string and dropping
+ * the event.
  */
 export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
     let buffer = "";
@@ -50,35 +59,49 @@ export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
             buffer = parts.pop() ?? "";
 
             for (const part of parts) {
-                if (!part.trim()) continue;
+                if (part === "") continue;
 
                 const lines = part.split("\n");
                 let data = "";
                 let eventType = "message"; // SSE spec default
+                let sawData = false;
 
                 for (const line of lines) {
                     // Comments – silently ignore (used as keep-alive pings).
                     if (line.startsWith(":")) continue;
 
-                    // `event:` with or without the optional space after the colon.
-                    if (line.startsWith("event: ")) {
-                        eventType = line.slice(7);
-                    } else if (line.startsWith("event:")) {
-                        eventType = line.slice(6);
-                    }
+                    const colon = line.indexOf(":");
+                    const field = colon === -1 ? line : line.slice(0, colon);
+                    let value = colon === -1 ? "" : line.slice(colon + 1);
+                    // A single optional space after the colon is part of the
+                    // wire format, not the value.
+                    if (value.startsWith(" ")) value = value.slice(1);
 
-                    // `data:` with or without the optional space after the colon.
-                    else if (line.startsWith("data: ")) {
-                        data += (data ? "\n" : "") + line.slice(6);
-                    } else if (line.startsWith("data:")) {
-                        data += (data ? "\n" : "") + line.slice(5);
+                    if (field === "event") {
+                        eventType = value;
+                    } else if (field === "data") {
+                        // Per the SSE spec, each `data:` line contributes its
+                        // value followed by a newline. Accumulating this way
+                        // (rather than joining with a separator) preserves
+                        // payloads that are *only* newlines – e.g. a streamed
+                        // "\n" or "\n\n" token – which would otherwise collapse
+                        // to an empty string and be dropped, gluing adjacent
+                        // markdown blocks together.
+                        data += value + "\n";
+                        sawData = true;
                     }
 
                     // `id:` and `retry:` are intentionally ignored for now.
                 }
 
-                if (data) {
-                    onEvent({ event: eventType, data } as SSEEvent & string);
+                // Only events that carried at least one `data:` field are
+                // dispatched. Strip the single trailing newline added by the
+                // final `data:` line, leaving any intentional newlines intact.
+                if (sawData) {
+                    onEvent({
+                        event: eventType,
+                        data: data.slice(0, -1),
+                    } as SSEEvent & string);
                 }
             }
         },

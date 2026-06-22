@@ -1,6 +1,5 @@
 import { browser } from "$app/environment";
 
-/** localStorage key used to persist the user's favorite models. */
 const STORAGE_KEY = "lerpz:favorite-models";
 
 function loadFavorites(): string[] {
@@ -12,7 +11,6 @@ function loadFavorites(): string[] {
             ? parsed.filter((v): v is string => typeof v === "string")
             : [];
     } catch {
-        // Corrupt or inaccessible storage — start from an empty list.
         return [];
     }
 }

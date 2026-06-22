@@ -1,5 +1,6 @@
 <script lang="ts">
 import { InteractionStatus } from "@azure/msal-browser";
+import Icon from "@iconify/svelte";
 import {
     Card,
     CardContent,
@@ -18,6 +19,22 @@ const errorDescription = $derived(
     page.url.searchParams.get("error_description"),
 );
 
+// `page.url.searchParams.get` already decodes percent-encoding, but error
+// descriptions coming from an OAuth redirect may still arrive with `+` for
+// spaces and an extra layer of encoding. Decode defensively so a malformed
+// value (e.g. a literal `%`) can never throw during render.
+function safeDecode(value: string): string {
+    try {
+        return decodeURIComponent(value.replace(/\+/g, " "));
+    } catch {
+        return value.replace(/\+/g, " ");
+    }
+}
+
+const description = $derived(
+    errorDescription ? safeDecode(errorDescription) : null,
+);
+
 $effect(() => {
     if (
         msalStore.inProgress === InteractionStatus.None &&
@@ -34,6 +51,10 @@ async function handleLogin() {
     } catch {
         console.error("Login failed");
     }
+}
+
+function dismissError() {
+    goto("/login", { replaceState: true });
 }
 </script>
 
@@ -56,13 +77,27 @@ async function handleLogin() {
 
       <CardContent class="flex flex-col gap-4">
         {#if error}
-          <div class="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            <p class="font-medium">Authentication failed</p>
-            <p class="mt-1 text-destructive/80">
-              {errorDescription
-                ? decodeURIComponent(errorDescription.replace(/\+/g, " "))
-                : error}
-            </p>
+          <div
+            role="alert"
+            class="flex flex-col gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            <div class="flex items-start gap-2">
+              <Icon icon="fa6-solid:circle-exclamation" class="mt-0.5 size-4 shrink-0" />
+              <div class="flex-1">
+                <p class="font-medium">Authentication failed</p>
+                <p class="mt-1 break-words text-destructive/80">
+                  {description ?? "Something went wrong while signing you in."}
+                </p>
+                <p class="mt-2 font-mono text-xs text-destructive/60">{error}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick={dismissError}
+              class="inline-flex h-8 w-full items-center justify-center gap-2 rounded-4xl border border-destructive/40 px-3 text-xs font-medium transition hover:bg-destructive/10"
+            >
+              Dismiss
+            </button>
           </div>
         {/if}
 

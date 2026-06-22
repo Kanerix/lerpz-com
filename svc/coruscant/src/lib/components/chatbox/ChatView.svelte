@@ -77,7 +77,7 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
             {/if}
 
             <div class={cn(
-              "min-w-0 rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
+              "min-w-0 rounded-2xl px-4 py-2.5 text-base leading-relaxed break-words",
               message.role === "user"
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-muted text-foreground rounded-bl-md"

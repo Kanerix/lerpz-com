@@ -21,7 +21,6 @@ export type Model = {
     modalities: string[];
     features: string[];
     settings: ModelSetting[];
-    /** Whether the model can produce reasoning / chain-of-thought output. */
     reasoning: boolean;
 };
 
