@@ -60,24 +60,24 @@ jobs:
       environment: ${{ needs.env.outputs.name }}
     secrets: inherit
 
-  deploy-kamino:
-    name: "Deploy kamino"
-    needs: [prepare, env]
-    if: needs.prepare.outputs.kamino == 'true' || inputs.kamino == true
-    uses: ./.github/workflows/deploy-container.yaml
-    with:
-      service: kamino
-      container-app: lerpz-api-${{ needs.env.outputs.name }}
-      environment: ${{ needs.env.outputs.name }}
-    secrets: inherit
+  # deploy-kamino:
+  #   name: "Deploy kamino"
+  #   needs: [prepare, env]
+  #   if: needs.prepare.outputs.kamino == 'true' || inputs.kamino == true
+  #   uses: ./.github/workflows/deploy-container.yaml
+  #   with:
+  #     service: kamino
+  #     container-app: lerpz-api-${{ needs.env.outputs.name }}
+  #     environment: ${{ needs.env.outputs.name }}
+  #   secrets: inherit
 
-  deploy-artoo:
-    name: "Deploy artoo"
-    needs: [prepare, env]
-    if: needs.prepare.outputs.artoo == 'true' || inputs.artoo == true
-    uses: ./.github/workflows/deploy-container.yaml
-    with:
-      service: artoo
-      container-app: lerpz-agent-${{ needs.env.outputs.name }}
-      environment: ${{ needs.env.outputs.name }}
-    secrets: inherit
+  # deploy-artoo:
+  #   name: "Deploy artoo"
+  #   needs: [prepare, env]
+  #   if: needs.prepare.outputs.artoo == 'true' || inputs.artoo == true
+  #   uses: ./.github/workflows/deploy-container.yaml
+  #   with:
+  #     service: artoo
+  #     container-app: lerpz-agent-${{ needs.env.outputs.name }}
+  #     environment: ${{ needs.env.outputs.name }}
+  #   secrets: inherit

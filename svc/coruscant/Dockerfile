@@ -49,8 +49,8 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000
 
-RUN addgroup --system --gid 1001 app && \
-    adduser --system --uid 1001 --ingroup app lerpz
+RUN groupadd --system --gid 1001 app && \
+    useradd --system --uid 1001 --gid app lerpz
 
 COPY --from=builder --chown=lerpz:app /app/svc/coruscant/build ./build
 COPY --from=builder --chown=lerpz:app /app/svc/coruscant/package.json ./package.json
