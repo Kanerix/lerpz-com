@@ -16,17 +16,19 @@ let { class: className = "" }: { class?: string } = $props();
 const sidebar = useSidebar();
 const pathname = $derived(page.url.pathname);
 
-type SubItem = { title: string; href: string; icon: string };
-type Category = {
+interface SubItem {
+    title: string;
+    href: string;
+    icon: string;
+}
+
+interface Category {
     name: string;
     icon: string;
     href: string;
     items: SubItem[];
-};
+}
 
-// Each category groups a media type. Every category leads with a "Create"
-// action, then the relevant gallery/tools. Some sub-routes are proposals and
-// may not exist yet.
 const categories: Category[] = [
     {
         name: "Chat",
@@ -113,13 +115,11 @@ function toggle(category: Category) {
     <SidebarMenu class="gap-1">
       {#each categories as category (category.name)}
         {@const open = isOpen(category)}
-        {@const active = isCategoryActive(category)}
         <SidebarMenuItem>
           {#if sidebar.state === "collapsed"}
             <!-- Collapsed: icon links straight to the category landing page. -->
             <SidebarMenuButton
               href={category.href}
-              isActive={active}
               class="justify-center"
               title={category.name}
               aria-label={category.name}
@@ -130,21 +130,19 @@ function toggle(category: Category) {
             <SidebarMenuButton
               onclick={() => toggle(category)}
               aria-expanded={open}
-              class="h-10 gap-2.5 rounded-lg px-2.5 {active ? 'bg-sidebar-accent' : ''}"
+              class="h-10 gap-2.5 rounded-lg px-2.5"
             >
               <span
-                class="flex size-7 shrink-0 items-center justify-center rounded-md transition-colors
-                {active ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60'}"
+                class="flex size-7 shrink-0 items-center justify-center rounded-md transition-colors text-sidebar-foreground/60"
               >
                 <Icon icon={category.icon} class="size-4" />
               </span>
-              <span class="flex-1 {active ? 'font-medium' : 'font-normal'}">
+              <span class="flex-1 font-normal">
                   {category.name}
               </span>
               <Icon
                 icon="fa6-solid:angle-right"
-                class="size-3.5 shrink-0 transition-transform duration-200
-                {active ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60'}
+                class="size-3.5 shrink-0 text-sidebar-foreground/60 transition-transform duration-200
                 {open ? 'rotate-90' : ''}"
               />
             </SidebarMenuButton>
@@ -164,8 +162,7 @@ function toggle(category: Category) {
                     >
                       <Icon
                           icon={item.icon}
-                          class="size-3.5 shrink-0
-                            {subActive ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60'}"
+                          class="size-3.5 shrink-0 text-sidebar-foreground/60"
                         />
                       <span class="truncate">{item.title}</span>
                     </a>

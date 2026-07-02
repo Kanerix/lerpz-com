@@ -245,25 +245,22 @@ where
     ///
     /// This automatically logs errors using [`tracing`] and sets the
     /// log ID so that the error can be tracked.
-    fn into_response(self) -> Response {
-        let problem = self.problem.as_ref();
+    fn into_response(mut self) -> Response {
+        let problem = self.problem.as_mut();
         if let Some(err) = problem.inner.as_ref() {
-            let ProblemInner {
-                title,
-                detail,
-                log_id,
-                ..
-            } = problem;
-
-            let log_id = match log_id.as_deref() {
-                Some(id) => id,
-                None => &Uuid::new_v4().to_string(),
-            };
+            let log_id = problem
+                .log_id
+                .get_or_insert_with(|| Uuid::new_v4().to_string());
 
             if problem.status.is_server_error() {
                 tracing::error!(log_id = %log_id, server_error = %err, "A server error occurred");
             } else {
-                tracing::info!(log_id = %log_id, client_error = %title, message = %detail, "A client error occurred");
+                tracing::info!(
+                    log_id = %log_id,
+                    client_error = %problem.title,
+                    message = %problem.detail,
+                    "A client error occurred"
+                );
             }
         }
 
