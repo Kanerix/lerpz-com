@@ -3,6 +3,8 @@ import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { TextLoop } from "@lerpz/ui/components/text-loop";
 import { msalStore } from "$lib/auth/msal.svelte.js";
+
+const isAuthenticated = $derived(msalStore.isAuthenticated);
 </script>
 
 <section class="flex flex-col gap-6 py-16 md:py-24">
@@ -21,10 +23,17 @@ import { msalStore } from "$lib/auth/msal.svelte.js";
   </p>
 
   <div class="flex items-center gap-3 pt-2">
-    <Button size="lg" onclick={() => msalStore.loginRedirect()}>
-      Sign in
-      <Icon icon="fa6-solid:arrow-right" class="size-4" />
-    </Button>
+    {#if isAuthenticated}
+      <Button size="lg" href="/ai/chats">
+        Go to dashboard
+        <Icon icon="fa6-solid:arrow-right" class="size-4" />
+      </Button>
+    {:else}
+      <Button size="lg" onclick={() => msalStore.loginRedirect()}>
+        Sign in
+        <Icon icon="fa6-solid:arrow-right" class="size-4" />
+      </Button>
+    {/if}
     <Button variant="ghost" size="lg" href="/docs">Documentation</Button>
   </div>
 </section>

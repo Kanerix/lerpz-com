@@ -1,8 +1,7 @@
 <script lang="ts">
-import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
-import ThemeButton from "$lib/components/ThemeButton.svelte";
 import { msalStore } from "$lib/auth/msal.svelte.js";
+import ThemeButton from "$lib/components/ThemeButton.svelte";
 
 const navLinks = [
     { label: "Tools", href: "/ai" },
@@ -37,7 +36,7 @@ const isAuthenticated = $derived(msalStore.isAuthenticated);
         </a>
       {/if}
       <ThemeButton />
-      <Button onclick={() => msalStore.loginRedirect()}>
+      <Button onclick={() => (isAuthenticated ? msalStore.switchAccount() : msalStore.loginRedirect())}>
         {isAuthenticated ? "Switch account" : "Sign in"}
       </Button>
     </div>

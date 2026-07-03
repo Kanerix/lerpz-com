@@ -21,7 +21,9 @@ let {
   <ScrollArea.Viewport
     class="size-full rounded-[inherit] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
   >
-    <ScrollArea.Content>
+    <ScrollArea.Content
+      class={cn(orientation === "vertical" && "w-full min-w-0!")}
+    >
       {@render children?.()}
     </ScrollArea.Content>
   </ScrollArea.Viewport>

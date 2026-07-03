@@ -34,12 +34,8 @@ class MsalStore {
             // Promote the account from a successful interactive/silent flow to
             // the active account so the rest of the app stays in sync.
             if (
-                (message.eventType === EventType.LOGIN_SUCCESS ||
-                    message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
-                    message.eventType === EventType.SSO_SILENT_SUCCESS) &&
-                message.payload &&
-                "account" in message.payload &&
-                message.payload.account
+                (message.eventType === EventType.LOGIN_SUCCESS || message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS) &&
+                message.payload && "account" in message.payload && message.payload.account
             ) {
                 inst.setActiveAccount(message.payload.account);
             }
