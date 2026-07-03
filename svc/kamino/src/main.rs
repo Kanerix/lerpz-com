@@ -13,6 +13,7 @@ use axum::response::{Html, IntoResponse, Redirect};
 use axum::{Json, routing::get};
 use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
+use lerpz_axum::middleware::instance::CaptureInstanceLayer;
 use lerpz_axum::shutdown_signal;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
@@ -107,6 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (router, api) = OpenApiRouter::with_openapi(api_doc())
         .nest("/api/v1", api::router(state.clone()))
         .with_state(state)
+        .layer(CaptureInstanceLayer)
         .layer(cors)
         .fallback(redirect)
         .split_for_parts();

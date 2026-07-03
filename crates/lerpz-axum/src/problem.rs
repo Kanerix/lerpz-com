@@ -14,6 +14,17 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+tokio::task_local! {
+    /// The path of the request currently being handled.
+    ///
+    /// Set by [`crate::middleware::instance::capture_instance`] for the
+    /// duration of each request, and read in [`Problem::into_response`] to
+    /// automatically populate the [`instance`](Problem::instance) field on any
+    /// problem that does not already have one (e.g. problems created via the
+    /// `?` operator).
+    pub(crate) static REQUEST_INSTANCE: String;
+}
+
 /// A type alias for [`Result<T, Problem>`].
 ///
 /// Used by handlers to return a response or a structured error (a problem).
@@ -33,18 +44,72 @@ struct ProblemInner<D = ()>
 where
     D: Serialize + Send + Sync,
 {
+    /// The HTTP status code for this problem.
+    ///
+    /// Corresponds to the `status` member in [RFC 9457 §3.1]. It is not
+    /// serialized into the body, as it is instead conveyed by the HTTP
+    /// response status line (see [`Problem::into_response`]).
+    ///
+    /// [RFC 9457 §3.1]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.1
     #[serde(skip)]
     status: StatusCode,
+    /// A URI reference identifying the problem type.
+    ///
+    /// The `type` member from [RFC 9457 §3.1]. Renamed to `type` on the wire,
+    /// since `type` is a reserved keyword in Rust. Defaults to `about:blank`
+    /// when the problem has no dedicated documentation.
+    ///
+    /// [RFC 9457 §3.1]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.1
     #[serde(rename = "type")]
     kind: Cow<'static, str>,
+    /// A short, human-readable summary of the problem type.
+    ///
+    /// The `title` member from [RFC 9457 §3.1]. It should stay stable across
+    /// occurrences of the same problem type (unlike [`Self::detail`]).
+    ///
+    /// [RFC 9457 §3.1]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.1
     title: Cow<'static, str>,
+    /// A human-readable explanation specific to this occurrence.
+    ///
+    /// The `detail` member from [RFC 9457 §3.1]. Unlike [`Self::title`], it may
+    /// vary between occurrences of the same problem type.
+    ///
+    /// [RFC 9457 §3.1]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.1
     detail: Cow<'static, str>,
+    /// A URI reference identifying this specific occurrence of the problem.
+    ///
+    /// The `instance` member from [RFC 9457 §3.1]. Usually the path of the
+    /// request that failed; it is filled automatically from the request when
+    /// not set explicitly. Omitted from the body when [`None`].
+    ///
+    /// [RFC 9457 §3.1]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.1
     #[serde(skip_serializing_if = "Option::is_none")]
     instance: Option<Cow<'static, str>>,
+    /// Additional structured data specific to this problem type.
+    ///
+    /// A problem type extension member, as described in [RFC 9457 §3.2].
+    /// Serialized under an `extension` key rather than as top-level members.
+    /// Omitted from the body when [`None`].
+    ///
+    /// [RFC 9457 §3.2]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.2
     #[serde(skip_serializing_if = "Option::is_none")]
     extension: Option<D>,
+    /// A server-side log reference for this occurrence.
+    ///
+    /// An extension member (in the sense of [RFC 9457 §3.2]) that is not part
+    /// of the standard fields. It is sent to the client in place of the actual
+    /// source error so that support requests can be correlated with server
+    /// logs without leaking sensitive details. Omitted from the body when [`None`].
+    ///
+    /// [RFC 9457 §3.2]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.2
     #[serde(skip_serializing_if = "Option::is_none")]
     log_id: Option<String>,
+    /// The underlying source error, if any.
+    ///
+    /// Not part of RFC 9457 and never serialized: exposing internal error
+    /// details to clients could leak sensitive information. It is used only for
+    /// server-side logging (see [`Problem::into_response`]) and is surfaced to
+    /// the client indirectly through [`Self::log_id`].
     #[serde(skip)]
     inner: Option<anyhow::Error>,
 }
@@ -247,15 +312,28 @@ where
     /// log ID so that the error can be tracked.
     fn into_response(mut self) -> Response {
         let problem = self.problem.as_mut();
+
+        if problem.instance.is_none() {
+            let _ = REQUEST_INSTANCE.try_with(|path| {
+                problem.instance = Some(Cow::Owned(path.clone()));
+            });
+        }
+
         if let Some(err) = problem.inner.as_ref() {
             let log_id = problem
                 .log_id
                 .get_or_insert_with(|| Uuid::new_v4().to_string());
 
             if problem.status.is_server_error() {
-                tracing::error!(log_id = %log_id, server_error = %err, "A server error occurred");
+                tracing::error!(
+                    instance = ?&problem.instance.as_deref(),
+                    log_id = %log_id,
+                    server_error = %err,
+                    "A server error occurred"
+                );
             } else {
                 tracing::info!(
+                    instance = ?&problem.instance.as_deref(),
                     log_id = %log_id,
                     client_error = %problem.title,
                     message = %problem.detail,
