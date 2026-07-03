@@ -9,7 +9,9 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@lerpz/ui/components/sidebar";
+import { cubicOut } from "svelte/easing";
 import { page } from "$app/state";
+import { fly, slide } from "$lib/utils/transitions.js";
 
 let { class: className = "" }: { class?: string } = $props();
 
@@ -133,7 +135,11 @@ function toggle(category: Category) {
               class="h-10 gap-2.5 rounded-lg px-2.5"
             >
               <span
-                class="flex size-7 shrink-0 items-center justify-center rounded-md transition-colors text-sidebar-foreground/60"
+                class="flex size-7 shrink-0 items-center justify-center
+                rounded-md text-sidebar-foreground/60
+                transition-[color,transform] duration-200
+                group-hover/menu-item:scale-110
+                group-hover/menu-item:text-sidebar-foreground"
               >
                 <Icon icon={category.icon} class="size-4" />
               </span>
@@ -147,10 +153,13 @@ function toggle(category: Category) {
               />
             </SidebarMenuButton>
             {#if open}
-              <ul class="mt-1 ml-6 flex flex-col gap-1 border-l border-sidebar-border pl-3">
-                {#each category.items as item (item.href)}
+              <ul
+                transition:slide={{ duration: 220, easing: cubicOut }}
+                class="mt-1 ml-6 flex flex-col gap-1 overflow-hidden border-l border-sidebar-border pl-3"
+              >
+                {#each category.items as item, i (item.href)}
                   {@const subActive = pathname === item.href}
-                  <li>
+                  <li in:fly={{ x: -8, duration: 220, delay: 60 + i * 45, easing: cubicOut }}>
                     <a
                       href={item.href}
                       aria-current={subActive ? "page" : undefined}

@@ -8,10 +8,8 @@ let { children }: { children?: Snippet } = $props();
 <main
   data-slot="sidebar-inset"
   class={cn(
-    "relative flex flex-1 flex-col overflow-auto min-h-screen",
-    "bg-background transition-[margin] duration-200",
-    "peer-data-[state=collapsed]:md:ml-[--sidebar-width-icon]",
-    "peer-data-[state=expanded]:md:ml-[--sidebar-width]"
+    "relative flex flex-1 flex-col overflow-auto min-h-screen min-w-0",
+    "bg-background"
   )}
 >
   {@render children?.()}

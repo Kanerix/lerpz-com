@@ -73,7 +73,7 @@ const avatarFallback = $derived(
         <DropdownMenuGroup>
           <DropdownMenuLabel class="p-0 font-normal">
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-              <Avatar class="h-8 w-8 rounded-lg">
+              <Avatar class="h-8 w-8">
                 <AvatarImage src={avatarSrc ?? ""} alt={account?.name ?? ""} />
                 <AvatarFallback class="rounded-lg">{avatarFallback}</AvatarFallback>
               </Avatar>

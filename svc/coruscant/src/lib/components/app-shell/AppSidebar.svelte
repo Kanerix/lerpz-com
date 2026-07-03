@@ -17,9 +17,9 @@ import UserInfo from "./UserInfo.svelte";
 </script>
 
 <Sidebar collapsible="icon">
-  <SidebarHeader>
+  <!-- <SidebarHeader>
     <SidebarBrand />
-  </SidebarHeader>
+  </SidebarHeader> -->
   <SeparatorComp />
   <SidebarContent class="overflow-hidden">
     <NavCategories />
