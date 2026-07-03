@@ -14,9 +14,9 @@ const sidebar = useSidebar();
   type="button"
   onclick={() => sidebar.toggleSidebar()}
   class={cn(
-    "inline-flex size-7 items-center justify-center",
+    "inline-flex size-8 items-center justify-center",
     "rounded-md text-sidebar-foreground cursor-pointer",
-    "hover:bg-sidebar-accent",
+    "hover:bg-sidebar-accent/50",
     className
   )}
   aria-label="Toggle sidebar"

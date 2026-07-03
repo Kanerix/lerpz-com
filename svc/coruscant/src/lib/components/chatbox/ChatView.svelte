@@ -1,13 +1,12 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
-import { Button } from "@lerpz/ui/components/button";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
 import { cubicOut } from "svelte/easing";
-import { fly } from "svelte/transition";
 import type { ConversationMessage } from "$lib/api/models/index.js";
+import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import CopyButton from "./CopyButton.svelte";
 import Markdown from "./Markdown.svelte";
 import ThinkingBlock from "./ThinkingBlock.svelte";
@@ -56,6 +55,16 @@ function followAgent() {
 }
 
 $effect(() => {
+    chatboxStore.setFollowButtonVisible(showFollowButton);
+    return () => chatboxStore.setFollowButtonVisible(false);
+});
+
+$effect(() => {
+    chatboxStore.setFollowAgentHandler(followAgent);
+    return () => chatboxStore.setFollowAgentHandler(null);
+});
+
+$effect(() => {
     const el = viewportRef;
     if (!el) return;
     el.addEventListener("scroll", handleScroll, { passive: true });
@@ -93,7 +102,7 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
 </script>
 
 {#if messages.length === 0}
-  <div class="flex flex-col items-center justify-center h-[calc(100vh-220px)] text-center gap-4">
+  <div class="flex flex-col items-center justify-center text-center gap-4">
     <div class="flex flex-col items-center gap-3">
       <div class="bg-muted rounded-full p-4">
         <Icon icon="fa6-solid:robot" class="size-8 text-muted-foreground" />
@@ -105,9 +114,9 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
     </div>
   </div>
 {:else}
-  <div class="relative h-[calc(100vh-220px)] w-full">
+  <div class="relative h-full w-full">
     <ScrollArea bind:viewportRef orientation="vertical" class="h-full w-full">
-      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 pb-8">
+      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4" style="padding-bottom: {chatboxStore.chatboxHeight + 24}px">
       {#each messages as message, index (message.id)}
         <div
           in:bubbleIn={{ role: message.role }}
@@ -191,22 +200,5 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
 
       </div>
     </ScrollArea>
-
-    {#if showFollowButton}
-      <div
-        transition:fly={{ y: 12, duration: 200, easing: cubicOut }}
-        class="absolute bottom-1 left-1/2 z-10 -translate-x-1/2"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={followAgent}
-          class="rounded-full bg-background/90 shadow-lg backdrop-blur"
-        >
-          <Icon icon="fa6-solid:arrow-down" class="size-3.5" />
-          Follow agent
-        </Button>
-      </div>
-    {/if}
   </div>
 {/if}

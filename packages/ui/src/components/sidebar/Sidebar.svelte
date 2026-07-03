@@ -50,39 +50,74 @@ function handleEnter() {
 function handleLeave() {
     if (canHoverExpand) sidebar.setHovered(false);
 }
+
+// Close the mobile drawer when a navigation link inside it is activated.
+function handleDrawerClick(event: MouseEvent) {
+    if ((event.target as HTMLElement | null)?.closest("a")) {
+        sidebar.setOpenMobile(false);
+    }
+}
 </script>
 
-<!-- Space reserver: keeps content beside the sidebar without shifting on hover. -->
-<div
-  data-slot="sidebar"
-  data-state={sidebar.state}
-  data-collapsible={collapsible}
-  style="width: {reservedWidth}; min-width: 0;"
-  class={cn(
-    "group peer relative hidden md:block shrink-0 grow-0",
-    "sticky top-0 h-svh",
-    "text-sidebar-foreground transition-[width] duration-200",
-    // The sticky wrapper forms its own stacking context; keep it above the
-    // inset so the hover-expanded panel can overlay the page content.
-    isHoverExpanded ? "z-40" : "z-20",
-    className
-  )}
-  onmouseenter={handleEnter}
-  onmouseleave={handleLeave}
-  {...rest}
->
-  <!-- Visual panel: overlays the content when expanded on hover. -->
-  <div
-    style="width: {visualWidth};"
+{#if sidebar.isMobile}
+  <button
+    type="button"
+    aria-label="Close sidebar"
+    tabindex={sidebar.openMobile ? 0 : -1}
+    onclick={() => sidebar.setOpenMobile(false)}
     class={cn(
-      "absolute inset-y-0 left-0 flex h-full flex-col bg-sidebar",
-      "border-r border-sidebar-border",
-      "transition-[width,box-shadow] duration-200",
-      isHoverExpanded
-        ? "shadow-[4px_0_24px_-2px_rgba(0,0,0,0.18)]"
-        : "shadow-[1px_0_8px_0_rgba(0,0,0,0.06)]"
+      "fixed inset-0 z-40 bg-black/50 md:hidden",
+      "transition-opacity duration-200",
+      sidebar.openMobile ? "opacity-100" : "pointer-events-none opacity-0"
     )}
+  ></button>
+  <div
+    data-slot="sidebar"
+    data-state="expanded"
+    data-collapsible={collapsible}
+    style="width: var(--sidebar-width);"
+    onclick={handleDrawerClick}
+    class={cn(
+      "group fixed inset-y-0 left-0 z-50 flex h-svh flex-col md:hidden",
+      "bg-sidebar text-sidebar-foreground",
+      "border-r border-sidebar-border shadow-xl",
+      "transition-transform duration-200",
+      sidebar.openMobile ? "translate-x-0" : "-translate-x-full",
+      className
+    )}
+    {...rest}
   >
     {@render children?.()}
   </div>
-</div>
+{:else}
+  <div
+    data-slot="sidebar"
+    data-state={sidebar.state}
+    data-collapsible={collapsible}
+    style="width: {reservedWidth}; min-width: 0;"
+    class={cn(
+      "group peer relative hidden md:block shrink-0 grow-0",
+      "sticky top-0 h-svh",
+      "text-sidebar-foreground transition-[width] duration-200",
+      isHoverExpanded ? "z-40" : "z-20",
+      className
+    )}
+    onmouseenter={handleEnter}
+    onmouseleave={handleLeave}
+    {...rest}
+  >
+    <div
+      style="width: {visualWidth};"
+      class={cn(
+        "absolute inset-y-0 left-0 flex h-full flex-col bg-sidebar",
+        "border-r border-sidebar-border",
+        "transition-[width,box-shadow] duration-200",
+        isHoverExpanded
+          ? "shadow-[4px_0_24px_-2px_rgba(0,0,0,0.18)]"
+          : "shadow-[1px_0_8px_0_rgba(0,0,0,0.06)]"
+      )}
+    >
+      {@render children?.()}
+    </div>
+  </div>
+{/if}

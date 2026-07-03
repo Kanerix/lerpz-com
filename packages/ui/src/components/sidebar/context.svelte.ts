@@ -5,17 +5,20 @@ export const SIDEBAR_KEY = Symbol("sidebar");
 export type SidebarState = "expanded" | "collapsed";
 
 export class SidebarContext {
-    /** Persistent open state, toggled by the user (trigger/rail). */
+    /** Persistent desktop open state, toggled by the user (trigger/rail). */
     open = $state(true);
+    /** Mobile off-canvas drawer open state. */
+    openMobile = $state(false);
     isMobile = $state(false);
     /** Transient hover-to-expand state (desktop only). */
     hovered = $state(false);
 
-    /** Effective visual state: hovering expands a collapsed sidebar on desktop. */
+    /** Effective visual state used for content layout. */
     get state(): SidebarState {
-        return this.open || (this.hovered && !this.isMobile)
-            ? "expanded"
-            : "collapsed";
+        // The mobile drawer always shows full-width content; its visibility is
+        // handled separately via `openMobile`.
+        if (this.isMobile) return "expanded";
+        return this.open || this.hovered ? "expanded" : "collapsed";
     }
 
     /** Persistent state that drives the reserved layout width (ignores hover). */
@@ -24,6 +27,10 @@ export class SidebarContext {
     }
 
     toggleSidebar() {
+        if (this.isMobile) {
+            this.openMobile = !this.openMobile;
+            return;
+        }
         this.open = !this.open;
         // A deliberate toggle should win over a lingering hover.
         this.hovered = false;
@@ -31,6 +38,10 @@ export class SidebarContext {
 
     setOpen(value: boolean) {
         this.open = value;
+    }
+
+    setOpenMobile(value: boolean) {
+        this.openMobile = value;
     }
 
     setHovered(value: boolean) {

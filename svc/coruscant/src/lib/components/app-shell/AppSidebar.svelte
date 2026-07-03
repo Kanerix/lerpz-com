@@ -5,13 +5,11 @@ import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
-    SidebarHeader,
     SidebarRail,
 } from "@lerpz/ui/components/sidebar";
 import NavCategories from "./NavCategories.svelte";
 import NavSecondary from "./NavSecondary.svelte";
 import NewChatButton from "./NewChatButton.svelte";
-import SidebarBrand from "./SidebarBrand.svelte";
 import SidebarChats from "./SidebarChats.svelte";
 import UserInfo from "./UserInfo.svelte";
 </script>
@@ -19,8 +17,8 @@ import UserInfo from "./UserInfo.svelte";
 <Sidebar collapsible="icon">
   <!-- <SidebarHeader>
     <SidebarBrand />
-  </SidebarHeader> -->
-  <SeparatorComp />
+  </SidebarHeader>
+  <SeparatorComp /> -->
   <SidebarContent class="overflow-hidden">
     <NavCategories />
     <ScrollArea class="min-h-0 shrink" orientation="vertical">

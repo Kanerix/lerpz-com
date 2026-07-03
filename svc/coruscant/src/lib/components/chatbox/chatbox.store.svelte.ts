@@ -26,6 +26,9 @@ class ChatboxStore {
     prompt = $state("");
     model = $state<string | null>(null);
     chatboxAnchor = $state<HTMLElement | null>(null);
+    chatboxHeight = $state(0);
+    followButtonVisible = $state(false);
+    followAgentHandler = $state<(() => void) | null>(null);
     autoAnalyze = $state(true);
     modelSettings = $state<ChatboxModelSettings>({});
     uploadedImages = $state<ChatboxUploadedImage[]>([]);
@@ -38,6 +41,15 @@ class ChatboxStore {
     }
     setChatboxAnchor(el: HTMLElement | null) {
         this.chatboxAnchor = el;
+    }
+    setChatboxHeight(height: number) {
+        this.chatboxHeight = height;
+    }
+    setFollowButtonVisible(visible: boolean) {
+        this.followButtonVisible = visible;
+    }
+    setFollowAgentHandler(handler: (() => void) | null) {
+        this.followAgentHandler = handler;
     }
     setAutoAnalyze(v: boolean) {
         this.autoAnalyze = v;

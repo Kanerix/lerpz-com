@@ -2,7 +2,9 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { Card, CardContent } from "@lerpz/ui/components/card";
-import { untrack } from "svelte";
+import { onMount, untrack } from "svelte";
+import { cubicOut } from "svelte/easing";
+import { fly } from "svelte/transition";
 import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ChatboxSettings from "./ChatboxSettings.svelte";
@@ -53,6 +55,31 @@ let isEnhancePending = $state(false);
 const isPending = $derived(isSubmitPending || isEnhancePending || isStreaming);
 
 let cardEl = $state<HTMLDivElement | null>(null);
+let mounted = $state(false);
+
+onMount(() => {
+    mounted = true;
+});
+
+$effect(() => {
+    const el = cardEl;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+        chatboxStore.setChatboxHeight(el.offsetHeight);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+});
+
+function chatboxIn(_node: Element) {
+    return {
+        duration: 550,
+        easing: cubicOut,
+        css: (t: number, u: number) =>
+            `opacity: ${t};
+             transform: translateY(${u * 28}px) scale(${0.96 + t * 0.04});`,
+    };
+}
 
 $effect(() => {
     chatboxStore.setChatboxAnchor(cardEl);
@@ -148,10 +175,30 @@ function handleEnter() {
 }
 </script>
 
-<aside class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl p-4">
+{#if mounted}
+<aside
+  in:chatboxIn
+  class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl p-4 bg-opacity-0"
+>
   <ImageShelf />
   <ChatStatusBar {isThinking} {isSaved} {error} />
-  <div bind:this={cardEl}>
+  <div bind:this={cardEl} class="relative">
+    {#if chatboxStore.followButtonVisible}
+      <div
+        transition:fly={{ y: 12, duration: 200, easing: cubicOut }}
+        class="absolute bottom-full left-1/2 z-10 mb-6 -translate-x-1/2"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={() => chatboxStore.followAgentHandler?.()}
+          class="rounded-full bg-background/90 shadow-lg backdrop-blur"
+        >
+          <Icon icon="fa6-solid:arrow-down" class="size-3.5" />
+          Follow agent
+        </Button>
+      </div>
+    {/if}
     <Card class="rounded-4xl bg-sidebar text-sidebar-foreground border-sidebar-border">
       <CardContent class="flex flex-col gap-2 p-4">
         <div class="flex items-end gap-4">
@@ -186,3 +233,4 @@ function handleEnter() {
     </Card>
   </div>
 </aside>
+{/if}

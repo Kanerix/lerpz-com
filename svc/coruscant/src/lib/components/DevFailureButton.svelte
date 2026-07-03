@@ -51,7 +51,7 @@ async function triggerFailure() {
   size="sm"
   onclick={triggerFailure}
   disabled={loading}
-  class="fixed bottom-4 right-4 z-40 shadow-lg"
+  class="fixed bottom-4 right-4 z-40 shadow-lg 2xl:flex hidden"
   title="Temporary: trigger /api/v1/failure"
 >
   <Icon

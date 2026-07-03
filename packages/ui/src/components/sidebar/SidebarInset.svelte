@@ -8,7 +8,7 @@ let { children }: { children?: Snippet } = $props();
 <main
   data-slot="sidebar-inset"
   class={cn(
-    "relative flex flex-1 flex-col overflow-auto min-h-screen min-w-0",
+    "relative flex flex-1 flex-col overflow-hidden h-screen min-w-0",
     "bg-background"
   )}
 >
