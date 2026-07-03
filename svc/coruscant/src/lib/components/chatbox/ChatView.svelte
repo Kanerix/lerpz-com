@@ -116,7 +116,7 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
 {:else}
   <div class="relative h-full w-full">
     <ScrollArea bind:viewportRef orientation="vertical" class="h-full w-full">
-      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4" style="padding-bottom: {chatboxStore.chatboxHeight + 24}px">
+      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 pb-48">
       {#each messages as message, index (message.id)}
         <div
           in:bubbleIn={{ role: message.role }}
