@@ -6,10 +6,12 @@ import { cn } from "../../lib/utils.js";
 let {
     class: className = "",
     orientation = "both",
+    viewportRef = $bindable(null),
     children,
 }: {
     class?: string;
     orientation?: "vertical" | "horizontal" | "both";
+    viewportRef?: HTMLDivElement | null;
     children?: Snippet;
 } = $props();
 </script>
@@ -19,6 +21,7 @@ let {
   class={cn("relative overflow-hidden", className)}
 >
   <ScrollArea.Viewport
+    bind:ref={viewportRef}
     class="size-full rounded-[inherit] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
   >
     <ScrollArea.Content

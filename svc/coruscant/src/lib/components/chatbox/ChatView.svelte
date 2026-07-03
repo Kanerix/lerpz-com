@@ -1,10 +1,12 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
+import { Button } from "@lerpz/ui/components/button";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
 import { cubicOut } from "svelte/easing";
+import { fly } from "svelte/transition";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 import CopyButton from "./CopyButton.svelte";
 import Markdown from "./Markdown.svelte";
@@ -20,11 +22,62 @@ let {
     error: string | null;
 } = $props();
 
-let bottomRef = $state<HTMLDivElement | null>(null);
+// Distance (px) from the bottom within which we consider the
+// user to be "at the bottom" and therefore following the stream.
+const BOTTOM_THRESHOLD = 64;
+
+let viewportRef = $state<HTMLDivElement | null>(null);
+let contentRef = $state<HTMLDivElement | null>(null);
+
+let autoScroll = $state(true);
+
+const showFollowButton = $derived(!autoScroll && messages.length > 0);
+
+function isAtBottom(el: HTMLElement) {
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_THRESHOLD;
+}
+
+function scrollToBottom(smooth = false) {
+    if (!viewportRef) return;
+    viewportRef.scrollTo({
+        top: viewportRef.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+    });
+}
+
+function handleScroll() {
+    if (!viewportRef) return;
+    autoScroll = isAtBottom(viewportRef);
+}
+
+function followAgent() {
+    autoScroll = true;
+    scrollToBottom(false);
+}
 
 $effect(() => {
-    messages;
-    bottomRef?.scrollIntoView({ behavior: "smooth" });
+    const el = viewportRef;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+});
+
+$effect(() => {
+    if (!contentRef) return;
+    const observer = new ResizeObserver(() => {
+        if (autoScroll) scrollToBottom();
+    });
+    observer.observe(contentRef);
+    return () => observer.disconnect();
+});
+
+let lastUserMessageId = $state<string | null>(null);
+$effect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === "user" && last.id !== lastUserMessageId) {
+        lastUserMessageId = last.id;
+        autoScroll = true;
+    }
 });
 
 function bubbleIn(_node: Element, { role }: { role: string }) {
@@ -52,8 +105,9 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
     </div>
   </div>
 {:else}
-  <ScrollArea orientation="vertical" class="h-[calc(100vh-220px)] w-full">
-    <div class="mx-auto max-w-6xl flex flex-col gap-4 pb-8">
+  <div class="relative h-[calc(100vh-220px)] w-full">
+    <ScrollArea bind:viewportRef orientation="vertical" class="h-full w-full">
+      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 pb-8">
       {#each messages as message, index (message.id)}
         <div
           in:bubbleIn={{ role: message.role }}
@@ -135,7 +189,24 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
         </div>
       {/if}
 
-      <div bind:this={bottomRef}></div>
-    </div>
-  </ScrollArea>
+      </div>
+    </ScrollArea>
+
+    {#if showFollowButton}
+      <div
+        transition:fly={{ y: 12, duration: 200, easing: cubicOut }}
+        class="absolute bottom-1 left-1/2 z-10 -translate-x-1/2"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={followAgent}
+          class="rounded-full bg-background/90 shadow-lg backdrop-blur"
+        >
+          <Icon icon="fa6-solid:arrow-down" class="size-3.5" />
+          Follow agent
+        </Button>
+      </div>
+    {/if}
+  </div>
 {/if}
