@@ -71,7 +71,7 @@ const status = $derived<Status>(
       in:fade={{ duration: 120 }}
       out:fade={{ duration: 120 }}
       role="alert"
-      class="pointer-events-auto flex max-w-full items-center gap-1.5 rounded-full bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground shadow-sm"
+      class="pointer-events-auto flex max-w-full items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive shadow-sm"
     >
       <Icon icon="fa6-solid:circle-exclamation" class="size-3.5 shrink-0" />
       <span class="truncate">{error}</span>

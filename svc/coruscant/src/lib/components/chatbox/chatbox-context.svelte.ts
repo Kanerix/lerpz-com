@@ -1,26 +1,16 @@
 import { getContext, setContext } from "svelte";
 import type { Model } from "$lib/ai/models.svelte.js";
-import type {
-    ChatboxModelSettingsForModel,
-    ChatboxUploadedImage,
-} from "$lib/components/chatbox/chatbox.store.svelte.js";
-
-export type ChatboxMode = "chat" | "image" | "video";
+import type { ChatboxModelSettingsForModel } from "$lib/components/chatbox/chatbox.store.svelte.js";
 
 export type ChatboxSubmitArgs = {
     prompt: string;
-    mode: ChatboxMode;
     model: string | null;
     modelSettings: ChatboxModelSettingsForModel;
-    images: ChatboxUploadedImage[];
 };
 
 export type ChatboxContextValue = {
-    readonly mode: ChatboxMode;
-    setMode: (mode: ChatboxMode) => void;
     readonly showSettings: boolean;
     setShowSettings: (v: boolean) => void;
-    readonly allowImageUploads: boolean;
     readonly models: Model[];
     readonly isModelsLoading: boolean;
     loadModels: (mode?: string) => Promise<void>;

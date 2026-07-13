@@ -1,5 +1,6 @@
 import { getContext, setContext } from "svelte";
 import type { SendChatOptions } from "$lib/ai/chat.svelte.js";
+import type { StartImageOptions } from "$lib/ai/image.svelte.js";
 import type { Model } from "$lib/ai/models.svelte.js";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 
@@ -22,7 +23,7 @@ export type AiContextValue = {
     readonly imageError: string | null;
     stopImage: () => void;
     resetImage: () => void;
-    startImage: (prompt: string) => void;
+    startImage: (prompt: string, options?: StartImageOptions) => void;
     readonly models: Model[];
     readonly isModelsLoading: boolean;
     loadModels: (modality?: string) => Promise<void>;

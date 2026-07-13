@@ -6,8 +6,11 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@lerpz/ui/components/tooltip";
+import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
-import ModelSelector from "./ModelSelector.svelte";
+import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
+import { REASONING_KEY } from "$lib/components/model-selector/reasoning.js";
+import { getChatboxContext } from "./chatbox-context.svelte.js";
 
 let {
     enhance,
@@ -19,17 +22,7 @@ let {
     isEnhancePending: boolean;
 } = $props();
 
-let fileInputEl = $state<HTMLInputElement | null>(null);
-
-function handleFileChange(e: Event) {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files?.length) return;
-    const imageFiles = Array.from(files).filter((f) =>
-        f.type.startsWith("image/"),
-    );
-    if (imageFiles.length) chatboxStore.addUploadedImages(imageFiles);
-    (e.target as HTMLInputElement).value = "";
-}
+const chatbox = getChatboxContext();
 
 async function handleEnhance() {
     if (!chatboxStore.prompt || !enhance) return;
@@ -40,27 +33,21 @@ async function handleEnhance() {
 
 <div class="flex gap-2">
   <!-- Model selector -->
-  <ModelSelector />
+  <ModelSelector
+    models={chatbox.models}
+    isModelsLoading={chatbox.isModelsLoading}
+    value={chatboxStore.model}
+    onSelect={(value) => chatboxStore.setModel(value)}
+    getReasoningLevel={(model: Model) =>
+      chatboxStore.getModelSetting(model.value ?? undefined, REASONING_KEY)}
+    onReasoningChange={(model: Model, level) => {
+      if (model.value) chatboxStore.setModelSetting(model.value, REASONING_KEY, level);
+    }}
+    getAnchorRect={() =>
+      chatboxStore.chatboxAnchor?.getBoundingClientRect() ?? null}
+  />
 
   <div class="flex gap-x-2 ml-auto">
-    <!-- Upload images -->
-    <Tooltip>
-      <TooltipTrigger>
-        <Button
-          class="hidden sm:flex"
-          variant="ghost"
-          size="icon"
-          aria-label="Add images"
-          disabled={isPending}
-          onclick={() => fileInputEl?.click()}
-        >
-          <input bind:this={fileInputEl} type="file" accept="image/*" multiple class="hidden" onchange={handleFileChange} />
-          <Icon icon="fa6-regular:image" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent><p>Add images to your prompt</p></TooltipContent>
-    </Tooltip>
-
     <!-- Enhance -->
     <Tooltip>
       <TooltipTrigger>

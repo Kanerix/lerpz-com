@@ -9,7 +9,7 @@ import { createImage } from "$lib/ai/image.svelte.js";
 import { createModels } from "$lib/ai/models.svelte.js";
 import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
-import { DEFAULT_REASONING_LEVEL } from "$lib/components/chatbox/chatbox.store.svelte.js";
+import { DEFAULT_REASONING_LEVEL } from "$lib/components/model-selector/reasoning.js";
 
 let { children }: { children: Snippet } = $props();
 
@@ -78,9 +78,7 @@ setAiContext({
     loadModels: modelsHook.loadModels,
 });
 
-const isPending = $derived(
-    chat.isStreaming || chat.isLoading || image.isLoading,
-);
+const isPending = $derived(chat.isStreaming || chat.isLoading);
 
 // The chatbox is only used to drive conversations, so it should be limited to
 // the chat area rather than every AI sub-page (images, videos, agents, …). The
@@ -95,26 +93,17 @@ const showChatbox = $derived(
 {#if showChatbox}
   <Chatbox
     onSubmit={async (args) => {
-      switch (args.mode) {
-        case "chat": {
-          const model = modelsHook.models.find((m) => m.value === args.model);
-          const reasoning = model?.reasoning
-            ? (args.modelSettings.reasoning ?? DEFAULT_REASONING_LEVEL)
-            : null;
-          chat.send(args.prompt, { model: args.model, reasoning });
-          break;
-        }
-        case "image":
-          image.start(args.prompt, { model: args.model });
-          break;
-        case "video": break;
-      }
+      const model = modelsHook.models.find((m) => m.value === args.model);
+      const reasoning = model?.reasoning
+        ? (args.modelSettings.reasoning ?? DEFAULT_REASONING_LEVEL)
+        : null;
+      chat.send(args.prompt, { model: args.model, reasoning });
     }}
     onEnhance={async (prompt) => prompt}
     isStreaming={isPending}
     isThinking={isPending}
     isSaved={chat.isSaved}
-    error={chat.error ?? image.error}
+    error={chat.error}
     models={modelsHook.models}
     isModelsLoading={modelsHook.isLoading}
     loadModels={modelsHook.loadModels}

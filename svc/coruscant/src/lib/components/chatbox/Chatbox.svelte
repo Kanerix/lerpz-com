@@ -2,26 +2,18 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { Card, CardContent } from "@lerpz/ui/components/card";
-import { onMount, untrack } from "svelte";
+import { onMount } from "svelte";
 import { cubicOut } from "svelte/easing";
 import { fly } from "svelte/transition";
 import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ChatboxSettings from "./ChatboxSettings.svelte";
 import ChatStatusBar from "./ChatStatusBar.svelte";
-import type {
-    ChatboxMode,
-    ChatboxSubmitArgs,
-} from "./chatbox-context.svelte.js";
+import type { ChatboxSubmitArgs } from "./chatbox-context.svelte.js";
 import { setChatboxContext } from "./chatbox-context.svelte.js";
-import ImageShelf from "./ImageShelf.svelte";
 import MarkdownEditor from "./MarkdownEditor.svelte";
 
-const placeholders: Record<ChatboxMode, string> = {
-    chat: "Send a message!",
-    image: "Describe your image!",
-    video: "Describe your video!",
-};
+const placeholder = "Send a message!";
 
 let {
     onSubmit,
@@ -33,7 +25,6 @@ let {
     isSaved = false,
     error = null,
     loadModels = async () => {},
-    defaultMode = "chat",
 }: {
     onSubmit?: (args: ChatboxSubmitArgs) => void | Promise<void>;
     onEnhance?: (prompt: string) => Promise<string>;
@@ -44,10 +35,8 @@ let {
     isSaved?: boolean;
     error?: string | null;
     loadModels?: (mode?: string) => Promise<void>;
-    defaultMode?: ChatboxMode;
 } = $props();
 
-let mode = $state<ChatboxMode>(untrack(() => defaultMode));
 let showSettings = $state(true);
 let isSubmitPending = $state(false);
 let isEnhancePending = $state(false);
@@ -103,19 +92,12 @@ $effect(() => {
 });
 
 setChatboxContext({
-    get mode() {
-        return mode;
-    },
-    setMode: (m) => {
-        mode = m;
-    },
     get showSettings() {
         return showSettings;
     },
     setShowSettings: (v) => {
         showSettings = v;
     },
-    allowImageUploads: true,
     get models() {
         return models;
     },
@@ -143,18 +125,15 @@ async function submit() {
     if (!trimmed || isPending) return;
     const args: ChatboxSubmitArgs = {
         prompt: trimmed,
-        mode,
         model: chatboxStore.model,
         modelSettings: chatboxStore.getModelSettings(
             chatboxStore.model ?? undefined,
         ),
-        images: chatboxStore.uploadedImages,
     };
     isSubmitPending = true;
     try {
         if (onSubmit) await onSubmit(args);
         chatboxStore.setPrompt("");
-        chatboxStore.clearUploadedImages();
     } finally {
         isSubmitPending = false;
     }
@@ -180,7 +159,6 @@ function handleEnter() {
   in:chatboxIn
   class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl p-4 bg-opacity-0"
 >
-  <ImageShelf />
   <ChatStatusBar {isThinking} {isSaved} {error} />
   <div bind:this={cardEl} class="relative">
     {#if chatboxStore.followButtonVisible}
@@ -207,7 +185,7 @@ function handleEnter() {
             onChange={(md) => chatboxStore.setPrompt(md)}
             onEnter={handleEnter}
             disabled={isPending}
-            placeholder={placeholders[mode]}
+            {placeholder}
             autofocus
             class="grow self-stretch px-1 py-1.5"
           />

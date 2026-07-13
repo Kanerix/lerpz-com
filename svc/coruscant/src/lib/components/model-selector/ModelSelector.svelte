@@ -12,18 +12,34 @@ import { Separator } from "@lerpz/ui/components/separator";
 import { cn } from "@lerpz/ui/lib/utils";
 import { modelFavoritesStore } from "$lib/ai/model-favorites.svelte.js";
 import { type Model, modelFamilyLogo } from "$lib/ai/models.svelte.js";
-import {
-    chatboxStore,
-    DEFAULT_REASONING_LEVEL,
-    REASONING_KEY,
-    REASONING_LEVELS,
-} from "$lib/components/chatbox/chatbox.store.svelte.js";
-import { getChatboxContext } from "./chatbox-context.svelte.js";
+import { DEFAULT_REASONING_LEVEL, REASONING_LEVELS } from "./reasoning.js";
 
-const chatbox = getChatboxContext();
+let {
+    models = [],
+    isModelsLoading = false,
+    value = null,
+    onSelect,
+    getReasoningLevel,
+    onReasoningChange,
+    getAnchorRect,
+}: {
+    models?: Model[];
+    isModelsLoading?: boolean;
+    /** Currently selected model value. */
+    value?: string | null;
+    onSelect: (value: string | null) => void;
+    /** Current reasoning level for a model, or `null` when not applicable. */
+    getReasoningLevel?: (model: Model) => string | null;
+    onReasoningChange?: (model: Model, level: string) => void;
+    /**
+     * Optional anchor for the popover. When omitted the popover anchors to its
+     * trigger; the chatbox uses this to anchor to the whole chatbox card.
+     */
+    getAnchorRect?: () => DOMRect | null;
+} = $props();
 
 const sortedModels = $derived<Model[]>(
-    [...chatbox.models].sort(
+    [...models].sort(
         (a, b) =>
             a.family.localeCompare(b.family) || a.label.localeCompare(b.label),
     ),
@@ -38,7 +54,7 @@ let previewValue = $state<string | null>(null);
 let detailValue = $state<string | null>(null);
 
 const selectedModel = $derived<Model | null>(
-    sortedModels.find((m) => m.value === chatboxStore.model) ?? null,
+    sortedModels.find((m) => m.value === value) ?? null,
 );
 
 const favoriteModels = $derived<Model[]>(
@@ -59,56 +75,59 @@ const detailModel = $derived<Model | null>(
     sortedModels.find((m) => m.value === detailValue) ?? null,
 );
 
+const positioning = $derived({
+    placement: "top" as const,
+    gutter: 8,
+    ...(getAnchorRect ? { getAnchorRect } : {}),
+});
+
 function handleOpenChange(details: { open: boolean }) {
     open = details.open;
     if (details.open) {
         view = "list";
         detailValue = null;
-        previewValue = chatboxStore.model;
+        previewValue = value;
     }
 }
 
-function openDetail(value: string | null) {
-    if (!value) return;
-    detailValue = value;
+function openDetail(modelValue: string | null) {
+    if (!modelValue) return;
+    detailValue = modelValue;
     view = "detail";
 }
 
 function backToList() {
     view = "list";
-    previewValue = detailValue ?? chatboxStore.model;
+    previewValue = detailValue ?? value;
 }
 
-function selectModel(value: string | null) {
-    chatboxStore.setModel(value);
+function selectModel(modelValue: string | null) {
+    onSelect(modelValue);
     open = false;
 }
 
 const reasoningLevel = $derived<string | null>(
-    detailModel?.reasoning
-        ? (chatboxStore.getModelSetting(
-              detailModel.value ?? undefined,
-              REASONING_KEY,
-          ) ?? DEFAULT_REASONING_LEVEL)
+    detailModel?.reasoning && getReasoningLevel
+        ? (getReasoningLevel(detailModel) ?? DEFAULT_REASONING_LEVEL)
         : null,
 );
 
 function setReasoningLevel(level: string) {
-    if (!detailModel?.value || !detailModel.reasoning) return;
-    chatboxStore.setModelSetting(detailModel.value, REASONING_KEY, level);
+    if (!detailModel?.reasoning) return;
+    onReasoningChange?.(detailModel, level);
 }
 
 function handleListKeydown(e: KeyboardEvent) {
-    const models = visibleModels;
-    if (models.length === 0) return;
-    const currentIndex = models.findIndex((m) => m.value === previewValue);
+    const list = visibleModels;
+    if (list.length === 0) return;
+    const currentIndex = list.findIndex((m) => m.value === previewValue);
     if (e.key === "ArrowDown") {
         e.preventDefault();
-        const next = models[(currentIndex + 1 + models.length) % models.length];
+        const next = list[(currentIndex + 1 + list.length) % list.length];
         if (next) previewValue = next.value;
     } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        const prev = models[(currentIndex - 1 + models.length) % models.length];
+        const prev = list[(currentIndex - 1 + list.length) % list.length];
         if (prev) previewValue = prev.value;
     } else if (e.key === "Enter" && previewValue) {
         e.preventDefault();
@@ -118,7 +137,7 @@ function handleListKeydown(e: KeyboardEvent) {
 </script>
 
 {#snippet modelRow(model: Model)}
-  {@const isSelected = model.value === chatboxStore.model}
+  {@const isSelected = model.value === value}
   {@const isPreview = model.value === previewValue}
   {@const isFavorite = modelFavoritesStore.isFavorite(model.value)}
   <li role="option" aria-selected={isSelected}>
@@ -170,16 +189,7 @@ function handleListKeydown(e: KeyboardEvent) {
   </li>
 {/snippet}
 
-<Popover
-  {open}
-  onOpenChange={handleOpenChange}
-  positioning={{
-    placement: "top",
-    gutter: 8,
-    getAnchorRect: () =>
-      chatboxStore.chatboxAnchor?.getBoundingClientRect() ?? null,
-  }}
->
+<Popover {open} onOpenChange={handleOpenChange} {positioning}>
   <PopoverTrigger
     class={cn(
       "inline-flex h-9 items-center gap-1.5 rounded-4xl px-3 text-sm",
@@ -189,7 +199,7 @@ function handleListKeydown(e: KeyboardEvent) {
     )}
     aria-label="Select model"
   >
-    {#if chatbox.isModelsLoading}
+    {#if isModelsLoading}
       <Icon icon="fa6-solid:spinner" class="animate-spin" />
     {:else if selectedModel}
       <img
@@ -225,12 +235,12 @@ function handleListKeydown(e: KeyboardEvent) {
           aria-label="Available models"
           onkeydown={handleListKeydown}
         >
-          {#if chatbox.isModelsLoading}
+          {#if isModelsLoading}
             <li class="px-3 py-2 text-sm text-muted-foreground">
               <Icon icon="fa6-solid:spinner" class="mr-1.5 inline animate-spin" />
               Loading models…
             </li>
-          {:else if chatbox.models.length === 0}
+          {:else if sortedModels.length === 0}
             <li class="px-3 py-2 text-sm text-muted-foreground">
               No models available
             </li>
@@ -341,7 +351,7 @@ function handleListKeydown(e: KeyboardEvent) {
               <span class="text-xs font-medium text-muted-foreground">
                 Settings
               </span>
-              {#if detailModel.reasoning}
+              {#if detailModel.reasoning && onReasoningChange}
                 <div class="flex flex-col gap-2">
                   <div class="flex flex-col">
                     <span class="text-sm font-medium">Reasoning</span>
@@ -385,14 +395,14 @@ function handleListKeydown(e: KeyboardEvent) {
             type="button"
             class={cn(
               "flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              detailModel.value === chatboxStore.model
+              detailModel.value === value
                 ? "bg-muted text-muted-foreground"
                 : "bg-primary text-primary-foreground hover:bg-primary/90",
             )}
-            disabled={detailModel.value === chatboxStore.model}
+            disabled={detailModel.value === value}
             onclick={() => selectModel(detailModel.value)}
           >
-            {#if detailModel.value === chatboxStore.model}
+            {#if detailModel.value === value}
               <Icon icon="fa6-solid:check" class="size-4" />
               Selected
             {:else}
