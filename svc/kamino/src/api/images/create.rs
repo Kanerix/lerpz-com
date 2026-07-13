@@ -65,8 +65,9 @@ pub struct ImageRequest {
         (
             status = OK,
             description = "SSE stream of image generation events. Events: \
-                partial_image (base64 partial render), \
-                completed_image (base64 final image), \
+                partial_image ({ b64, format } partial render), \
+                completed_image ({ b64, format } final image), \
+                saved ({ id } persisted metadata), \
                 error (error message)",
             content_type = "text/event-stream"
         ),
@@ -145,18 +146,18 @@ pub async fn handler(
             };
 
             match chunk {
-                ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, partial_image_index,.. }) => {
-                    tracing::trace!(index = %partial_image_index, "generated partial image");
+                ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, partial_image_index, output_format, .. }) => {
+                    tracing::trace!(index = %partial_image_index, format = %output_format, "generated partial image");
                     yield Ok(Event::default()
                         .event("partial_image")
-                        .json_data(b64_json)
+                        .json_data(json!({ "b64": b64_json, "format": output_format.to_string() }))
                         .expect("failed to serialize partial_image event"));
                 }
                 ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, output_format, .. }) => {
                     tracing::trace!(format = %output_format, "generated complete image");
                     yield Ok(Event::default()
                         .event("completed_image")
-                        .json_data(&b64_json)
+                        .json_data(json!({ "b64": b64_json, "format": output_format.to_string() }))
                         .expect("failed to serialize completed_image event"));
 
                     tracing::trace!("decoding complete image");
