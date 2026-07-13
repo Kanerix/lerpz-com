@@ -186,7 +186,7 @@ function handleEnter() {
     {#if chatboxStore.followButtonVisible}
       <div
         transition:fly={{ y: 12, duration: 200, easing: cubicOut }}
-        class="absolute bottom-full left-1/2 z-10 mb-6 -translate-x-1/2"
+        class="absolute bottom-full left-1/2 z-10 mb-7 -translate-x-1/2"
       >
         <Button
           variant="outline"

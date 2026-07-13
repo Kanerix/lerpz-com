@@ -102,7 +102,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cors = CorsLayer::new()
         .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .allow_headers(Any);
 
     let (router, api) = OpenApiRouter::with_openapi(api_doc())

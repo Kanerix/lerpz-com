@@ -42,6 +42,8 @@ pub struct ConversationDetail {
     title: Option<String>,
     /// AI model used for this conversation.
     model: String,
+    /// Whether the conversation has been archived by the user.
+    archived: bool,
     /// All messages in chronological order.
     messages: Vec<ConversationMessage>,
     /// Timestamp when the conversation was created.
@@ -95,7 +97,7 @@ pub async fn handler(
     let user_id = token.sub;
 
     let conversation = sqlx::query!(
-        "SELECT id, title, model, created_at, updated_at
+        "SELECT id, title, model, archived, created_at, updated_at
         FROM conversations
         WHERE id = $1 AND user_id = $2",
         &conv_id,
@@ -140,6 +142,7 @@ pub async fn handler(
         id: conversation.id,
         title: conversation.title,
         model: conversation.model,
+        archived: conversation.archived,
         messages,
         created_at: conversation.created_at.unwrap_or_default(),
         updated_at: conversation.updated_at.unwrap_or_default(),

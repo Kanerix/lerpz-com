@@ -2,6 +2,7 @@
 import { useQueryClient } from "@tanstack/svelte-query";
 import type { Snippet } from "svelte";
 import { goto } from "$app/navigation";
+import { page } from "$app/state";
 import { createChat } from "$lib/ai/chat.svelte.js";
 import { setAiContext } from "$lib/ai/context.svelte.js";
 import { createImage } from "$lib/ai/image.svelte.js";
@@ -80,32 +81,42 @@ setAiContext({
 const isPending = $derived(
     chat.isStreaming || chat.isLoading || image.isLoading,
 );
+
+// The chatbox is only used to drive conversations, so it should be limited to
+// the chat area rather than every AI sub-page (images, videos, agents, …). The
+// history page is a management view, so it opts out too.
+const showChatbox = $derived(
+    page.url.pathname.startsWith("/ai/chats") &&
+        !page.url.pathname.startsWith("/ai/chats/history"),
+);
 </script>
 
 {@render children()}
-<Chatbox
-  onSubmit={async (args) => {
-    switch (args.mode) {
-      case "chat": {
-        const model = modelsHook.models.find((m) => m.value === args.model);
-        const reasoning = model?.reasoning
-          ? (args.modelSettings.reasoning ?? DEFAULT_REASONING_LEVEL)
-          : null;
-        chat.send(args.prompt, { model: args.model, reasoning });
-        break;
+{#if showChatbox}
+  <Chatbox
+    onSubmit={async (args) => {
+      switch (args.mode) {
+        case "chat": {
+          const model = modelsHook.models.find((m) => m.value === args.model);
+          const reasoning = model?.reasoning
+            ? (args.modelSettings.reasoning ?? DEFAULT_REASONING_LEVEL)
+            : null;
+          chat.send(args.prompt, { model: args.model, reasoning });
+          break;
+        }
+        case "image":
+          image.start(args.prompt, { model: args.model });
+          break;
+        case "video": break;
       }
-      case "image":
-        image.start(args.prompt, { model: args.model });
-        break;
-      case "video": break;
-    }
-  }}
-  onEnhance={async (prompt) => prompt}
-  isStreaming={isPending}
-  isThinking={isPending}
-  isSaved={chat.isSaved}
-  error={chat.error ?? image.error}
-  models={modelsHook.models}
-  isModelsLoading={modelsHook.isLoading}
-  loadModels={modelsHook.loadModels}
-/>
+    }}
+    onEnhance={async (prompt) => prompt}
+    isStreaming={isPending}
+    isThinking={isPending}
+    isSaved={chat.isSaved}
+    error={chat.error ?? image.error}
+    models={modelsHook.models}
+    isModelsLoading={modelsHook.isLoading}
+    loadModels={modelsHook.loadModels}
+  />
+{/if}

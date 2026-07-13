@@ -16,15 +16,17 @@ use crate::{
 #[derive(Debug, Serialize, ToSchema)]
 pub struct Conversation {
     /// Unique conversation identifier
-    id: Uuid,
+    pub(crate) id: Uuid,
     /// Conversation title (auto-generated from the first prompt if not provided)
-    title: Option<String>,
+    pub(crate) title: Option<String>,
     /// AI model used for this conversation
-    model: String,
+    pub(crate) model: String,
+    /// Whether the conversation has been archived by the user
+    pub(crate) archived: bool,
     /// Timestamp of when the conversation was created
-    created_at: Option<DateTime<Utc>>,
+    pub(crate) created_at: Option<DateTime<Utc>>,
     /// Timestamp of the last message in the conversation
-    updated_at: Option<DateTime<Utc>>,
+    pub(crate) updated_at: Option<DateTime<Utc>>,
 }
 
 #[utoipa::path(
@@ -63,7 +65,7 @@ pub async fn handler(
 
     let conversations = sqlx::query_as!(
         Conversation,
-        "SELECT id, title, model, created_at, updated_at
+        "SELECT id, title, model, archived, created_at, updated_at
         FROM conversations
         WHERE user_id = $1 ORDER BY updated_at DESC",
         &user_id,

@@ -1,6 +1,8 @@
 // @ts-nocheck
 
 export interface Conversation {
+  /** Whether the conversation has been archived by the user */
+  archived: boolean;
   /**
      * Timestamp of when the conversation was created
      * @nullable

@@ -8,6 +8,7 @@ mod list;
 mod message;
 mod read;
 mod stream;
+mod update;
 
 /// Parses a reasoning level string into a [`ReasoningEffort`].
 ///
@@ -32,4 +33,5 @@ pub fn router() -> OpenApiRouter<AppState> {
         .routes(routes!(create::handler))
         .routes(routes!(read::handler))
         .routes(routes!(message::handler))
+        .routes(routes!(update::handler))
 }

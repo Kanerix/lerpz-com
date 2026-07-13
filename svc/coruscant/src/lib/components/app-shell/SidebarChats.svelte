@@ -59,6 +59,7 @@ function getDateGroup(dateStr: string | null | undefined): DateGroup {
 const groups = $derived.by(() => {
     if (query.data?.status !== 200) return [];
     const convs = [...(query.data.data ?? [])]
+        .filter((conv) => !conv.archived)
         .sort((a, b) => getTime(b) - getTime(a))
         .slice(0, MAX_CHATS);
     const map = new Map<DateGroup, Conversation[]>();

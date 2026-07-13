@@ -20,7 +20,8 @@ import type {
   Conversation,
   ConversationDetail,
   MessageRequest,
-  ProblemSchema
+  ProblemSchema,
+  UpdateChatRequest
 } from '../models';
 
 import { customFetch } from '../../http/orval-mutator';
@@ -437,6 +438,117 @@ export function createSendChatMessage<TData = Awaited<ReturnType<typeof sendChat
 
   const query = createQuery(() => getSendChatMessageQueryOptions(id(),
     messageRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type updateChatResponse200 = {
+  data: Conversation
+  status: 200
+}
+
+export type updateChatResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type updateChatResponse404 = {
+  data: ProblemSchema
+  status: 404
+}
+
+export type updateChatResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type updateChatResponseSuccess = (updateChatResponse200) & {
+  headers: Headers;
+};
+export type updateChatResponseError = (updateChatResponse401 | updateChatResponse404 | updateChatResponse500) & {
+  headers: Headers;
+};
+
+export type updateChatResponse = (updateChatResponseSuccess | updateChatResponseError)
+
+export const getUpdateChatUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/chats/${id}`
+}
+
+/**
+ * Updates mutable fields on a conversation owned by the authenticated user. Currently supports archiving and unarchiving.
+ * @summary Update a chat
+ */
+export const updateChat = async (id: string,
+    updateChatRequest: UpdateChatRequest, options?: RequestInit): Promise<updateChatResponse> => {
+
+  return customFetch<updateChatResponse>(getUpdateChatUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateChatRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateChatQueryKey = (id: string,
+    updateChatRequest?: UpdateChatRequest,) => {
+    return [
+    'PATCH', `/api/v1/chats/${id}`, updateChatRequest
+    ] as const;
+    }
+
+
+export const getUpdateChatQueryOptions = <TData = Awaited<ReturnType<typeof updateChat>>, TError = ErrorType<ProblemSchema>>(id: string,
+    updateChatRequest: UpdateChatRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getUpdateChatQueryKey(id,updateChatRequest);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof updateChat>>> = ({ signal }) => updateChat(id,updateChatRequest, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof updateChat>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type UpdateChatQueryResult = NonNullable<Awaited<ReturnType<typeof updateChat>>>
+export type UpdateChatQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Update a chat
+ */
+
+export function createUpdateChat<TData = Awaited<ReturnType<typeof updateChat>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string,
+    updateChatRequest: () =>  UpdateChatRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getUpdateChatQueryOptions(id(),
+    updateChatRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return query
 }

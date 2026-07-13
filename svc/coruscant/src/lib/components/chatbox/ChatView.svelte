@@ -99,18 +99,58 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
              transform: translateY(${u * 10}px) translateX(${u * x}px) scale(${0.95 + t * 0.05});`,
     };
 }
+
+const EXAMPLE_PROMPTS = [
+    {
+        icon: "fa6-solid:lightbulb",
+        title: "Explain a concept",
+        prompt: "Explain how JSON Web Tokens work, and when I should use them.",
+    },
+    {
+        icon: "fa6-solid:code",
+        title: "Write some code",
+        prompt: "Write a TypeScript function that debounces an async function.",
+    },
+    {
+        icon: "fa6-solid:feather",
+        title: "Draft a message",
+        prompt: "Draft a friendly release announcement for a new feature in our app.",
+    },
+    {
+        icon: "fa6-solid:list-check",
+        title: "Plan a task",
+        prompt: "Help me break down migrating a REST API to gRPC into actionable steps.",
+    },
+];
 </script>
 
 {#if messages.length === 0}
-  <div class="flex flex-col items-center justify-center text-center gap-4">
-    <div class="flex flex-col items-center gap-3">
-      <div class="bg-muted rounded-full p-4">
-        <Icon icon="fa6-solid:robot" class="size-8 text-muted-foreground" />
+  <div class="flex h-full min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+    <div class="flex w-full max-w-xl flex-col items-center gap-6">
+      <div class="flex flex-col items-center gap-3">
+        <div class="bg-muted rounded-full p-4">
+          <Icon icon="fa6-solid:robot" class="size-8 text-muted-foreground" />
+        </div>
+        <h2 class="text-xl font-semibold tracking-tight">Start a conversation</h2>
+        <p class="text-sm text-muted-foreground max-w-sm">
+          Type a message below to begin chatting, or pick an example to get started. Your conversation will be saved automatically.
+        </p>
       </div>
-      <h2 class="text-xl font-semibold tracking-tight">Start a conversation</h2>
-      <p class="text-sm text-muted-foreground max-w-sm">
-        Type a message below to begin chatting. Your conversation will be saved automatically.
-      </p>
+      <div class="grid w-full gap-2 sm:grid-cols-2">
+        {#each EXAMPLE_PROMPTS as example (example.title)}
+          <button
+            type="button"
+            onclick={() => chatboxStore.setPrompt(example.prompt)}
+            class="group flex flex-col gap-1 rounded-xl border border-border bg-card/40 p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent"
+          >
+            <span class="flex items-center gap-2 text-sm font-medium">
+              <Icon icon={example.icon} class="size-3.5 text-muted-foreground transition-colors group-hover:text-primary" />
+              {example.title}
+            </span>
+            <span class="line-clamp-2 text-xs text-muted-foreground">{example.prompt}</span>
+          </button>
+        {/each}
+      </div>
     </div>
   </div>
 {:else}

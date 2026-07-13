@@ -12,4 +12,5 @@ export * from './model';
 export * from './modelFamily';
 export * from './modelSettings';
 export * from './problemSchema';
+export * from './updateChatRequest';
 export * from './updateModelRequest';
