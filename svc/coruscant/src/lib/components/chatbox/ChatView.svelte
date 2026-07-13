@@ -114,7 +114,7 @@ function bubbleIn(_node: Element, { role }: { role: string }) {
     </div>
   </div>
 {:else}
-  <div class="relative h-full w-full">
+  <div class="relative h-full w-full p-2">
     <ScrollArea bind:viewportRef orientation="vertical" class="h-full w-full">
       <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 pb-48">
       {#each messages as message, index (message.id)}
