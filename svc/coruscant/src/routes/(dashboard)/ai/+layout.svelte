@@ -1,17 +1,24 @@
 <script lang="ts">
+import { useQueryClient } from "@tanstack/svelte-query";
 import type { Snippet } from "svelte";
 import { goto } from "$app/navigation";
 import { createChat } from "$lib/ai/chat.svelte.js";
 import { setAiContext } from "$lib/ai/context.svelte.js";
 import { createImage } from "$lib/ai/image.svelte.js";
 import { createModels } from "$lib/ai/models.svelte.js";
+import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
 import { DEFAULT_REASONING_LEVEL } from "$lib/components/chatbox/chatbox.store.svelte.js";
 
 let { children }: { children: Snippet } = $props();
 
+const queryClient = useQueryClient();
+
 const chat = createChat({
     onSaved: (convId) => {
+        // Refresh the sidebar chat list so the newly created conversation
+        // shows up without a manual reload.
+        queryClient.invalidateQueries({ queryKey: [getListChatsUrl()] });
         goto(`/ai/chats/${convId}`, { replaceState: true });
     },
 });
