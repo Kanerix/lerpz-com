@@ -89,6 +89,7 @@ pub(super) async fn start_completion_sse(
     request: CreateChatCompletionRequest,
     conv_id: Uuid,
     database: DatabasePool,
+    model_family: Option<String>,
 ) -> HandlerResult<impl Stream<Item = Result<Event, Infallible>>> {
     tracing::trace!(
         %conv_id,
@@ -102,13 +103,14 @@ pub(super) async fn start_completion_sse(
         .create_stream_byot::<_, StreamChunk>(request)
         .await?;
 
-    Ok(completion_sse(stream, conv_id, database))
+    Ok(completion_sse(stream, conv_id, database, model_family))
 }
 
 fn completion_sse(
     mut stream: ChunkStream,
     conv_id: Uuid,
     database: DatabasePool,
+    model_family: Option<String>,
 ) -> impl Stream<Item = Result<Event, Infallible>> {
     async_stream::stream! {
         let mut content_buf = String::new();
@@ -168,11 +170,12 @@ fn completion_sse(
         tracing::trace!(%conv_id, "persisting assistant message");
         let reasoning = (!reasoning_buf.is_empty()).then_some(reasoning_buf);
         let result = sqlx::query!(
-            "INSERT INTO messages (conversation_id, role, content, reasoning)
-            VALUES ($1, 'assistant', $2, $3)",
+            "INSERT INTO messages (conversation_id, role, content, reasoning, model_family)
+            VALUES ($1, 'assistant', $2, $3, $4)",
             &conv_id,
             &content_buf,
             reasoning.as_deref(),
+            model_family.as_deref(),
         )
         .execute(&database)
         .await;

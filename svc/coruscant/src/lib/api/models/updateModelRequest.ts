@@ -1,5 +1,4 @@
 // @ts-nocheck
-import type { ModelFamily } from './modelFamily';
 import type { ModelSettings } from './modelSettings';
 
 /**
@@ -23,7 +22,11 @@ export interface UpdateModelRequest {
      * @nullable
      */
   display_name?: string | null;
-  family?: null | ModelFamily;
+  /**
+     * Provider family the model belongs to.
+     * @nullable
+     */
+  family?: string | null;
   /**
      * Input/output modalities the model supports (e.g. `text`, `image`).
      * @nullable

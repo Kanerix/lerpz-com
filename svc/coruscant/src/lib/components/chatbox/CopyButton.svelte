@@ -9,8 +9,16 @@ import {
 import { cn } from "@lerpz/ui/lib/utils";
 import { toast } from "svelte-sonner";
 
-let { text = "", class: className = "" }: { text?: string; class?: string } =
-    $props();
+let {
+    text = "",
+    class: className = "",
+    tooltipAlign = "end",
+}: {
+    text?: string;
+    class?: string;
+    /** Alignment of the tooltip relative to the button. */
+    tooltipAlign?: "start" | "center" | "end";
+} = $props();
 
 let copied = $state(false);
 let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -36,7 +44,7 @@ async function copy() {
 }
 </script>
 
-<Tooltip side="bottom" align="end">
+<Tooltip side="bottom" align={tooltipAlign}>
   <TooltipTrigger>
     {#snippet asChild(getProps)}
       <Button

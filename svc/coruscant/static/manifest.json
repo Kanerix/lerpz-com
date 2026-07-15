@@ -1,0 +1,64 @@
+{
+  "name": "Lerpz AI Portal",
+  "short_name": "Lerpz AI",
+  "description": "The AI portal for your organisation. Sign in with your work account to chat with AI models, generate images and video, and more — centralised and maintained for your whole team.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "business", "utilities"],
+  "background_color": "#f8f6ef",
+  "theme_color": "#6482fa",
+  "icons": [
+    {
+      "src": "/lerpz.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Chat",
+      "short_name": "Chat",
+      "description": "Have conversations with large language models.",
+      "url": "/ai/chats",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Image Generation",
+      "short_name": "Images",
+      "description": "Generate images from text prompts.",
+      "url": "/ai/images",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Video Generation",
+      "short_name": "Videos",
+      "description": "Generate video from text prompts.",
+      "url": "/ai/videos",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

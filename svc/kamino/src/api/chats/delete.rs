@@ -1,5 +1,4 @@
 use axum::{
-    Json,
     extract::{Path, State},
     http::StatusCode,
 };
@@ -10,27 +9,25 @@ use lerpz_axum::{
 use uuid::Uuid;
 
 use crate::{
-    oapi::MODELS_TAG,
+    oapi::CHATS_TAG,
     state::{AppState, DatabasePool},
 };
 
-use super::Model;
-
 #[utoipa::path(
-    method(get),
+    method(delete),
     path = "/{id}",
-    tag = MODELS_TAG,
-    operation_id = "get_model",
-    summary = "Get a specific model",
-    description = "Returns a single model by its identifier.",
+    operation_id = "delete_chat",
+    tag = CHATS_TAG,
+    summary = "Delete a chat",
+    description = "Permanently deletes a conversation and all of its messages. \
+        Requires the conversation to belong to the authenticated user.",
     params(
-        ("id" = Uuid, Path, description = "Model ID"),
+        ("id" = Uuid, Path, description = "Conversation ID"),
     ),
     responses(
         (
-            status = OK,
-            description = "The requested model",
-            body = Model
+            status = NO_CONTENT,
+            description = "Conversation deleted"
         ),
         (
             status = UNAUTHORIZED,
@@ -40,7 +37,7 @@ use super::Model;
         ),
         (
             status = NOT_FOUND,
-            description = "Resource not found",
+            description = "Conversation not found or does not belong to the authenticated user",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -54,36 +51,29 @@ use super::Model;
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
-    Path(id): Path<Uuid>,
+    token: AzureAccessToken,
+    Path(conv_id): Path<Uuid>,
     State(database): State<DatabasePool>,
-) -> HandlerResult<Json<Model>> {
-    let model = sqlx::query_as!(
-        Model,
-        r#"SELECT
-            id,
-            display_name,
-            description,
-            family,
-            deployment_name,
-            provider,
-            modalities,
-            settings,
-            created_at,
-            updated_at
-        FROM models
-        WHERE id = $1"#,
-        &id,
+) -> HandlerResult<StatusCode> {
+    let user_id = token.sub;
+
+    // Messages are removed automatically via the `ON DELETE CASCADE` foreign key
+    // on `messages.conversation_id`.
+    let result = sqlx::query!(
+        "DELETE FROM conversations WHERE id = $1 AND user_id = $2",
+        &conv_id,
+        &user_id,
     )
-    .fetch_optional(&database)
+    .execute(&database)
     .await?;
 
-    match model {
-        Some(model) => Ok(Json(model)),
-        None => Err(Problem::new(
+    if result.rows_affected() == 0 {
+        return Err(Problem::new(
             StatusCode::NOT_FOUND,
             "Not Found",
-            "The requested model was not found.",
-        )),
+            "The requested conversation was not found.",
+        ));
     }
+
+    Ok(StatusCode::NO_CONTENT)
 }

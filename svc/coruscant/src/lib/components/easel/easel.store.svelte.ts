@@ -1,12 +1,16 @@
+import {
+    MODEL_STORAGE_KEYS,
+    loadStoredModel,
+    storeModel,
+} from "$lib/ai/model-storage.js";
+
 export type AspectRatioOption = {
     value: string;
     label: string;
-    /** Width/height used to render the little preview glyph. */
     w: number;
     h: number;
 };
 
-// The ratios most image models understand. `1:1` is the safe default.
 export const SQUARE_RATIO: AspectRatioOption = {
     value: "1:1",
     label: "Square",
@@ -34,7 +38,7 @@ export const MAX_IMAGE_COUNT = 4;
 
 class EaselStore {
     prompt = $state("");
-    model = $state<string | null>(null);
+    model = $state<string | null>(loadStoredModel(MODEL_STORAGE_KEYS.image));
     easelAnchor = $state<HTMLElement | null>(null);
     aspectRatio = $state<string>(DEFAULT_ASPECT_RATIO);
     count = $state<number>(1);
@@ -44,6 +48,7 @@ class EaselStore {
     }
     setModel(model: string | null) {
         this.model = model;
+        storeModel(MODEL_STORAGE_KEYS.image, model);
     }
     setEaselAnchor(el: HTMLElement | null) {
         this.easelAnchor = el;

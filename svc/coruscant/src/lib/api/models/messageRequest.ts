@@ -1,6 +1,13 @@
 // @ts-nocheck
 
 export interface MessageRequest {
+  /**
+     * Optional model override. Switches the conversation to this model for
+     * this and future messages. Uses the conversation's current model when
+     * omitted.
+     * @nullable
+     */
+  model?: string | null;
   /** The user's message text */
   prompt: string;
   /**

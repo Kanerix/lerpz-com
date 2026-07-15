@@ -1,9 +1,15 @@
+import {
+    MODEL_STORAGE_KEYS,
+    loadStoredModel,
+    storeModel,
+} from "$lib/ai/model-storage.js";
+
 export type ChatboxModelSettingsForModel = Record<string, string | null>;
 export type ChatboxModelSettings = Record<string, ChatboxModelSettingsForModel>;
 
 class ChatboxStore {
     prompt = $state("");
-    model = $state<string | null>(null);
+    model = $state<string | null>(loadStoredModel(MODEL_STORAGE_KEYS.chat));
     chatboxAnchor = $state<HTMLElement | null>(null);
     chatboxHeight = $state(0);
     followButtonVisible = $state(false);
@@ -15,6 +21,7 @@ class ChatboxStore {
     }
     setModel(model: string | null) {
         this.model = model;
+        storeModel(MODEL_STORAGE_KEYS.chat, model);
     }
     setChatboxAnchor(el: HTMLElement | null) {
         this.chatboxAnchor = el;

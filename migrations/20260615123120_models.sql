@@ -1,13 +1,10 @@
--- Model family
-CREATE TYPE model_family AS ENUM ('openai', 'anthropic', 'google');
-
 -- Models table
 CREATE TABLE models (
     id                  UUID            PRIMARY KEY DEFAULT uuidv7(),
     -- identity
     display_name        VARCHAR(255)    NOT NULL,
     description         TEXT,
-    family              model_family    NOT NULL,
+    family              VARCHAR(255)    NOT NULL,
     -- portkey routing
     deployment_name     VARCHAR(255)    NOT NULL,
     provider            VARCHAR(255)    NOT NULL,

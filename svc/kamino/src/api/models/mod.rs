@@ -13,18 +13,6 @@ mod list;
 mod read;
 mod update;
 
-/// Provider family a model belongs to.
-///
-/// Mirrors the `model_family` Postgres enum.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, sqlx::Type)]
-#[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "model_family", rename_all = "lowercase")]
-pub enum ModelFamily {
-    OpenAI,
-    Anthropic,
-    Google,
-}
-
 /// Provider/runtime settings for a model, stored as a JSON object.
 ///
 /// The object is open-ended; only the keys the backend understands are
@@ -47,7 +35,7 @@ pub struct Model {
     /// Optional longer description of the model.
     pub description: Option<String>,
     /// Provider family the model belongs to.
-    pub family: ModelFamily,
+    pub family: String,
     /// Portkey deployment name used when routing requests.
     pub deployment_name: String,
     /// Portkey provider slug the deployment lives under.

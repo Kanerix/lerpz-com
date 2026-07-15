@@ -16,7 +16,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelFamily, ModelSettings};
+use super::{Model, ModelSettings};
 
 /// Parameters for updating an existing model.
 ///
@@ -31,7 +31,7 @@ pub struct UpdateModelRequest {
     description: Option<String>,
     /// Provider family the model belongs to.
     #[serde(default)]
-    family: Option<ModelFamily>,
+    family: Option<String>,
     /// Portkey deployment name used when routing requests.
     #[serde(default)]
     deployment_name: Option<String>,
@@ -122,7 +122,7 @@ pub async fn handler(
             id,
             display_name,
             description,
-            family AS "family: ModelFamily",
+            family,
             deployment_name,
             provider,
             modalities,
@@ -132,7 +132,7 @@ pub async fn handler(
         &id,
         body.display_name.as_deref(),
         body.description.as_deref(),
-        body.family as _,
+        body.family.as_deref(),
         body.deployment_name.as_deref(),
         body.provider.as_deref(),
         body.modalities.as_deref(),

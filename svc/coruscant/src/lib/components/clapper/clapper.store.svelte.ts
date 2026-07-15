@@ -1,3 +1,9 @@
+import {
+    MODEL_STORAGE_KEYS,
+    loadStoredModel,
+    storeModel,
+} from "$lib/ai/model-storage.js";
+
 export type AspectRatioOption = {
     value: string;
     label: string;
@@ -51,7 +57,7 @@ export function resolveDuration(value: number): DurationOption {
 
 class ClapperStore {
     prompt = $state("");
-    model = $state<string | null>(null);
+    model = $state<string | null>(loadStoredModel(MODEL_STORAGE_KEYS.video));
     clapperAnchor = $state<HTMLElement | null>(null);
     aspectRatio = $state<string>(DEFAULT_ASPECT_RATIO);
     duration = $state<number>(DEFAULT_DURATION);
@@ -61,6 +67,7 @@ class ClapperStore {
     }
     setModel(model: string | null) {
         this.model = model;
+        storeModel(MODEL_STORAGE_KEYS.video, model);
     }
     setClapperAnchor(el: HTMLElement | null) {
         this.clapperAnchor = el;

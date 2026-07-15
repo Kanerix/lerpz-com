@@ -9,14 +9,16 @@ import {
 import { cn } from "@lerpz/ui/lib/utils";
 
 let {
-    onDelete,
+    onEdit,
     disabled = false,
     class: className = "",
     tooltipAlign = "end",
 }: {
-    onDelete?: () => void;
+    /** Called when the user wants to edit this message. */
+    onEdit?: () => void;
     disabled?: boolean;
     class?: string;
+    /** Alignment of the tooltip relative to the button. */
     tooltipAlign?: "start" | "center" | "end";
 } = $props();
 </script>
@@ -29,15 +31,15 @@ let {
         variant="ghost"
         size="icon-xs"
         {disabled}
-        onclick={() => onDelete?.()}
-        aria-label="Delete message"
-        class={cn("text-muted-foreground hover:text-destructive", className)}
+        onclick={() => onEdit?.()}
+        aria-label="Edit message"
+        class={cn("text-muted-foreground", className)}
       >
-        <Icon icon="fa6-regular:trash-can" class="size-3.5 shrink-0" />
+        <Icon icon="fa6-regular:pen-to-square" class="size-3.5 shrink-0" />
       </Button>
     {/snippet}
   </TooltipTrigger>
   <TooltipContent>
-    <p>Delete message</p>
+    <p>Edit message</p>
   </TooltipContent>
 </Tooltip>

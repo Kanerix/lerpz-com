@@ -10,9 +10,11 @@
   *,
   *::before,
   *::after {
+    /* biome-ignore-start lint/complexity/noImportantStyles: accessibility override must win over component-level animations/transitions */
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    /* biome-ignore-end lint/complexity/noImportantStyles: accessibility override must win over component-level animations/transitions */
   }
 }

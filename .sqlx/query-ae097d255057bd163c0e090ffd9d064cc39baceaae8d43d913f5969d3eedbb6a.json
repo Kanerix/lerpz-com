@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE models SET\n            display_name = COALESCE($2, display_name),\n            description = COALESCE($3, description),\n            family = COALESCE($4, family),\n            deployment_name = COALESCE($5, deployment_name),\n            provider = COALESCE($6, provider),\n            modalities = COALESCE($7, modalities),\n            settings = COALESCE($8, settings)\n        WHERE id = $1\n        RETURNING\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            modalities,\n            settings,\n            created_at,\n            updated_at",
+  "query": "UPDATE models SET\n            display_name = COALESCE($2, display_name),\n            description = COALESCE($3, description),\n            family = COALESCE($4, family),\n            deployment_name = COALESCE($5, deployment_name),\n            provider = COALESCE($6, provider),\n            modalities = COALESCE($7, modalities),\n            settings = COALESCE($8, settings)\n        WHERE id = $1\n        RETURNING\n            id,\n            display_name,\n            description,\n            family,\n            deployment_name,\n            provider,\n            modalities,\n            settings,\n            created_at,\n            updated_at",
   "describe": {
     "columns": [
       {
@@ -20,19 +20,8 @@
       },
       {
         "ordinal": 3,
-        "name": "family: ModelFamily",
-        "type_info": {
-          "Custom": {
-            "name": "model_family",
-            "kind": {
-              "Enum": [
-                "openai",
-                "anthropic",
-                "google"
-              ]
-            }
-          }
-        }
+        "name": "family",
+        "type_info": "Varchar"
       },
       {
         "ordinal": 4,
@@ -70,18 +59,7 @@
         "Uuid",
         "Varchar",
         "Text",
-        {
-          "Custom": {
-            "name": "model_family",
-            "kind": {
-              "Enum": [
-                "openai",
-                "anthropic",
-                "google"
-              ]
-            }
-          }
-        },
+        "Varchar",
         "Varchar",
         "Varchar",
         "TextArray",
@@ -101,5 +79,5 @@
       false
     ]
   },
-  "hash": "fcf25de13572a08bb9457764c86823fd1ea46d26c014e31fbc53e9b308fa2826"
+  "hash": "ae097d255057bd163c0e090ffd9d064cc39baceaae8d43d913f5969d3eedbb6a"
 }

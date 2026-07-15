@@ -12,7 +12,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelFamily, ModelSettings};
+use super::{Model, ModelSettings};
 
 /// Parameters for creating a new model.
 #[derive(Debug, Deserialize, ToSchema)]
@@ -23,7 +23,7 @@ pub struct CreateModelRequest {
     #[serde(default)]
     description: Option<String>,
     /// Provider family the model belongs to.
-    family: ModelFamily,
+    family: String,
     /// Portkey deployment name used when routing requests.
     deployment_name: String,
     /// Portkey provider slug the deployment lives under.
@@ -98,7 +98,7 @@ pub async fn handler(
             id,
             display_name,
             description,
-            family AS "family: ModelFamily",
+            family,
             deployment_name,
             provider,
             modalities,
@@ -107,7 +107,7 @@ pub async fn handler(
             updated_at"#,
         &body.display_name,
         body.description.as_deref(),
-        body.family as _,
+        &body.family,
         &body.deployment_name,
         &body.provider,
         &body.modalities,

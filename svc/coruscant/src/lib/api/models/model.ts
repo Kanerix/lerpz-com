@@ -1,5 +1,4 @@
 // @ts-nocheck
-import type { ModelFamily } from './modelFamily';
 import type { ModelSettings } from './modelSettings';
 
 /**
@@ -18,7 +17,7 @@ export interface Model {
   /** Human-readable name shown in UIs. */
   display_name: string;
   /** Provider family the model belongs to. */
-  family: ModelFamily;
+  family: string;
   /** Unique model identifier. */
   id: string;
   /** Input/output modalities the model supports. */

@@ -113,6 +113,7 @@ export function createChat(options: UseChatOptions = {}) {
               } satisfies ChatRequest)
             : JSON.stringify({
                   prompt,
+                  model: sendOptions.model ?? options.model ?? null,
                   reasoning: sendOptions.reasoning ?? null,
               } satisfies MessageRequest);
 

@@ -11,7 +11,8 @@ import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Separator } from "@lerpz/ui/components/separator";
 import { cn } from "@lerpz/ui/lib/utils";
 import { modelFavoritesStore } from "$lib/ai/model-favorites.svelte.js";
-import { type Model, modelFamilyLogo } from "$lib/ai/models.svelte.js";
+import { modelFamilyLogoForTheme } from "$lib/ai/model-logo.svelte.js";
+import type { Model } from "$lib/ai/models.svelte.js";
 import { DEFAULT_REASONING_LEVEL, REASONING_LEVELS } from "./reasoning.js";
 
 let {
@@ -25,16 +26,10 @@ let {
 }: {
     models?: Model[];
     isModelsLoading?: boolean;
-    /** Currently selected model value. */
     value?: string | null;
     onSelect: (value: string | null) => void;
-    /** Current reasoning level for a model, or `null` when not applicable. */
     getReasoningLevel?: (model: Model) => string | null;
     onReasoningChange?: (model: Model, level: string) => void;
-    /**
-     * Optional anchor for the popover. When omitted the popover anchors to its
-     * trigger; the chatbox uses this to anchor to the whole chatbox card.
-     */
     getAnchorRect?: () => DOMRect | null;
 } = $props();
 
@@ -156,7 +151,7 @@ function handleListKeydown(e: KeyboardEvent) {
         onclick={() => openDetail(model.value)}
       >
         <img
-          src={modelFamilyLogo(model.family)}
+          src={modelFamilyLogoForTheme(model.family)}
           alt=""
           class="size-4 shrink-0 object-contain"
         />
@@ -203,7 +198,7 @@ function handleListKeydown(e: KeyboardEvent) {
       <Icon icon="fa6-solid:spinner" class="animate-spin" />
     {:else if selectedModel}
       <img
-        src={modelFamilyLogo(selectedModel.family)}
+        src={modelFamilyLogoForTheme(selectedModel.family)}
         alt=""
         class="size-4 shrink-0 object-contain"
       />
@@ -218,7 +213,7 @@ function handleListKeydown(e: KeyboardEvent) {
 
   <PopoverPositioner>
     <PopoverContent
-      class="flex h-2xl w-full max-w-lg flex-col overflow-hidden rounded-xl p-0 text-left"
+      class="flex h-2xl w-full max-w-lg min-w-3xs flex-col overflow-hidden rounded-xl p-0 text-left"
     >
       {#if view === "list"}
         <!-- Model list -->
@@ -305,7 +300,7 @@ function handleListKeydown(e: KeyboardEvent) {
           <div class="flex flex-col gap-4 p-4">
             <div class="flex items-start gap-3">
               <img
-                src={modelFamilyLogo(detailModel.family)}
+                src={modelFamilyLogoForTheme(detailModel.family)}
                 alt=""
                 class="size-9 shrink-0 object-contain"
               />

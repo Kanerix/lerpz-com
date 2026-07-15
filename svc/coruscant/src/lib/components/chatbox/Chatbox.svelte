@@ -85,7 +85,10 @@ $effect(() => {
 
 $effect(() => {
     if (isModelsLoading || availableModels.length === 0) return;
-    if (chatboxStore.model !== null) return;
+    // Keep the persisted selection while it's still available; otherwise fall
+    // back to the first model.
+    const current = chatboxStore.model;
+    if (current && availableModels.some((m) => m.value === current)) return;
     const first = availableModels[0];
     if (first) chatboxStore.setModel(first.value);
 });

@@ -11,6 +11,11 @@ export interface ConversationMessage {
   /** Unique message identifier. */
   id: string;
   /**
+     * Family of the AI model that generated the message (assistant messages only).
+     * @nullable
+     */
+  model_family?: string | null;
+  /**
      * Reasoning / chain-of-thought trace, when the model produced one.
      * @nullable
      */

@@ -9,7 +9,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelFamily};
+use super::Model;
 
 #[utoipa::path(
     method(get),
@@ -50,7 +50,7 @@ pub async fn handler(
             id,
             display_name,
             description,
-            family AS "family: ModelFamily",
+            family,
             deployment_name,
             provider,
             modalities,

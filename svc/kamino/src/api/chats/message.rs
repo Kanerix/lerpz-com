@@ -29,6 +29,11 @@ use crate::{
 pub struct MessageRequest {
     /// The user's message text
     prompt: String,
+    /// Optional model override. Switches the conversation to this model for
+    /// this and future messages. Uses the conversation's current model when
+    /// omitted.
+    #[serde(default)]
+    model: Option<String>,
     /// Reasoning level for reasoning-capable models (`none`, `minimal`, `low`,
     /// `medium`, `high` or `xhigh`). Unknown values fall back to `low`. Uses
     /// the model's default behaviour when omitted.
@@ -126,7 +131,32 @@ pub async fn handler(
         }
     };
 
-    let model = conversation.model;
+    // Honour a model override from the client, falling back to the model the
+    // conversation is currently pinned to. When the model changes, persist it so
+    // the switch sticks for subsequent messages and is reflected on reload.
+    let model = match body.model {
+        Some(m) if !m.trim().is_empty() => m,
+        _ => conversation.model.clone(),
+    };
+    if model != conversation.model {
+        tracing::trace!(%conv_id, %model, "switching conversation model");
+        sqlx::query!(
+            "UPDATE conversations SET model = $1 WHERE id = $2",
+            &model,
+            &conv_id,
+        )
+        .execute(&database)
+        .await?;
+    }
+
+    // Resolve the model's family so the assistant reply can be tagged with the
+    // provider that generated it. Unknown models leave the family unset.
+    let model_family = sqlx::query_scalar!(
+        "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
+        &model,
+    )
+    .fetch_optional(&database)
+    .await?;
 
     tracing::trace!(%conv_id, "loading previous messages");
     let previous_messages = sqlx::query!(
@@ -198,7 +228,8 @@ pub async fn handler(
     }
 
     let request = request_builder.build()?;
-    let sse_stream = start_completion_sse(openai, request, conv_id, database).await?;
+    let sse_stream =
+        start_completion_sse(openai, request, conv_id, database, model_family).await?;
 
     Ok(Sse::new(sse_stream))
 }

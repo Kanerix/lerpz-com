@@ -4,6 +4,7 @@ use async_openai::types::chat::ReasoningEffort;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod create;
+mod delete;
 mod list;
 mod message;
 mod read;
@@ -34,4 +35,5 @@ pub fn router() -> OpenApiRouter<AppState> {
         .routes(routes!(read::handler))
         .routes(routes!(message::handler))
         .routes(routes!(update::handler))
+        .routes(routes!(delete::handler))
 }

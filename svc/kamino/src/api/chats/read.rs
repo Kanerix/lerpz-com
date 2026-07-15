@@ -29,6 +29,9 @@ pub struct ConversationMessage {
     /// Reasoning / chain-of-thought trace, when the model produced one.
     #[serde(skip_serializing_if = "Option::is_none")]
     reasoning: Option<String>,
+    /// Family of the AI model that generated the message (assistant messages only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    model_family: Option<String>,
     /// Timestamp when the message was created.
     created_at: chrono::DateTime<Utc>,
 }
@@ -118,7 +121,7 @@ pub async fn handler(
     };
 
     let message_rows = sqlx::query!(
-        "SELECT id, role AS \"role: String\", content, reasoning, created_at
+        "SELECT id, role AS \"role: String\", content, reasoning, model_family, created_at
         FROM messages
         WHERE conversation_id = $1
         ORDER BY created_at ASC",
@@ -134,6 +137,7 @@ pub async fn handler(
             role: r.role,
             content: r.content,
             reasoning: r.reasoning,
+            model_family: r.model_family,
             created_at: r.created_at.unwrap_or_default(),
         })
         .collect();

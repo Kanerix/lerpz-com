@@ -27,17 +27,38 @@ export type Model = {
     reasoning: boolean;
 };
 
-// Maps a model family to its logo in `static/`.
-const MODEL_FAMILY_LOGOS: Record<string, string> = {
-    openai: "/openai.webp",
-    anthropic: "/claude.svg",
-    google: "/gemini.png",
+/** The color scheme used when picking a theme-aware logo. */
+export type ColorScheme = "light" | "dark";
+
+/**
+ * A family logo is either a single asset used in both themes, or a pair with a
+ * dedicated variant per color scheme (e.g. a white logo for dark mode).
+ */
+type FamilyLogo = string | Record<ColorScheme, string>;
+
+// Maps a model family to its logo(s) in `static/models/`.
+const MODEL_FAMILY_LOGOS: Record<string, FamilyLogo> = {
+    openai: {
+        light: "/models/openai_light.svg",
+        dark: "/models/openai_dark.svg",
+    },
+    anthropic: "/models/claude.svg",
+    google: "/models/gemini.svg",
+    xai: {
+        light: "/models/grok_light.svg",
+        dark: "/models/grok_dark.svg",
+    },
 };
 
 export const FALLBACK_MODEL_LOGO = "/lerpz.svg";
 
-export function modelFamilyLogo(family: string): string {
-    return MODEL_FAMILY_LOGOS[family.toLowerCase()] ?? FALLBACK_MODEL_LOGO;
+export function modelFamilyLogo(
+    family: string,
+    scheme: ColorScheme = "light",
+): string {
+    const logo = MODEL_FAMILY_LOGOS[family.toLowerCase()];
+    if (!logo) return FALLBACK_MODEL_LOGO;
+    return typeof logo === "string" ? logo : logo[scheme];
 }
 
 export function filterModelsByModality(

@@ -25,6 +25,7 @@ CREATE TABLE messages (
     role message_role NOT NULL,
     content TEXT NOT NULL,
     reasoning TEXT,
+    model_family VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

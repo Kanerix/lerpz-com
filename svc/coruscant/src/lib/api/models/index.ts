@@ -9,7 +9,6 @@ export * from './healthCheck';
 export * from './imageRequest';
 export * from './messageRequest';
 export * from './model';
-export * from './modelFamily';
 export * from './modelSettings';
 export * from './problemSchema';
 export * from './updateChatRequest';

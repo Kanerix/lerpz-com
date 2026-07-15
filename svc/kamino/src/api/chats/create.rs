@@ -125,6 +125,16 @@ pub async fn handler(
     .execute(&database)
     .await?;
 
+    // Resolve the model's family so assistant replies can be tagged with the
+    // provider that generated them. Unknown models (e.g. a raw default that
+    // isn't registered) simply leave the family unset.
+    let model_family = sqlx::query_scalar!(
+        "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
+        model,
+    )
+    .fetch_optional(&database)
+    .await?;
+
     let mut request_builder = CreateChatCompletionRequestArgs::default();
 
     request_builder
@@ -145,7 +155,8 @@ pub async fn handler(
     }
 
     let request = request_builder.build()?;
-    let reply_stream = start_completion_sse(openai, request, conv_id, database).await?;
+    let reply_stream =
+        start_completion_sse(openai, request, conv_id, database, model_family).await?;
 
     let sse_stream = async_stream::stream! {
         yield Ok(Event::default()

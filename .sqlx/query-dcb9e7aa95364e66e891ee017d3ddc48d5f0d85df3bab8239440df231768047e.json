@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            modalities,\n            settings,\n            created_at,\n            updated_at\n        FROM models\n        ORDER BY display_name ASC",
+  "query": "SELECT\n            id,\n            display_name,\n            description,\n            family,\n            deployment_name,\n            provider,\n            modalities,\n            settings,\n            created_at,\n            updated_at\n        FROM models\n        ORDER BY display_name ASC",
   "describe": {
     "columns": [
       {
@@ -20,19 +20,8 @@
       },
       {
         "ordinal": 3,
-        "name": "family: ModelFamily",
-        "type_info": {
-          "Custom": {
-            "name": "model_family",
-            "kind": {
-              "Enum": [
-                "openai",
-                "anthropic",
-                "google"
-              ]
-            }
-          }
-        }
+        "name": "family",
+        "type_info": "Varchar"
       },
       {
         "ordinal": 4,
@@ -81,5 +70,5 @@
       false
     ]
   },
-  "hash": "bf6bb8e5ba243c36e08bd24217f43eb01f39d62fe1234ecd08e374dc49aa1a26"
+  "hash": "dcb9e7aa95364e66e891ee017d3ddc48d5f0d85df3bab8239440df231768047e"
 }

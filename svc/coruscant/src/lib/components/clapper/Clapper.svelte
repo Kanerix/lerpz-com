@@ -67,7 +67,10 @@ $effect(() => {
 // Default the model to the first available one, matching the easel behaviour.
 $effect(() => {
     if (isModelsLoading || availableModels.length === 0) return;
-    if (clapperStore.model !== null) return;
+    // Keep the persisted selection while it's still available; otherwise fall
+    // back to the first model.
+    const current = clapperStore.model;
+    if (current && availableModels.some((m) => m.value === current)) return;
     const first = availableModels[0];
     if (first) clapperStore.setModel(first.value);
 });

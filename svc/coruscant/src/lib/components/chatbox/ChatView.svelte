@@ -1,15 +1,18 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
 import { Button } from "@lerpz/ui/components/button";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
 import { cubicOut } from "svelte/easing";
+import { getAiContext } from "$lib/ai/context.svelte.js";
 import type { ConversationMessage } from "$lib/api/models/index.js";
+import ModelAvatar from "$lib/components/avatar/ModelAvatar.svelte";
+import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import CopyButton from "./CopyButton.svelte";
 import DeleteButton from "./DeleteButton.svelte";
+import EditButton from "./EditButton.svelte";
 import Markdown from "./Markdown.svelte";
 import ThinkingBlock from "./ThinkingBlock.svelte";
 
@@ -23,11 +26,17 @@ let {
     messages: ConversationMessage[];
     isStreaming: boolean;
     error: string | null;
-    /** Re-send the failed message. Shown next to that message when set. */
     onRetry?: () => void;
-    /** Delete a message by its id. */
     onDelete?: (id: string) => void;
 } = $props();
+
+const ai = getAiContext();
+
+// Fallback family for assistant avatars: the currently selected model. Used for
+// the streaming placeholder and any message that predates per-message families.
+const selectedFamily = $derived(
+    ai.models.find((m) => m.value === chatboxStore.model)?.family ?? null,
+);
 
 // When a send fails, the last user message is the one that didn't go through.
 // Flag it so we can attach a "Not sent" state and a retry action to it.
@@ -191,15 +200,11 @@ const EXAMPLE_PROMPTS = [
           {/if}
           <div class={cn("flex items-end gap-3 max-w-[80%]", message.role === "user" ? "justify-end" : "justify-start")}>
             {#if message.role === "assistant"}
-              <Avatar size="sm" class="shrink-0">
-                <AvatarFallback>
-                  <Icon icon="fa6-solid:robot" class="size-3.5" />
-                </AvatarFallback>
-              </Avatar>
+              <ModelAvatar family={message.model_family ?? selectedFamily} />
             {/if}
 
             <div class={cn(
-              "min-w-0 rounded-2xl px-4 py-2.5 text-base leading-relaxed break-words",
+              "min-w-0 rounded-2xl px-4 py-2.5 text-base leading-relaxed wrap-break-word",
               message.role === "user"
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-muted text-foreground rounded-bl-md"
@@ -221,11 +226,7 @@ const EXAMPLE_PROMPTS = [
             </div>
 
             {#if message.role === "user"}
-              <Avatar size="sm" class="shrink-0">
-                <AvatarFallback>
-                  <Icon icon="fa6-solid:user" class="size-3.5" />
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar />
             {/if}
           </div>
 
@@ -251,19 +252,27 @@ const EXAMPLE_PROMPTS = [
                 Try again
               </Button>
             {/if}
-            <CopyButton text={message.content} />
-            <DeleteButton onDelete={() => onDelete?.(message.id)} />
+            {#if index === messages.length - 1}
+              <EditButton
+                onEdit={() => chatboxStore.setPrompt(message.content)}
+                tooltipAlign={message.role === "user" ? "end" : "start"}
+              />
+            {/if}
+            <CopyButton
+              text={message.content}
+              tooltipAlign={message.role === "user" ? "end" : "start"}
+            />
+            <DeleteButton
+              onDelete={() => onDelete?.(message.id)}
+              tooltipAlign={message.role === "user" ? "end" : "start"}
+            />
           </div>
         </div>
       {/each}
 
       {#if isStreaming && messages[messages.length - 1]?.role === "user"}
         <div in:bubbleIn={{ role: "assistant" }} class="flex gap-3 justify-start">
-          <Avatar size="sm" class="shrink-0">
-            <AvatarFallback>
-              <Icon icon="fa6-solid:robot" class="size-3.5" />
-            </AvatarFallback>
-          </Avatar>
+          <ModelAvatar family={selectedFamily} />
           <div class="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
             <Icon icon="fa6-solid:spinner" class="size-4 animate-spin text-muted-foreground" />
           </div>

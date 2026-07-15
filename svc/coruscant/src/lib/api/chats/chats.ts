@@ -447,6 +447,112 @@ export function createSendChatMessage<TData = Awaited<ReturnType<typeof sendChat
 
 
 
+export type deleteChatResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteChatResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type deleteChatResponse404 = {
+  data: ProblemSchema
+  status: 404
+}
+
+export type deleteChatResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type deleteChatResponseSuccess = (deleteChatResponse204) & {
+  headers: Headers;
+};
+export type deleteChatResponseError = (deleteChatResponse401 | deleteChatResponse404 | deleteChatResponse500) & {
+  headers: Headers;
+};
+
+export type deleteChatResponse = (deleteChatResponseSuccess | deleteChatResponseError)
+
+export const getDeleteChatUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/chats/${id}`
+}
+
+/**
+ * Permanently deletes a conversation and all of its messages. Requires the conversation to belong to the authenticated user.
+ * @summary Delete a chat
+ */
+export const deleteChat = async (id: string, options?: RequestInit): Promise<deleteChatResponse> => {
+
+  return customFetch<deleteChatResponse>(getDeleteChatUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteChatQueryKey = (id: string,) => {
+    return [
+    'DELETE', `/api/v1/chats/${id}`
+    ] as const;
+    }
+
+
+export const getDeleteChatQueryOptions = <TData = Awaited<ReturnType<typeof deleteChat>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDeleteChatQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteChat>>> = ({ signal }) => deleteChat(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteChat>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DeleteChatQueryResult = NonNullable<Awaited<ReturnType<typeof deleteChat>>>
+export type DeleteChatQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Delete a chat
+ */
+
+export function createDeleteChat<TData = Awaited<ReturnType<typeof deleteChat>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getDeleteChatQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
 export type updateChatResponse200 = {
   data: Conversation
   status: 200

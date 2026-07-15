@@ -1,5 +1,4 @@
 // @ts-nocheck
-import type { ModelFamily } from './modelFamily';
 import type { ModelSettings } from './modelSettings';
 
 /**
@@ -16,7 +15,7 @@ export interface CreateModelRequest {
   /** Human-readable name shown in UIs (e.g. `GPT-4o`). */
   display_name: string;
   /** Provider family the model belongs to. */
-  family: ModelFamily;
+  family: string;
   /** Input/output modalities the model supports (e.g. `text`, `image`). Defaults to `[]`. */
   modalities?: string[];
   /** Portkey provider slug the deployment lives under. */

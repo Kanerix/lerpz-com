@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO messages (conversation_id, role, content, reasoning, model_family)\n            VALUES ($1, 'assistant', $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ba03028d723e07aeae5f5d88ec675878e0a600546d0024d05b5350fac9809ad0"
+}
