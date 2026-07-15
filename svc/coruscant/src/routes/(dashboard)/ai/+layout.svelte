@@ -121,11 +121,12 @@ const showChatbox = $derived(
       const reasoning = model?.reasoning
         ? (args.modelSettings.reasoning ?? DEFAULT_REASONING_LEVEL)
         : null;
+      const family = model?.family || null;
       if (chatboxStore.editingMessageId) {
-        chat.editLatest(args.prompt, { model: args.model, reasoning });
+        chat.editLatest(args.prompt, { model: args.model, reasoning, family });
         chatboxStore.stopEditing();
       } else {
-        chat.send(args.prompt, { model: args.model, reasoning });
+        chat.send(args.prompt, { model: args.model, reasoning, family });
       }
     }}
     onEnhance={enhanceChat}

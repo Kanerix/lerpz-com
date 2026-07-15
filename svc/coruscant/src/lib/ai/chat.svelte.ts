@@ -46,6 +46,12 @@ export type UseChatOptions = {
 export type SendChatOptions = {
     model?: string | null;
     reasoning?: string | null;
+    /**
+     * Family of the model handling this send (e.g. "openai"). Used to tag the
+     * streamed assistant message so its avatar reflects the model that
+     * generated it, independent of whichever model is selected later.
+     */
+    family?: string | null;
 };
 
 export function createChat(options: UseChatOptions = {}) {
@@ -64,6 +70,9 @@ export function createChat(options: UseChatOptions = {}) {
     let assistantBuf = "";
     let reasoningBuf = "";
     let assistantMsgId = tempId();
+    // Family of the model driving the in-flight stream, applied to the assistant
+    // message so its avatar stays pinned to the generating model.
+    let pendingModelFamily: string | null = null;
     let conversationIdRef: string | null = null;
 
     // Callbacks via refs to avoid stale closures
@@ -137,6 +146,7 @@ export function createChat(options: UseChatOptions = {}) {
                                         role: "assistant",
                                         content: "",
                                         reasoning,
+                                        model_family: pendingModelFamily,
                                         created_at: new Date().toISOString(),
                                     },
                                 ];
@@ -160,6 +170,7 @@ export function createChat(options: UseChatOptions = {}) {
                                         id,
                                         role: "assistant",
                                         content,
+                                        model_family: pendingModelFamily,
                                         created_at: new Date().toISOString(),
                                     },
                                 ];
@@ -220,6 +231,7 @@ export function createChat(options: UseChatOptions = {}) {
         assistantBuf = "";
         reasoningBuf = "";
         assistantMsgId = tempId();
+        pendingModelFamily = sendOptions.family ?? null;
 
         // If the previous send failed, drop that unsent message before adding
         // the new one instead of leaving it behind.
@@ -276,6 +288,7 @@ export function createChat(options: UseChatOptions = {}) {
         assistantBuf = "";
         reasoningBuf = "";
         assistantMsgId = tempId();
+        pendingModelFamily = sendOptions.family ?? null;
 
         // Find the latest user message and truncate everything after it, since
         // the backend discards the stale reply when regenerating.
