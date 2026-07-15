@@ -10,6 +10,7 @@ authors.workspace = true
 # Internal
 lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
 lerpz-metadata = { workspace = true }
+lerpz-portkey = { workspace = true }
 lerpz-utils = { workspace = true }
 # Services
 aws-sdk-s3 = { workspace = true }

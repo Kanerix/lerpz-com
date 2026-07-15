@@ -121,7 +121,7 @@ fn completion_sse(
                     tracing::error!("{err}");
                     yield Ok(Event::default()
                         .event("error")
-                        .data(format!("stream error: {err}")));
+                        .data(lerpz_portkey::humanize_error(&err.to_string())));
                     break;
                 }
             };

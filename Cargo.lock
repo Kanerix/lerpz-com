@@ -2628,6 +2628,7 @@ dependencies = [
  "image",
  "lerpz-axum",
  "lerpz-metadata",
+ "lerpz-portkey",
  "lerpz-utils",
  "redis",
  "scalar_api_reference",
@@ -2721,6 +2722,13 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.18",
  "uuid",
+]
+
+[[package]]
+name = "lerpz-portkey"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

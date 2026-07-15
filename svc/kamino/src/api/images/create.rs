@@ -139,7 +139,7 @@ pub async fn handler(
                     tracing::error!("failed to get chunk: {err}");
                     yield Ok(Event::default()
                         .event("error")
-                        .json_data(err.to_string())
+                        .json_data(lerpz_portkey::humanize_error(&err.to_string()))
                         .expect("failed to serialize error event"));
                     break;
                 }
