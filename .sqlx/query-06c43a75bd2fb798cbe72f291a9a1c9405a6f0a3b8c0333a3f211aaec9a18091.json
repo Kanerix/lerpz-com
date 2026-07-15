@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM audio_metadata WHERE id = $1\n                   RETURNING id, prompt, model, title, tags,\n                             storage_provider AS \"storage_provider: StorageProvider\",\n                             storage_bucket, storage_key,\n                             format, duration,\n                             created_at, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "prompt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "model",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 5,
+        "name": "storage_provider: StorageProvider",
+        "type_info": {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "storage_bucket",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "storage_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "format",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "duration",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "06c43a75bd2fb798cbe72f291a9a1c9405a6f0a3b8c0333a3f211aaec9a18091"
+}

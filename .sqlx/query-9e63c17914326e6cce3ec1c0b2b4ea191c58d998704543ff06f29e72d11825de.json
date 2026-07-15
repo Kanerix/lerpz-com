@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE video_metadata\n                     SET prompt = $1, model = $2, title = $3, tags = $4,\n                         storage_provider = $5, storage_bucket = $6, storage_key = $7,\n                         width = $8, height = $9, duration = $10\n                     WHERE id = $11",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Varchar",
+        "TextArray",
+        {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9e63c17914326e6cce3ec1c0b2b4ea191c58d998704543ff06f29e72d11825de"
+}

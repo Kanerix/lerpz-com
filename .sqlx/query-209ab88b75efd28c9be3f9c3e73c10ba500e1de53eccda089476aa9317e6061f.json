@@ -1,0 +1,43 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO video_metadata\n                         (id, prompt, model, title, tags,\n                          storage_provider, storage_bucket, storage_key,\n                          format, width, height, duration)\n                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n                     RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "TextArray",
+        {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "209ab88b75efd28c9be3f9c3e73c10ba500e1de53eccda089476aa9317e6061f"
+}

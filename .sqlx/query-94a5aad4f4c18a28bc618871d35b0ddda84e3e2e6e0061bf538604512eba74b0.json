@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE models SET\n            display_name = COALESCE($2, display_name),\n            description = COALESCE($3, description),\n            family = COALESCE($4, family),\n            deployment_name = COALESCE($5, deployment_name),\n            provider = COALESCE($6, provider),\n            settings = COALESCE($7, settings)\n        WHERE id = $1\n        RETURNING\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            settings,\n            created_at,\n            updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "family: ModelFamily",
+        "type_info": {
+          "Custom": {
+            "name": "model_family",
+            "kind": {
+              "Enum": [
+                "openai",
+                "anthropic",
+                "google"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "deployment_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "provider",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Text",
+        {
+          "Custom": {
+            "name": "model_family",
+            "kind": {
+              "Enum": [
+                "openai",
+                "anthropic",
+                "google"
+              ]
+            }
+          }
+        },
+        "Varchar",
+        "Varchar",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "94a5aad4f4c18a28bc618871d35b0ddda84e3e2e6e0061bf538604512eba74b0"
+}

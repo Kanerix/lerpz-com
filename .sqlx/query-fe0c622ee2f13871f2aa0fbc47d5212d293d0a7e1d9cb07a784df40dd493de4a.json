@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE audio_metadata\n                     SET prompt = $1, model = $2, title = $3, tags = $4,\n                         storage_provider = $5, storage_bucket = $6, storage_key = $7,\n                         format = $8, duration = $9\n                     WHERE id = $10",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Varchar",
+        "TextArray",
+        {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fe0c622ee2f13871f2aa0fbc47d5212d293d0a7e1d9cb07a784df40dd493de4a"
+}

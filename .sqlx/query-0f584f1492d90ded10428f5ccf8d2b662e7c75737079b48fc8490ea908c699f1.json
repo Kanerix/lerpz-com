@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT role AS \"role: String\", content\n        FROM messages\n        WHERE conversation_id = $1\n        ORDER BY created_at ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "role: String",
+        "type_info": {
+          "Custom": {
+            "name": "message_role",
+            "kind": {
+              "Enum": [
+                "user",
+                "assistant"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "content",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "0f584f1492d90ded10428f5ccf8d2b662e7c75737079b48fc8490ea908c699f1"
+}

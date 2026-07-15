@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO image_metadata\n                         (id, prompt, model, title, tags,\n                          storage_provider, storage_bucket, storage_key,\n                          format, width, height)\n                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n                     RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "TextArray",
+        {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c4d6075baedb5d6a670dde0642a4d11767e26f2665d205f7f437bc5ea738a25f"
+}
