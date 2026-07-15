@@ -1,16 +1,11 @@
 import { type Configuration, LogLevel } from "@azure/msal-browser";
-import {
-    PUBLIC_ENTRA_ID_CLIENT_ID,
-    PUBLIC_ENTRA_ID_REDIRECT_URI,
-    PUBLIC_ENTRA_ID_SCOPE,
-    PUBLIC_ENTRA_ID_TENANT_ID,
-} from "$env/static/public";
+import { publicEnv } from "$lib/env.js";
 
 export const msalConfig: Configuration = {
     auth: {
-        clientId: PUBLIC_ENTRA_ID_CLIENT_ID,
-        authority: `https://login.microsoftonline.com/${PUBLIC_ENTRA_ID_TENANT_ID}`,
-        redirectUri: PUBLIC_ENTRA_ID_REDIRECT_URI,
+        clientId: publicEnv.PUBLIC_ENTRA_ID_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${publicEnv.PUBLIC_ENTRA_ID_TENANT_ID}`,
+        redirectUri: publicEnv.PUBLIC_ENTRA_ID_REDIRECT_URI,
     },
     cache: {
         cacheLocation: "sessionStorage",
@@ -33,5 +28,5 @@ export const msalConfig: Configuration = {
 };
 
 export const loginRequest = {
-    scopes: [PUBLIC_ENTRA_ID_SCOPE],
+    scopes: [publicEnv.PUBLIC_ENTRA_ID_SCOPE],
 };

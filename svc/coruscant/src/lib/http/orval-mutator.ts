@@ -1,7 +1,7 @@
 import { getAccessToken } from "$lib/auth/msal-auth.js";
-import { PUBLIC_API_URL } from "$env/static/public";
+import { publicEnv } from "$lib/env.js";
 
-const API_BASE_URL = PUBLIC_API_URL;
+const API_BASE_URL = publicEnv.PUBLIC_API_URL;
 
 export type ErrorType<TError> = TError & { status: number };
 

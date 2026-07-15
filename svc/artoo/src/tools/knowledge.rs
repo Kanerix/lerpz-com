@@ -1,4 +1,3 @@
-use rig_core::completion::ToolDefinition;
 use rig_core::embeddings::EmbeddingModel;
 use rig_core::tool::Tool;
 use rig_core::vector_store::VectorSearchRequest;
@@ -42,31 +41,31 @@ where
     type Args = SearchKnowledgeBaseArgs;
     type Output = SearchKnowledgeBaseOutput;
 
-    async fn definition(&self, _prompt: String) -> ToolDefinition {
-        ToolDefinition {
-            name: Self::NAME.to_string(),
-            description: "Search the knowledge base for documents relevant to the given query. \
-                Always call this tool before answering factual questions so that \
-                answers are grounded in retrieved sources."
-                .to_string(),
-            parameters: serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The natural-language query used to find relevant documents."
-                    },
-                    "top_k": {
-                        "type": "integer",
-                        "description": "Maximum number of results to return (default: 5).",
-                        "minimum": 1,
-                        "maximum": 20
-                    }
+    fn description(&self) -> String {
+        "Search the knowledge base for documents relevant to the given query. \
+            Always call this tool before answering factual questions so that \
+            answers are grounded in retrieved sources."
+            .to_string()
+    }
+
+    fn parameters(&self) -> Value {
+        serde_json::json!({
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The natural-language query used to find relevant documents."
                 },
-                "required": ["query"],
-                "additionalProperties": false
-            }),
-        }
+                "top_k": {
+                    "type": "integer",
+                    "description": "Maximum number of results to return (default: 5).",
+                    "minimum": 1,
+                    "maximum": 20
+                }
+            },
+            "required": ["query"],
+            "additionalProperties": false
+        })
     }
 
     #[instrument(skip(self), fields(tool = Self::NAME))]

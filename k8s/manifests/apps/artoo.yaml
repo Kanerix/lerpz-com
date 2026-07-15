@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: artoo
+  namespace: lerpz
+spec:
+  selector:
+    app: artoo
+  ports:
+    - name: http
+      port: 3002
+      targetPort: 3002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artoo
+  namespace: lerpz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artoo
+  template:
+    metadata:
+      labels:
+        app: artoo
+    spec:
+      containers:
+        - name: artoo
+          image: lerpz/artoo:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3002
+          # Create with: kubectl -n lerpz create secret generic artoo-env \
+          #   --from-env-file=svc/artoo/.env.docker
+          envFrom:
+            - secretRef:
+                name: artoo-env
+          readinessProbe:
+            tcpSocket:
+              port: 3002
+            initialDelaySeconds: 5
+            periodSeconds: 10

@@ -1,0 +1,89 @@
+# Local kind cluster helpers for the Lerpz platform.
+# Run from the k8s/ directory:  just <recipe>
+
+cluster      := "lerpz"
+ns           := "lerpz"
+kind_config  := "kind-config.yaml"
+manifests    := "manifests"
+root         := ".."
+
+# Tag used for the locally-built app images loaded into kind.
+tag          := "dev"
+
+_default:
+    @just --list
+
+# Full bring-up (env secrets must exist first)
+all: cluster traefik build load tls secrets deploy
+
+# Create the kind cluster
+cluster:
+    kind create cluster --name {{cluster}} --config {{kind_config}}
+
+# Install the Traefik ingress controller via Helm
+traefik:
+    helm repo add traefik https://traefik.github.io/charts
+    helm repo update
+    helm upgrade --install traefik traefik/traefik \
+        --namespace traefik --create-namespace \
+        -f traefik/values.yaml
+
+# Build the three app images (context = repo root)
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Context is the repo root so the Cargo/Bun workspaces resolve and the root
+    # .dockerignore applies. The Dockerfiles use `RUN --mount=type=cache`, which
+    # requires BuildKit. Coruscant reads its PUBLIC_* config at runtime (via the
+    # coruscant-env Secret), so no build args are needed here.
+    export DOCKER_BUILDKIT=1
+
+    docker build -f {{root}}/svc/coruscant/Dockerfile -t lerpz/coruscant:{{tag}} {{root}}
+    docker build -f {{root}}/svc/kamino/Dockerfile    -t lerpz/kamino:{{tag}}    {{root}}
+    docker build -f {{root}}/svc/artoo/Dockerfile     -t lerpz/artoo:{{tag}}     {{root}}
+
+# Load the app images into the kind cluster
+load:
+    kind load docker-image lerpz/coruscant:{{tag}} lerpz/kamino:{{tag}} lerpz/artoo:{{tag}} --name {{cluster}}
+
+# Create the TLS secret from ../certs (run mkcert first)
+tls:
+    kubectl create namespace {{ns}} --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ns}} create secret tls lerpz-tls \
+        --cert={{root}}/certs/cert.pem --key={{root}}/certs/key.pem \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+# Create per-app env secrets from svc/*/.env.docker
+secrets:
+    kubectl create namespace {{ns}} --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ns}} create secret generic coruscant-env \
+        --from-env-file={{root}}/svc/coruscant/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ns}} create secret generic kamino-env \
+        --from-env-file={{root}}/svc/kamino/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ns}} create secret generic artoo-env \
+        --from-env-file={{root}}/svc/artoo/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+
+# Apply all declarative manifests
+deploy:
+    kubectl apply -k {{manifests}}
+
+# Run sqlx migrations against the in-cluster postgres (needs a free :5432)
+migrate:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Port-forwarding postgres:5432 and running migrations..."
+    kubectl -n {{ns}} port-forward svc/postgres 5432:5432 &
+    PF_PID=$!
+    trap 'kill $PF_PID' EXIT
+    sleep 3
+    DATABASE_URL=postgres://lerpz:Password123@localhost:5432/primary \
+        cargo sqlx migrate run --source {{root}}/migrations
+
+# Show pods, services and ingressroutes
+status:
+    kubectl -n {{ns}} get pods,svc
+    kubectl -n {{ns}} get ingressroute
+
+# Delete the kind cluster
+down:
+    kind delete cluster --name {{cluster}}

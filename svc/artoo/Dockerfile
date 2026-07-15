@@ -9,15 +9,21 @@ RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
     cargo install cargo-chef
 
 
-FROM chef AS planner
-WORKDIR /chef
+FROM chef AS source
+WORKDIR /src
 
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY benchmarks ./benchmarks
 COPY svc/artoo ./svc/artoo
 COPY svc/kamino ./svc/kamino
+COPY .sqlx ./.sqlx
 
+
+FROM chef AS planner
+WORKDIR /chef
+
+COPY --from=source /src ./
 RUN cargo chef prepare --recipe-path recipe.json
 
 
@@ -26,19 +32,15 @@ WORKDIR /build
 
 COPY --from=planner /chef/recipe.json ./recipe.json
 RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    --mount=type=cache,id=deps,target=/build/target \
+    --mount=type=cache,id=artoo-target,target=/build/target \
     cargo chef cook --release --recipe-path recipe.json
 
-COPY Cargo.toml Cargo.lock ./
-COPY crates ./crates
-COPY benchmarks ./benchmarks
-COPY svc/artoo ./svc/artoo
-COPY svc/kamino ./svc/kamino
+COPY --from=source /src ./
 
 ENV SQLX_OFFLINE=true
 
 RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    --mount=type=cache,id=target,target=/build/target \
+    --mount=type=cache,id=artoo-target,target=/build/target \
     cargo build --release --bin artoo && \
     cp /build/target/release/artoo /build/server
 

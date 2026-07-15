@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The `*-env` secrets, the `lerpz-tls` secret, and the app images are provided
+# out-of-band (see k8s/Makefile and k8s/README.md), because they come from
+# private .env files, your mkcert certs, and locally-built Docker images.
+resources:
+  - namespace.yaml
+  - infra/secrets.yaml
+  - infra/postgres.yaml
+  - infra/dragonfly.yaml
+  - infra/qdrant.yaml
+  - infra/minio.yaml
+  - apps/coruscant.yaml
+  - apps/kamino.yaml
+  - apps/artoo.yaml
+  - ingress/ingressroutes.yaml

@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kamino
+  namespace: lerpz
+spec:
+  selector:
+    app: kamino
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kamino
+  namespace: lerpz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kamino
+  template:
+    metadata:
+      labels:
+        app: kamino
+    spec:
+      containers:
+        - name: kamino
+          image: lerpz/kamino:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          # Create with: kubectl -n lerpz create secret generic kamino-env \
+          #   --from-env-file=svc/kamino/.env.docker
+          # ADDR must bind 0.0.0.0:3001 and the URLs must point at in-cluster
+          # service names (see k8s/README.md).
+          envFrom:
+            - secretRef:
+                name: kamino-env
+          readinessProbe:
+            tcpSocket:
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10

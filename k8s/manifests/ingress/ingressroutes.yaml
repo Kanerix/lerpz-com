@@ -1,0 +1,54 @@
+# Traefik IngressRoutes — the cluster equivalent of the docker-compose Traefik
+# labels/dynamic config. HTTP entrypoint = `web`, HTTPS = `websecure`.
+#
+# TLS uses the `lerpz-tls` secret. Create it from your mkcert certs with:
+#   kubectl -n lerpz create secret tls lerpz-tls \
+#     --cert=certs/cert.pem --key=certs/key.pem
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: coruscant
+  namespace: lerpz
+spec:
+  entryPoints: [web, websecure]
+  routes:
+    - match: Host(`lerpz.local`)
+      kind: Rule
+      services:
+        - name: coruscant
+          port: 3000
+  tls:
+    secretName: lerpz-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kamino
+  namespace: lerpz
+spec:
+  entryPoints: [web, websecure]
+  routes:
+    - match: Host(`api.lerpz.local`)
+      kind: Rule
+      services:
+        - name: kamino
+          port: 3001
+  tls:
+    secretName: lerpz-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: artoo
+  namespace: lerpz
+spec:
+  entryPoints: [web, websecure]
+  routes:
+    - match: Host(`agent.lerpz.local`)
+      kind: Rule
+      services:
+        - name: artoo
+          port: 3002
+  tls:
+    secretName: lerpz-tls

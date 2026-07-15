@@ -1,7 +1,0 @@
-.svelte-kit
-build
-.env
-.env.*
-node_modules
-.gitignore
-biome.json

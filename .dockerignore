@@ -1,11 +1,44 @@
+# Rust
+**/target
+rustc-ice-*.txt
+
+# Node / Bun
 **/node_modules
 **/.svelte-kit
 **/build
 **/.turbo
 **/.vite
 **/.vite-cache
+**/.bun-debug.log*
+
+# Python
+**/.venv
+**/__pycache__
+**/.ruff_cache
+
+# Version control & CI
 **/.git
 **/.gitignore
+**/.gitattributes
+.github
+
+# Docker
+**/Dockerfile
+**/.dockerignore
+docker-compose*.yml
+
+# Environment & secrets
 **/.env
 **/.env.*
+!**/.env.example
+certs
+keys
+
+# Docs & infra (not needed by image builds)
+docs
+k8s
+terraform
+
+# Editor / OS junk
 **/.DS_Store
+**/*.swp

@@ -1,0 +1,49 @@
+# Helm values for installing Traefik on the kind cluster.
+#
+#   helm repo add traefik https://traefik.github.io/charts
+#   helm repo update
+#   helm upgrade --install traefik traefik/traefik \
+#     --namespace traefik --create-namespace \
+#     -f k8s/traefik/values.yaml
+#
+# Traefik binds hostPorts 80/443 on the ingress-ready node, which kind forwards
+# from the host via extraPortMappings (see k8s/kind-config.yaml).
+
+# Run as a DaemonSet so exactly one Traefik pod sits on the ingress node.
+deployment:
+  kind: DaemonSet
+
+# A ClusterIP Service is unnecessary because we expose Traefik via hostPort.
+service:
+  enabled: false
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    # Allow IngressRoutes to reference TLS secrets / services in other namespaces.
+    allowCrossNamespace: true
+  kubernetesIngress:
+    enabled: true
+
+ports:
+  web:
+    hostPort: 80
+    # Uncomment to force HTTP -> HTTPS everywhere.
+    # redirectTo:
+    #   port: websecure
+  websecure:
+    hostPort: 443
+    # TLS is enabled by default on this entrypoint (ports.websecure.http.tls.enabled).
+
+# Pin Traefik onto the labelled kind control-plane node.
+nodeSelector:
+  ingress-ready: "true"
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+# Handy for local debugging at http://<node>:8080/dashboard/
+ingressRoute:
+  dashboard:
+    enabled: true

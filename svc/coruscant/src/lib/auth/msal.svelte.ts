@@ -8,6 +8,7 @@ import {
     EventType,
     InteractionStatus,
 } from "@azure/msal-browser";
+import { publicEnv } from "$lib/env.js";
 import { initializeMsal } from "./msal-auth.js";
 import { loginRequest } from "./msal-config.js";
 
@@ -34,8 +35,11 @@ class MsalStore {
             // Promote the account from a successful interactive/silent flow to
             // the active account so the rest of the app stays in sync.
             if (
-                (message.eventType === EventType.LOGIN_SUCCESS || message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS) &&
-                message.payload && "account" in message.payload && message.payload.account
+                (message.eventType === EventType.LOGIN_SUCCESS ||
+                    message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS) &&
+                message.payload &&
+                "account" in message.payload &&
+                message.payload.account
             ) {
                 inst.setActiveAccount(message.payload.account);
             }
@@ -67,7 +71,9 @@ class MsalStore {
     }
 
     async logoutRedirect() {
-        await this.instance?.logoutRedirect();
+        await this.instance?.logoutRedirect({
+            postLogoutRedirectUri: publicEnv.PUBLIC_ENTRA_ID_LOGOUT_URI,
+        });
     }
 
     async switchAccount() {

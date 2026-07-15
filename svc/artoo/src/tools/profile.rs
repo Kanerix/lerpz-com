@@ -1,5 +1,5 @@
 use reqwest::Client;
-use rig_core::{completion::ToolDefinition, tool::Tool};
+use rig_core::tool::Tool;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
@@ -55,18 +55,18 @@ impl Tool for GetUserProfile {
     type Args = GetUserProfileArgs;
     type Output = UserProfile;
 
-    async fn definition(&self, _prompt: String) -> ToolDefinition {
-        ToolDefinition {
-            name: Self::NAME.to_string(),
-            description: "Retrieve the current user's profile information, \
-                including their name and email address."
-                .to_string(),
-            parameters: serde_json::json!({
-                "type": "object",
-                "properties": {},
-                "additionalProperties": false
-            }),
-        }
+    fn description(&self) -> String {
+        "Retrieve the current user's profile information, \
+            including their name and email address."
+            .to_string()
+    }
+
+    fn parameters(&self) -> serde_json::Value {
+        serde_json::json!({
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+        })
     }
 
     #[instrument(skip(self), fields(tool = Self::NAME))]

@@ -114,35 +114,6 @@ services:
     networks:
       - lerpz-network
 
-  traefik:
-    image: traefik:v3.4
-    container_name: traefik
-    restart: on-failure
-    hostname: traefik
-    domainname: lerpz.local
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=lerpz-network"
-      - "--providers.file.filename=/etc/traefik/dynamic.yml"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/etc/traefik/certs:ro
-    configs:
-      - source: traefik-dynamic
-        target: /etc/traefik/dynamic.yml
-    networks:
-      - lerpz-network
-
   coruscant:
     container_name: coruscant
     restart: on-failure
@@ -151,16 +122,6 @@ services:
     build:
       context: .
       dockerfile: svc/coruscant/Dockerfile
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.coruscant-http.rule=Host(`lerpz.local`)"
-      - "traefik.http.routers.coruscant-http.entrypoints=web"
-      - "traefik.http.routers.coruscant-http.priority=1"
-      - "traefik.http.routers.coruscant-https.rule=Host(`lerpz.local`)"
-      - "traefik.http.routers.coruscant-https.entrypoints=websecure"
-      - "traefik.http.routers.coruscant-https.tls=true"
-      - "traefik.http.routers.coruscant-https.priority=1"
-      - "traefik.http.services.coruscant.loadbalancer.server.port=3000"
     expose:
       - "3000"
     hostname: lerpz-coruscant
@@ -184,16 +145,6 @@ services:
     build:
       context: .
       dockerfile: svc/kamino/Dockerfile
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.kamino-http.rule=Host(`api.lerpz.local`)"
-      - "traefik.http.routers.kamino-http.entrypoints=web"
-      - "traefik.http.routers.kamino-http.priority=2"
-      - "traefik.http.routers.kamino-https.rule=Host(`api.lerpz.local`)"
-      - "traefik.http.routers.kamino-https.entrypoints=websecure"
-      - "traefik.http.routers.kamino-https.tls=true"
-      - "traefik.http.routers.kamino-https.priority=2"
-      - "traefik.http.services.kamino.loadbalancer.server.port=3001"
     expose:
       - "3001"
     hostname: lerpz-kamino
@@ -217,16 +168,6 @@ services:
     build:
       context: .
       dockerfile: svc/artoo/Dockerfile
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.artoo-http.rule=Host(`agent.lerpz.local`)"
-      - "traefik.http.routers.artoo-http.entrypoints=web"
-      - "traefik.http.routers.artoo-http.priority=3"
-      - "traefik.http.routers.artoo-https.rule=Host(`agent.lerpz.local`)"
-      - "traefik.http.routers.artoo-https.entrypoints=websecure"
-      - "traefik.http.routers.artoo-https.tls=true"
-      - "traefik.http.routers.artoo-https.priority=3"
-      - "traefik.http.services.artoo.loadbalancer.server.port=3002"
     expose:
       - "3002"
     hostname: lerpz-artoo
@@ -243,82 +184,6 @@ services:
       lerpz-network:
         aliases:
           - artoo.lerpz.local
-
-configs:
-  traefik-dynamic:
-    content: |
-      tls:
-        certificates:
-          - certFile: /etc/traefik/certs/cert.pem
-            keyFile: /etc/traefik/certs/key.pem
-        stores:
-          default:
-            defaultCertificate:
-              certFile: /etc/traefik/certs/cert.pem
-              keyFile: /etc/traefik/certs/key.pem
-
-      http:
-        routers:
-          coruscant-local-http:
-            rule: "Host(`lerpz.local`)"
-            entryPoints:
-              - web
-            service: coruscant-local
-            priority: 1
-
-          coruscant-local-https:
-            rule: "Host(`lerpz.local`)"
-            entryPoints:
-              - websecure
-            tls: {}
-            service: coruscant-local
-            priority: 1
-
-          kamino-local-http:
-            rule: "Host(`api.lerpz.local`)"
-            entryPoints:
-              - web
-            service: kamino-local
-            priority: 1
-
-          kamino-local-https:
-            rule: "Host(`api.lerpz.local`)"
-            entryPoints:
-              - websecure
-            tls: {}
-            service: kamino-local
-            priority: 1
-
-          artoo-local-http:
-            rule: "Host(`agent.lerpz.local`)"
-            entryPoints:
-              - web
-            service: artoo-local
-            priority: 1
-
-          artoo-local-https:
-            rule: "Host(`agent.lerpz.local`)"
-            entryPoints:
-              - websecure
-            tls: {}
-            service: artoo-local
-            priority: 1
-
-        services:
-          coruscant-local:
-            loadBalancer:
-              servers:
-                - url: "http://host.docker.internal:3000"
-
-          kamino-local:
-            loadBalancer:
-              servers:
-                - url: "http://host.docker.internal:3001"
-
-          artoo-local:
-            loadBalancer:
-              servers:
-                - url: "http://host.docker.internal:3002"
 
 volumes:
   postgres_data:

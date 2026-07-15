@@ -12,7 +12,7 @@ mod scheme;
 
 use std::{str::FromStr, sync::Arc};
 
-use rand::Rng;
+use rand::RngExt;
 
 pub use error::{Error, Result};
 pub use parts::{HashParts, PwdParts};
