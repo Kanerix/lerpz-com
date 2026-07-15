@@ -1,6 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { cn } from "@lerpz/ui/lib/utils";
+import { notifyPromptEnhanced } from "$lib/ai/enhance.js";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
 import { EnhanceButton } from "$lib/components/prompt";
 import EaselAspectRatio from "./EaselAspectRatio.svelte";
@@ -24,9 +25,12 @@ let {
 const easel = getEaselContext();
 
 async function handleEnhance() {
-    if (!easelStore.prompt.trim() || !enhance) return;
-    const newPrompt = await enhance(easelStore.prompt);
+    const original = easelStore.prompt;
+    if (!original.trim() || !enhance) return;
+    const newPrompt = await enhance(original);
+    if (newPrompt === original) return;
     easelStore.setPrompt(newPrompt);
+    notifyPromptEnhanced(() => easelStore.setPrompt(original));
 }
 </script>
 

@@ -167,7 +167,7 @@ function handleInput(e: Event) {
       )}
     ></textarea>
     <PromptSubmitButton
-      loading={isPending}
+      loading={isSubmitPending || isGenerating}
       disabled={isPending || !clapperStore.prompt.trim()}
       label="Generate video"
       onclick={submit}

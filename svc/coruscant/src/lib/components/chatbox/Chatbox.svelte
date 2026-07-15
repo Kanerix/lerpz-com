@@ -209,7 +209,7 @@ function handleEnter() {
       class="grow self-stretch px-1 py-1.5"
     />
     <PromptSubmitButton
-      loading={isSubmitPending || isEnhancePending}
+      loading={isSubmitPending}
       streaming={isStreaming}
       disabled={isPending || !chatboxStore.prompt.trim()}
       label="Send prompt"

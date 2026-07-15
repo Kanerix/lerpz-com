@@ -37,6 +37,9 @@ export type AiContextValue = {
     readonly models: Model[];
     readonly isModelsLoading: boolean;
     loadModels: (modality?: string) => Promise<void>;
+    enhanceChat: (prompt: string) => Promise<string>;
+    enhanceImage: (prompt: string) => Promise<string>;
+    enhanceVideo: (prompt: string) => Promise<string>;
 };
 
 export function setAiContext(ctx: AiContextValue) {

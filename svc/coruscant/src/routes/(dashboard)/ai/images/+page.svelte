@@ -34,7 +34,7 @@ const ai = getAiContext();
         amount: args.count,
       });
     }}
-    onEnhance={async (prompt) => prompt}
+    onEnhance={ai.enhanceImage}
     isGenerating={ai.isImageLoading}
     error={ai.imageError}
     models={ai.models}

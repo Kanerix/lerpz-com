@@ -38,7 +38,7 @@ const ai = getAiContext();
         duration: args.duration,
       });
     }}
-    onEnhance={async (prompt) => prompt}
+    onEnhance={ai.enhanceVideo}
     isGenerating={ai.isVideoLoading}
     error={ai.videoError}
     models={ai.models}

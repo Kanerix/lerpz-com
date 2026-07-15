@@ -1,4 +1,5 @@
 <script lang="ts">
+import { notifyPromptEnhanced } from "$lib/ai/enhance.js";
 import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
@@ -19,9 +20,12 @@ let {
 const chatbox = getChatboxContext();
 
 async function handleEnhance() {
-    if (!chatboxStore.prompt || !enhance) return;
-    const newPrompt = await enhance(chatboxStore.prompt);
+    const original = chatboxStore.prompt;
+    if (!original.trim() || !enhance) return;
+    const newPrompt = await enhance(original);
+    if (newPrompt === original) return;
     chatboxStore.setPrompt(newPrompt);
+    notifyPromptEnhanced(() => chatboxStore.setPrompt(original));
 }
 </script>
 

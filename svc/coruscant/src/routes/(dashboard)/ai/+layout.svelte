@@ -5,6 +5,7 @@ import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import { createChat } from "$lib/ai/chat.svelte.js";
 import { setAiContext } from "$lib/ai/context.svelte.js";
+import { enhanceChat, enhanceImage, enhanceVideo } from "$lib/ai/enhance.js";
 import { createImage } from "$lib/ai/image.svelte.js";
 import { createModels } from "$lib/ai/models.svelte.js";
 import { createVideo } from "$lib/ai/video.svelte.js";
@@ -96,6 +97,9 @@ setAiContext({
         return modelsHook.isLoading;
     },
     loadModels: modelsHook.loadModels,
+    enhanceChat,
+    enhanceImage,
+    enhanceVideo,
 });
 
 const isPending = $derived(chat.isStreaming || chat.isLoading);
@@ -124,7 +128,7 @@ const showChatbox = $derived(
         chat.send(args.prompt, { model: args.model, reasoning });
       }
     }}
-    onEnhance={async (prompt) => prompt}
+    onEnhance={enhanceChat}
     onStop={chat.stop}
     isStreaming={isPending}
     isThinking={isPending}

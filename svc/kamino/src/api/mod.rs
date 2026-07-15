@@ -4,6 +4,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod agents;
 mod chats;
+mod enhance;
 mod groups;
 mod health;
 mod images;
@@ -20,6 +21,7 @@ pub fn router(state: AppState) -> OpenApiRouter<AppState> {
         .nest("/groups", groups::router())
         .nest("/chats", chats::router())
         .nest("/images", images::router())
+        .nest("/enhance", enhance::router())
         .nest("/models", models::router())
         .nest("/agents", agents::router())
         .nest("/sessions", sessions::router())

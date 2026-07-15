@@ -1,18 +1,24 @@
 // @ts-nocheck
 import {
+  createMutation,
   createQuery
 } from '@tanstack/svelte-query';
 import type {
+  CreateMutationOptions,
+  CreateMutationResult,
   CreateQueryOptions,
   CreateQueryResult,
   DataTag,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey
 } from '@tanstack/svelte-query';
 
 import type {
+  ImageListResponse,
   ImageRequest,
+  ListImagesParams,
   ProblemSchema
 } from '../models';
 
@@ -24,7 +30,108 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
-export type createImageResponse400 = {
+export type listImagesResponse200 = {
+  data: ImageListResponse
+  status: 200
+}
+
+export type listImagesResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type listImagesResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type listImagesResponseSuccess = (listImagesResponse200) & {
+  headers: Headers;
+};
+export type listImagesResponseError = (listImagesResponse401 | listImagesResponse500) & {
+  headers: Headers;
+};
+
+export type listImagesResponse = (listImagesResponseSuccess | listImagesResponseError)
+
+export const getListImagesUrl = (params?: ListImagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/images?${stringifiedParams}` : `/api/v1/images`
+}
+
+/**
+ * Returns a page of generated images, newest first, using simple cursor-based pagination. Each item carries a public `url` served from the storage bucket (acting as a CDN). Pass the returned `next_cursor` back as the `cursor` query parameter to load the next page; a `null` cursor means there are no more images.
+ * @summary List generated images
+ */
+export const listImages = async (params?: ListImagesParams, options?: RequestInit): Promise<listImagesResponse> => {
+
+  return customFetch<listImagesResponse>(getListImagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+export const getListImagesMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listImages>>, TError,{params?: ListImagesParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof listImages>>, TError,{params?: ListImagesParams}, TContext> => {
+
+const mutationKey = ['listImages'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listImages>>, {params?: ListImagesParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  listImages(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ListImagesMutationResult = NonNullable<Awaited<ReturnType<typeof listImages>>>
+
+    export type ListImagesMutationError = ErrorType<ProblemSchema>
+
+    /**
+ * @summary List generated images
+ */
+export const createListImages = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listImages>>, TError,{params?: ListImagesParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof listImages>>,
+        TError,
+        {params?: ListImagesParams},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getListImagesMutationOptions(options?.()) }), queryClient);
+    }
+    export type createImageResponse400 = {
   data: ProblemSchema
   status: 400
 }

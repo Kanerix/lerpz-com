@@ -165,7 +165,7 @@ export const getCreateChatUrl = () => {
 }
 
 /**
- * Creates a new conversation, streams the AI reply back via Server-Sent Events. The first event is `conversation_created` with the new conversation ID; subsequent `reasoning` events carry incremental chain-of-thought chunks (reasoning models only) and `message` events carry incremental answer token chunks until the stream ends; `saved` confirms the reply was persisted and is the final event before the stream closes; `error` is emitted on failures.
+ * Creates a new conversation and streams the AI reply via Server-Sent Events. Events: `conversation_created` (new conversation UUID, sent first), `reasoning` (chain-of-thought chunk, reasoning models only), `message` (answer token chunk), `saved` (conversation UUID confirming persistence, sent last), `error` (error message).
  * @summary Create a new chat
  */
 export const createChat = async (chatRequest: ChatRequest, options?: RequestInit): Promise<createChatResponse> => {
@@ -375,7 +375,7 @@ export const getSendChatMessageUrl = (id: string,) => {
 }
 
 /**
- * Appends a new user message to the conversation and streams the AI reply back via Server-Sent Events. Requires the conversation to belong to the authenticated user. SSE events emitted: `reasoning` (chain-of-thought chunk, reasoning models only), `message` (answer token chunk) streamed until the response ends, `saved` (conversation UUID confirming persistence, sent as the final event before the stream closes), `error` (error message).
+ * Appends a new user message to the conversation and streams the AI reply via Server-Sent Events. Requires the conversation to belong to the authenticated user. Events: `reasoning` (chain-of-thought chunk, reasoning models only), `message` (answer token chunk), `saved` (conversation UUID confirming persistence, sent last), `error` (error message).
  * @summary Send a message in an existing chat
  */
 export const sendChatMessage = async (id: string,
@@ -713,7 +713,7 @@ export const getEditLatestChatMessageUrl = (id: string,) => {
 }
 
 /**
- * Replaces the content of the conversation's most recent user message, discards the assistant reply (and any later turns) that followed it, then regenerates and streams a fresh reply via Server-Sent Events. Only the latest message can be edited, since editing an earlier one would require regenerating everything after it. Requires the conversation to belong to the authenticated user. SSE events emitted: `reasoning` (chain-of-thought chunk, reasoning models only), `message` (answer token chunk) streamed until the response ends, `saved` (conversation UUID confirming persistence, sent as the final event before the stream closes), `error` (error message).
+ * Replaces the content of the conversation's most recent user message, discards the assistant reply (and any later turns) that followed it, then regenerates and streams a fresh reply via Server-Sent Events. Only the latest message can be edited, since editing an earlier one would require regenerating everything after it. Events: `reasoning` (chain-of-thought chunk, reasoning models only), `message` (answer token chunk), `saved` (conversation UUID confirming persistence, sent last), `error` (error message).
  * @summary Edit the latest message in a chat
  */
 export const editLatestChatMessage = async (id: string,

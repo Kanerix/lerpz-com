@@ -1,4 +1,5 @@
 <script lang="ts">
+import { notifyPromptEnhanced } from "$lib/ai/enhance.js";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
 import { EnhanceButton } from "$lib/components/prompt";
 import ClapperAspectRatio from "./ClapperAspectRatio.svelte";
@@ -19,9 +20,12 @@ let {
 const clapper = getClapperContext();
 
 async function handleEnhance() {
-    if (!clapperStore.prompt.trim() || !enhance) return;
-    const newPrompt = await enhance(clapperStore.prompt);
+    const original = clapperStore.prompt;
+    if (!original.trim() || !enhance) return;
+    const newPrompt = await enhance(original);
+    if (newPrompt === original) return;
     clapperStore.setPrompt(newPrompt);
+    notifyPromptEnhanced(() => clapperStore.setPrompt(original));
 }
 </script>
 
