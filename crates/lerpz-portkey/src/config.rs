@@ -1,9 +1,15 @@
 use async_openai::config::Config;
-use axum::http::HeaderMap;
+use http::HeaderMap;
 use secrecy::{ExposeSecret, SecretString};
 
+/// An [`async-openai`](async_openai) [`Config`] that routes every request
+/// through the [Portkey](https://portkey.ai) AI gateway.
+///
+/// Portkey exposes an OpenAI-compatible REST API but expects a couple of extra
+/// headers (the workspace API key and the upstream provider to route to), which
+/// this config injects on every request.
 #[derive(Clone, Debug)]
-pub(crate) struct PortkeyConfig {
+pub struct PortkeyConfig {
     pub api_base: String,
     pub api_key: SecretString,
     pub api_provider: String,

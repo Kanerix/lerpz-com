@@ -7,6 +7,7 @@ use axum::routing::get;
 use http::Method;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
+use lerpz_portkey::build_client;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
 use rig_core::client::EmbeddingsClient;
@@ -20,14 +21,12 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa_axum::router::OpenApiRouter;
 
-use crate::client::build_client;
 use crate::config::CONFIG;
 use crate::factory::AgentFactory;
 use crate::oapi::api_doc;
 use crate::state::AppState;
 
 mod api;
-mod client;
 mod config;
 mod factory;
 mod oapi;

@@ -9,6 +9,7 @@ authors.workspace = true
 [dependencies]
 # Internal
 lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
+lerpz-portkey = { workspace = true, features = ["rig"] }
 lerpz-utils = { workspace = true }
 # AI & async
 rig-core = { workspace = true }

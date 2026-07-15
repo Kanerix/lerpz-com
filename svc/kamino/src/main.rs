@@ -1,6 +1,5 @@
 use crate::config::CONFIG;
 use crate::oapi::api_doc;
-use crate::portkey::PortkeyConfig;
 use crate::state::AppState;
 
 use std::sync::Arc;
@@ -15,6 +14,7 @@ use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::middleware::instance::CaptureInstanceLayer;
 use lerpz_axum::shutdown_signal;
+use lerpz_portkey::PortkeyConfig;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
 use serde_json::json;
@@ -27,7 +27,6 @@ use utoipa_axum::router::OpenApiRouter;
 mod api;
 mod config;
 mod oapi;
-mod portkey;
 mod state;
 
 #[tokio::main]

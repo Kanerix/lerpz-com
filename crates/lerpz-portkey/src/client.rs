@@ -1,7 +1,7 @@
-//! OpenAI client integration for `rig-core`.
+//! [`rig-core`](rig_core) client integration for the Portkey AI gateway.
 //!
 //! This module provides utilities for building an [`openai::Client`] that
-//! routes every request through the Portkey AI gateway at `api_base`.
+//! routes every request through the Portkey AI gateway at `base_url`.
 //!
 //! # Portkey
 //!
@@ -16,23 +16,28 @@
 //! # Example
 //!
 //! ```ignore
-//! use lerpz_agent::client::build_client;
+//! use lerpz_portkey::build_client;
 //! use secrecy::SecretString;
-//! use std::sync::Arc;
 //!
 //! let client = build_client(
-//!     &Arc::from("https://api.portkey.ai/v1"),
-//!     &SecretString::new("pk-…".to_owned()),
+//!     "https://api.portkey.ai/v1",
+//!     &SecretString::from("pk-…".to_owned()),
+//!     "openai",
 //! )?;
 //!
 //! let agent = client.agent("gpt-4o").build();
 //! ```
 
+use http::HeaderMap;
 use rig_core::providers::openai;
 use secrecy::{ExposeSecret, SecretString};
 
-use http::HeaderMap;
-
+/// Builds a [`rig-core`](rig_core) [`openai::Client`] pointed at the Portkey AI
+/// gateway.
+///
+/// The returned client sends the `x-portkey-api-key` and `x-portkey-provider`
+/// headers on every request so Portkey can authenticate and route to the
+/// chosen upstream provider.
 pub fn build_client(
     base_url: &str,
     api_key: &SecretString,

@@ -112,6 +112,7 @@ dependencies = [
  "dotenvy",
  "http 1.4.2",
  "lerpz-axum",
+ "lerpz-portkey",
  "lerpz-utils",
  "qdrant-client",
  "reqwest 0.12.28",
@@ -2733,6 +2734,11 @@ dependencies = [
 name = "lerpz-portkey"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "async-openai",
+ "http 1.4.2",
+ "rig-core",
+ "secrecy",
  "serde_json",
 ]
 
