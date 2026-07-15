@@ -125,6 +125,7 @@ const showChatbox = $derived(
       }
     }}
     onEnhance={async (prompt) => prompt}
+    onStop={chat.stop}
     isStreaming={isPending}
     isThinking={isPending}
     isSaved={chat.isSaved}

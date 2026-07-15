@@ -21,6 +21,7 @@ const placeholder = "Send a message!";
 
 let {
     onSubmit,
+    onStop,
     onEnhance,
     models = [],
     isModelsLoading = false,
@@ -32,6 +33,7 @@ let {
     loadModels = async () => {},
 }: {
     onSubmit?: (args: ChatboxSubmitArgs) => void | Promise<void>;
+    onStop?: () => void;
     onEnhance?: (prompt: string) => Promise<string>;
     models?: Model[];
     isModelsLoading?: boolean;
@@ -207,10 +209,12 @@ function handleEnter() {
       class="grow self-stretch px-1 py-1.5"
     />
     <PromptSubmitButton
-      loading={isPending}
+      loading={isSubmitPending || isEnhancePending}
+      streaming={isStreaming}
       disabled={isPending || !chatboxStore.prompt.trim()}
       label="Send prompt"
       onclick={submit}
+      onStop={onStop}
     />
   </PromptInputRow>
   <!-- Settings row -->
