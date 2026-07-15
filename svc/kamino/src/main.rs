@@ -121,6 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let scalar_config = json!({
         "url": "/api/openapi.json",
+        "favicon": "/favicon.svg",
         "authentication": {
             "preferredSecurityScheme": "oauth2",
             "securitySchemes": {
@@ -142,6 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = router
         .route("/api/openapi.json", get(|| async { Json(api) }))
         .route("/scalar", get(move || async move { Html(html) }))
+        .route("/favicon.svg", get(favicon))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
@@ -161,4 +163,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[axum::debug_handler]
 pub async fn redirect() -> impl IntoResponse {
     Redirect::to("/scalar")
+}
+
+/// Serves the favicon shown in the Scalar API reference tab.
+#[axum::debug_handler]
+pub async fn favicon() -> impl IntoResponse {
+    const FAVICON: &[u8] = include_bytes!("../assets/lerpz.svg");
+    (
+        [(axum::http::header::CONTENT_TYPE, "image/svg+xml")],
+        FAVICON,
+    )
 }
