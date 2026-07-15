@@ -138,7 +138,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let html = scalar_html(&scalar_config, None);
+    let html = scalar_html(&scalar_config, None)
+        .replace(
+            "<title>Scalar API Reference</title>",
+            "<title>Lerpz AI — API references</title>",
+        );
 
     let app = router
         .route("/api/openapi.json", get(|| async { Json(api) }))

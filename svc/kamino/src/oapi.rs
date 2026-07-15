@@ -15,8 +15,11 @@ pub(crate) const HEALTH_TAG: &str = "health";
 #[derive(OpenApi)]
 #[openapi(
     info(
-        title = "Lerpz AI",
-        description = "Lerpz AI backend API",
+        title = "Lerpz AI — API references",
+        description = "The Lerpz AI API for building AI-powered experiences. \
+            Manage organizations, groups, agents, and sessions; stream chat \
+            completions and generate images in real time; and discover the \
+            models available to your organization.",
         contact(
             name = "Kasper Jønsson",
             email = "kas@lerpz.com",
