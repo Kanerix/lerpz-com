@@ -246,7 +246,7 @@ const EXAMPLE_PROMPTS = [
             message.id === failedMessageId || isEditing
               ? "opacity-100"
               : "opacity-0 group-hover:opacity-80 focus-within:opacity-80",
-            message.role === "user" ? "justify-end pr-9" : "pl-9"
+            message.role === "user" ? "justify-end pr-9" : "flex-row-reverse justify-end pl-9"
           )}>
             {#if message.id === failedMessageId}
               <span class="inline-flex items-center gap-1 text-xs font-medium text-destructive">
