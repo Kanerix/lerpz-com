@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Button } from "@lerpz/ui/components/button";
 import { slide } from "svelte/transition";
 import Markdown from "./Markdown.svelte";
 
@@ -18,12 +19,13 @@ const contentId = `thinking-${Math.random().toString(36).slice(2)}`;
 </script>
 
 <div class="flex flex-col text-muted-foreground">
-  <button
-    type="button"
+  <Button
+    variant="ghost"
+    size="xs"
     onclick={() => (userToggled = !open)}
     aria-expanded={open}
     aria-controls={contentId}
-    class="flex w-fit items-center gap-2 rounded-md py-1 text-xs font-medium transition-colors hover:text-foreground"
+    class="w-fit gap-2 rounded-md font-medium text-muted-foreground"
   >
     <Icon icon="fa6-solid:lightbulb" class="size-3.5" />
     <span>Thinking{streaming ? "..." : ""}</span>
@@ -31,13 +33,13 @@ const contentId = `thinking-${Math.random().toString(36).slice(2)}`;
       icon="fa6-solid:chevron-down"
       class="size-3 transition-transform duration-200 {open ? 'rotate-180' : ''}"
     />
-  </button>
+  </Button>
 
   {#if open}
     <div
       id={contentId}
       transition:slide={{ duration: 200 }}
-      class="border-l border-border ml-1.5 pl-4 text-xs leading-relaxed"
+      class="border-l border-border ml-4.5 pl-2 text-xs leading-relaxed"
     >
       <Markdown content={reasoning} />
     </div>
