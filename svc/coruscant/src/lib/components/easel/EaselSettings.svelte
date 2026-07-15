@@ -1,13 +1,8 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@lerpz/ui/components/tooltip";
 import { cn } from "@lerpz/ui/lib/utils";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
+import { EnhanceButton } from "$lib/components/prompt";
 import EaselAspectRatio from "./EaselAspectRatio.svelte";
 import {
     easelStore,
@@ -41,6 +36,8 @@ async function handleEnhance() {
     isModelsLoading={easel.isModelsLoading}
     value={easelStore.model}
     onSelect={(value) => easelStore.setModel(value)}
+    getAnchorRect={() =>
+      easelStore.easelAnchor?.getBoundingClientRect() ?? null}
   />
   <EaselAspectRatio disabled={isPending} />
 
@@ -84,23 +81,10 @@ async function handleEnhance() {
 
   <!-- Enhance -->
   <div class="ml-auto">
-    <Tooltip>
-      <TooltipTrigger>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Enhance prompt"
-          disabled={isPending || !easelStore.prompt.trim() || !enhance}
-          onclick={handleEnhance}
-        >
-          {#if isEnhancePending}
-            <Icon icon="fa6-solid:spinner" class="animate-spin" />
-          {:else}
-            <Icon icon="fa6-solid:wand-magic-sparkles" />
-          {/if}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent><p>Enhance the prompt!</p></TooltipContent>
-    </Tooltip>
+    <EnhanceButton
+      loading={isEnhancePending}
+      disabled={isPending || !easelStore.prompt.trim() || !enhance}
+      onclick={handleEnhance}
+    />
   </div>
 </div>

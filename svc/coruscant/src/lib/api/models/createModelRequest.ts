@@ -17,6 +17,8 @@ export interface CreateModelRequest {
   display_name: string;
   /** Provider family the model belongs to. */
   family: ModelFamily;
+  /** Input/output modalities the model supports (e.g. `text`, `image`). Defaults to `[]`. */
+  modalities?: string[];
   /** Portkey provider slug the deployment lives under. */
   provider: string;
   settings?: null | ModelSettings;

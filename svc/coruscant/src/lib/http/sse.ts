@@ -1,4 +1,50 @@
+import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
+import type { ProblemSchema } from "$lib/api/models/index.js";
 import { authenticatedFetch } from "./fetch.js";
+
+/**
+ * An {@link Error} raised for an HTTP-level failure that carried an RFC 9457
+ * `application/problem+json` body. The parsed problem is attached so richer
+ * consumers (e.g. the error dialog) can render it, while `message` stays a
+ * human-readable summary for plain-text surfaces.
+ */
+export type SseProblemError = Error & { problem: ProblemSchema };
+
+/**
+ * Convert a failed {@link Response} into an {@link Error} suitable for `onError`.
+ *
+ * When the body is a well-formed problem+json, the error message is the
+ * problem's `detail` (falling back to its `title`) and the parsed
+ * {@link ProblemSchema} is attached under `problem`. Otherwise we fall back to
+ * the raw body text or the HTTP status line.
+ */
+async function responseToError(response: Response): Promise<Error> {
+    let body: string;
+    try {
+        body = await response.text();
+    } catch {
+        return new Error(
+            response.statusText || `HTTP ${response.status}`,
+        );
+    }
+
+    try {
+        const parsed: unknown = JSON.parse(body);
+        if (isProblemSchema(parsed)) {
+            const error = new Error(
+                parsed.detail || parsed.title,
+            ) as SseProblemError;
+            error.problem = parsed;
+            return error;
+        }
+    } catch {
+        // Not JSON – fall through to the raw-text fallback below.
+    }
+
+    return new Error(
+        body || `HTTP ${response.status}: ${response.statusText}`,
+    );
+}
 
 export type SSEEvent = {
     /** The event type from the `event:` field. Defaults to `"message"` if not specified by the server. */
@@ -234,17 +280,7 @@ export function createSseConnection(
         }
 
         if (!response.ok || !response.body) {
-            let detail: string;
-            try {
-                detail = await response.text();
-            } catch {
-                detail = response.statusText;
-            }
-            onError?.(
-                new Error(
-                    `HTTP ${response.status}: ${detail || "Unknown error"}`,
-                ),
-            );
+            onError?.(await responseToError(response));
             onClose?.(true);
             return;
         }

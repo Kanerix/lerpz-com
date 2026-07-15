@@ -21,10 +21,10 @@ import UserInfo from "./UserInfo.svelte";
   <SeparatorComp /> -->
   <SidebarContent class="overflow-hidden">
     <NavCategories />
+    <NewChatButton />
     <ScrollArea class="min-h-0 shrink" orientation="vertical">
       <SidebarChats />
     </ScrollArea>
-    <NewChatButton />
     <NavSecondary class="mt-auto" />
   </SidebarContent>
   <SeparatorComp />

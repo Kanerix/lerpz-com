@@ -25,6 +25,11 @@ export interface UpdateModelRequest {
   display_name?: string | null;
   family?: null | ModelFamily;
   /**
+     * Input/output modalities the model supports (e.g. `text`, `image`).
+     * @nullable
+     */
+  modalities?: string[] | null;
+  /**
      * Portkey provider slug the deployment lives under.
      * @nullable
      */

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            settings,\n            created_at,\n            updated_at\n        FROM models\n        WHERE id = $1",
+  "query": "SELECT\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            modalities,\n            settings,\n            created_at,\n            updated_at\n        FROM models\n        WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -46,16 +46,21 @@
       },
       {
         "ordinal": 6,
+        "name": "modalities",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 7,
         "name": "settings",
         "type_info": "Jsonb"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -74,8 +79,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "273e8760de42a2aae4f33994c031c948acb3956b8be1fb809d460ee99c429c46"
+  "hash": "276c1f045bf95dd548fa51d3c047f8d1a6c6c19e7624f5eb9580af9e33b10f51"
 }

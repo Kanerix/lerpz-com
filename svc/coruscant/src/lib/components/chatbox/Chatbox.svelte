@@ -1,12 +1,16 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
-import { Card, CardContent } from "@lerpz/ui/components/card";
-import { onMount } from "svelte";
 import { cubicOut } from "svelte/easing";
 import { fly } from "svelte/transition";
-import type { Model } from "$lib/ai/models.svelte.js";
+import { filterModelsByModality, type Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
+import { ErrorDialog } from "$lib/components/error-dialog";
+import {
+    PromptComposer,
+    PromptInputRow,
+    PromptSubmitButton,
+} from "$lib/components/prompt";
 import ChatboxSettings from "./ChatboxSettings.svelte";
 import ChatStatusBar from "./ChatStatusBar.svelte";
 import type { ChatboxSubmitArgs } from "./chatbox-context.svelte.js";
@@ -24,6 +28,7 @@ let {
     isThinking = false,
     isSaved = false,
     error = null,
+    errorValue = null,
     loadModels = async () => {},
 }: {
     onSubmit?: (args: ChatboxSubmitArgs) => void | Promise<void>;
@@ -34,6 +39,7 @@ let {
     isThinking?: boolean;
     isSaved?: boolean;
     error?: string | null;
+    errorValue?: unknown;
     loadModels?: (mode?: string) => Promise<void>;
 } = $props();
 
@@ -41,14 +47,27 @@ let showSettings = $state(true);
 let isSubmitPending = $state(false);
 let isEnhancePending = $state(false);
 
+let errorDialogOpen = $state(false);
+let lastShownError: unknown = null;
+
+$effect(() => {
+    const current = errorValue;
+    if (current == null) {
+        lastShownError = null;
+        return;
+    }
+    if (current !== lastShownError) {
+        lastShownError = current;
+        errorDialogOpen = true;
+    }
+});
+
 const isPending = $derived(isSubmitPending || isEnhancePending || isStreaming);
 
-let cardEl = $state<HTMLDivElement | null>(null);
-let mounted = $state(false);
+// Only text-generation models make sense in the chat surface.
+const availableModels = $derived(filterModelsByModality(models, "text"));
 
-onMount(() => {
-    mounted = true;
-});
+let cardEl = $state<HTMLDivElement | null>(null);
 
 $effect(() => {
     const el = cardEl;
@@ -60,24 +79,14 @@ $effect(() => {
     return () => observer.disconnect();
 });
 
-function chatboxIn(_node: Element) {
-    return {
-        duration: 550,
-        easing: cubicOut,
-        css: (t: number, u: number) =>
-            `opacity: ${t};
-             transform: translateY(${u * 28}px) scale(${0.96 + t * 0.04});`,
-    };
-}
-
 $effect(() => {
     chatboxStore.setChatboxAnchor(cardEl);
 });
 
 $effect(() => {
-    if (isModelsLoading || models.length === 0) return;
+    if (isModelsLoading || availableModels.length === 0) return;
     if (chatboxStore.model !== null) return;
-    const first = models[0];
+    const first = availableModels[0];
     if (first) chatboxStore.setModel(first.value);
 });
 
@@ -99,7 +108,7 @@ setChatboxContext({
         showSettings = v;
     },
     get models() {
-        return models;
+        return availableModels;
     },
     get isModelsLoading() {
         return isModelsLoading;
@@ -154,13 +163,19 @@ function handleEnter() {
 }
 </script>
 
-{#if mounted}
-<aside
-  in:chatboxIn
-  class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl p-4 bg-opacity-0"
+<PromptComposer
+  bind:cardEl
+  class="absolute bottom-0 left-1/2 -translate-x-1/2"
 >
-  <ChatStatusBar {isThinking} {isSaved} {error} />
-  <div bind:this={cardEl} class="relative">
+  {#snippet statusBar()}
+    <ChatStatusBar
+      {isThinking}
+      {isSaved}
+      {error}
+      onShowError={() => (errorDialogOpen = true)}
+    />
+  {/snippet}
+  {#snippet overlay()}
     {#if chatboxStore.followButtonVisible}
       <div
         transition:fly={{ y: 12, duration: 200, easing: cubicOut }}
@@ -177,38 +192,28 @@ function handleEnter() {
         </Button>
       </div>
     {/if}
-    <Card class="rounded-4xl bg-sidebar text-sidebar-foreground border-sidebar-border">
-      <CardContent class="flex flex-col gap-2 p-4">
-        <div class="flex items-end gap-4">
-          <MarkdownEditor
-            value={chatboxStore.prompt}
-            onChange={(md) => chatboxStore.setPrompt(md)}
-            onEnter={handleEnter}
-            disabled={isPending}
-            {placeholder}
-            autofocus
-            class="grow self-stretch px-1 py-1.5"
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onclick={submit}
-            disabled={isPending || !chatboxStore.prompt.trim()}
-            aria-label="Send prompt"
-          >
-            {#if isPending}
-              <Icon icon="fa6-solid:spinner" class="animate-spin" />
-            {:else}
-              <Icon icon="fa6-solid:arrow-up" />
-            {/if}
-          </Button>
-        </div>
-        <!-- Settings row -->
-        {#if showSettings}
-          <ChatboxSettings {enhance} {isPending} {isEnhancePending} />
-        {/if}
-      </CardContent>
-    </Card>
-  </div>
-</aside>
-{/if}
+  {/snippet}
+  <PromptInputRow>
+    <MarkdownEditor
+      value={chatboxStore.prompt}
+      onChange={(md) => chatboxStore.setPrompt(md)}
+      onEnter={handleEnter}
+      disabled={isPending}
+      {placeholder}
+      autofocus
+      class="grow self-stretch px-1 py-1.5"
+    />
+    <PromptSubmitButton
+      loading={isPending}
+      disabled={isPending || !chatboxStore.prompt.trim()}
+      label="Send prompt"
+      onclick={submit}
+    />
+  </PromptInputRow>
+  <!-- Settings row -->
+  {#if showSettings}
+    <ChatboxSettings {enhance} {isPending} {isEnhancePending} />
+  {/if}
+</PromptComposer>
+
+<ErrorDialog bind:open={errorDialogOpen} error={errorValue} />

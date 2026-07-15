@@ -42,7 +42,7 @@ pub struct ModelSettings {
 pub struct Model {
     /// Unique model identifier.
     pub id: Uuid,
-    /// Human-readable name shown in UIs (e.g. `GPT-4o`).
+    /// Human-readable name shown in UIs.
     pub display_name: String,
     /// Optional longer description of the model.
     pub description: Option<String>,
@@ -52,6 +52,8 @@ pub struct Model {
     pub deployment_name: String,
     /// Portkey provider slug the deployment lives under.
     pub provider: String,
+    /// Input/output modalities the model supports.
+    pub modalities: Vec<String>,
     /// Provider/runtime settings as a JSON object.
     #[schema(value_type = ModelSettings)]
     pub settings: serde_json::Value,

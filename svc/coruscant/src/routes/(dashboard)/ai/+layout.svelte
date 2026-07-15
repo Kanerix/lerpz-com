@@ -7,6 +7,7 @@ import { createChat } from "$lib/ai/chat.svelte.js";
 import { setAiContext } from "$lib/ai/context.svelte.js";
 import { createImage } from "$lib/ai/image.svelte.js";
 import { createModels } from "$lib/ai/models.svelte.js";
+import { createVideo } from "$lib/ai/video.svelte.js";
 import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
 import { DEFAULT_REASONING_LEVEL } from "$lib/components/model-selector/reasoning.js";
@@ -25,6 +26,7 @@ const chat = createChat({
 });
 
 const image = createImage();
+const video = createVideo();
 const modelsHook = createModels();
 
 $effect(() => {
@@ -52,6 +54,7 @@ setAiContext({
     },
     stopChat: chat.stop,
     resetChat: chat.reset,
+    retryChat: chat.retry,
     enterConversation: chat.enterConversation,
     sendChat: chat.send,
     get generatedImage() {
@@ -69,6 +72,21 @@ setAiContext({
     stopImage: image.stop,
     resetImage: image.reset,
     startImage: image.start,
+    get generatedVideo() {
+        return video.video;
+    },
+    get isVideoLoading() {
+        return video.isLoading;
+    },
+    get isVideoDone() {
+        return video.isDone;
+    },
+    get videoError() {
+        return video.error;
+    },
+    stopVideo: video.stop,
+    resetVideo: video.reset,
+    startVideo: video.start,
     get models() {
         return modelsHook.models;
     },
@@ -104,6 +122,7 @@ const showChatbox = $derived(
     isThinking={isPending}
     isSaved={chat.isSaved}
     error={chat.error}
+    errorValue={chat.errorValue}
     models={modelsHook.models}
     isModelsLoading={modelsHook.isLoading}
     loadModels={modelsHook.loadModels}

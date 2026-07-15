@@ -35,6 +35,7 @@ export const MAX_IMAGE_COUNT = 4;
 class EaselStore {
     prompt = $state("");
     model = $state<string | null>(null);
+    easelAnchor = $state<HTMLElement | null>(null);
     aspectRatio = $state<string>(DEFAULT_ASPECT_RATIO);
     count = $state<number>(1);
 
@@ -43,6 +44,9 @@ class EaselStore {
     }
     setModel(model: string | null) {
         this.model = model;
+    }
+    setEaselAnchor(el: HTMLElement | null) {
+        this.easelAnchor = el;
     }
     setAspectRatio(ratio: string) {
         this.aspectRatio = ratio;

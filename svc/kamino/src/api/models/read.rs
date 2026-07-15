@@ -67,6 +67,7 @@ pub async fn handler(
             family AS "family: ModelFamily",
             deployment_name,
             provider,
+            modalities,
             settings,
             created_at,
             updated_at

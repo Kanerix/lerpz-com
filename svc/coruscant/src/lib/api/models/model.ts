@@ -15,12 +15,14 @@ export interface Model {
      * @nullable
      */
   description?: string | null;
-  /** Human-readable name shown in UIs (e.g. `GPT-4o`). */
+  /** Human-readable name shown in UIs. */
   display_name: string;
   /** Provider family the model belongs to. */
   family: ModelFamily;
   /** Unique model identifier. */
   id: string;
+  /** Input/output modalities the model supports. */
+  modalities: string[];
   /** Portkey provider slug the deployment lives under. */
   provider: string;
   /** Provider/runtime settings as a JSON object. */

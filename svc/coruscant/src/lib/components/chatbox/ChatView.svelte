@@ -1,6 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Avatar, AvatarFallback } from "@lerpz/ui/components/avatar";
+import { Button } from "@lerpz/ui/components/button";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
@@ -8,6 +9,7 @@ import { cubicOut } from "svelte/easing";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import CopyButton from "./CopyButton.svelte";
+import DeleteButton from "./DeleteButton.svelte";
 import Markdown from "./Markdown.svelte";
 import ThinkingBlock from "./ThinkingBlock.svelte";
 
@@ -15,11 +17,28 @@ let {
     messages = [],
     isStreaming = false,
     error = null,
+    onRetry,
+    onDelete,
 }: {
     messages: ConversationMessage[];
     isStreaming: boolean;
     error: string | null;
+    /** Re-send the failed message. Shown next to that message when set. */
+    onRetry?: () => void;
+    /** Delete a message by its id. */
+    onDelete?: (id: string) => void;
 } = $props();
+
+// When a send fails, the last user message is the one that didn't go through.
+// Flag it so we can attach a "Not sent" state and a retry action to it.
+const failedMessageId = $derived.by(() => {
+    if (!error || isStreaming) return null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i];
+        if (message?.role === "user") return message.id;
+    }
+    return null;
+});
 
 // Distance (px) from the bottom within which we consider the
 // user to be "at the bottom" and therefore following the stream.
@@ -141,7 +160,7 @@ const EXAMPLE_PROMPTS = [
           <button
             type="button"
             onclick={() => chatboxStore.setPrompt(example.prompt)}
-            class="group flex flex-col gap-1 rounded-xl border border-border bg-card/40 p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent"
+            class="group flex cursor-pointer flex-col gap-1 rounded-xl border border-border bg-card/40 p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent"
           >
             <span class="flex items-center gap-2 text-sm font-medium">
               <Icon icon={example.icon} class="size-3.5 text-muted-foreground transition-colors group-hover:text-primary" />
@@ -211,10 +230,29 @@ const EXAMPLE_PROMPTS = [
           </div>
 
           <div class={cn(
-            "opacity-0 transition-opacity group-hover:opacity-80 focus-within:opacity-80",
-            message.role === "user" ? "pr-9" : "pl-9"
+            "flex items-center gap-0.5 transition-opacity",
+            message.id === failedMessageId
+              ? "opacity-100"
+              : "opacity-0 group-hover:opacity-80 focus-within:opacity-80",
+            message.role === "user" ? "justify-end pr-9" : "pl-9"
           )}>
+            {#if message.id === failedMessageId}
+              <span class="inline-flex items-center gap-1 text-xs font-medium text-destructive">
+                <Icon icon="fa6-solid:circle-exclamation" class="size-3.5 shrink-0" />
+                Not sent
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onclick={() => onRetry?.()}
+                class="h-7 gap-1.5 rounded-full px-3"
+              >
+                <Icon icon="fa6-solid:rotate-right" class="size-3.5 shrink-0" />
+                Try again
+              </Button>
+            {/if}
             <CopyButton text={message.content} />
+            <DeleteButton onDelete={() => onDelete?.(message.id)} />
           </div>
         </div>
       {/each}
@@ -229,12 +267,6 @@ const EXAMPLE_PROMPTS = [
           <div class="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
             <Icon icon="fa6-solid:spinner" class="size-4 animate-spin text-muted-foreground" />
           </div>
-        </div>
-      {/if}
-
-      {#if error}
-        <div class="mx-auto text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2">
-          {error}
         </div>
       {/if}
 

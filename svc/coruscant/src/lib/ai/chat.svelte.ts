@@ -1,4 +1,4 @@
-import { createSseConnection } from "$lib/http/sse.js";
+import { createSseConnection, type SseProblemError } from "$lib/http/sse.js";
 import {
     getCreateChatUrl,
     getSendChatMessageUrl,
@@ -8,8 +8,26 @@ import type {
     ConversationMessage,
     MessageRequest,
 } from "$lib/api/models/index.js";
+import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
 
 export type ChatMessage = ConversationMessage;
+
+/**
+ * Turn an in-band `error` SSE payload into the richest value we can render.
+ *
+ * The server may send a JSON `application/problem+json` string; when it does we
+ * surface the parsed {@link ProblemSchema} so the error dialog can show its rich
+ * view. Otherwise the raw string is kept as-is.
+ */
+function toErrorValue(data: string): unknown {
+    try {
+        const parsed: unknown = JSON.parse(data);
+        if (isProblemSchema(parsed)) return parsed;
+    } catch {
+        // Not JSON – fall through and keep the raw string.
+    }
+    return data;
+}
 
 let _nextTempId = 0;
 function tempId(): string {
@@ -35,6 +53,10 @@ export function createChat(options: UseChatOptions = {}) {
     let isStreaming = $state(false);
     let isSaved = $state(false);
     let error = $state<string | null>(null);
+    // The raw error value (a `ProblemSchema`, `Error`, or string) kept so the
+    // error dialog can render it richly. `error` above stays a plain message
+    // for compact text surfaces like the status bar.
+    let errorValue = $state<unknown>(null);
 
     let closeRef: (() => void) | null = null;
     let assistantBuf = "";
@@ -46,16 +68,37 @@ export function createChat(options: UseChatOptions = {}) {
     let onSaved = options.onSaved;
     let onError = options.onError;
 
+    // Remember the options of the most recent send so `retry()` can replay it
+    // with the same model/reasoning.
+    let lastSendOptions: SendChatOptions = {};
+
     $effect(() => {
         return () => closeRef?.();
     });
 
+    // Remove the failed exchange – the last user message and any partial
+    // assistant reply streamed before the error. Used when the user retries or
+    // sends a new message so a stale "not sent" bubble doesn't linger.
+    function discardFailedExchange() {
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i]?.role === "user") {
+                messages = messages.slice(0, i);
+                return;
+            }
+        }
+    }
+
     function send(prompt: string, sendOptions: SendChatOptions = {}) {
         closeRef?.();
         closeRef = null;
+        lastSendOptions = sendOptions;
         assistantBuf = "";
         reasoningBuf = "";
         assistantMsgId = tempId();
+
+        // If the previous send failed, drop that unsent message before adding
+        // the new one instead of leaving it behind.
+        if (error !== null) discardFailedExchange();
 
         const convId = conversationIdRef;
         const isNew = convId === null;
@@ -87,12 +130,14 @@ export function createChat(options: UseChatOptions = {}) {
             isStreaming = true;
             isSaved = false;
             error = null;
+            errorValue = null;
         } else {
             messages = [...messages, userMsg];
             isLoading = true;
             isStreaming = true;
             isSaved = false;
             error = null;
+            errorValue = null;
         }
 
         const { close } = createSseConnection(
@@ -171,8 +216,12 @@ export function createChat(options: UseChatOptions = {}) {
                         case "error": {
                             isLoading = false;
                             isStreaming = false;
-                            error = data;
-                            onError?.(data);
+                            const value = toErrorValue(data);
+                            errorValue = value;
+                            error = isProblemSchema(value)
+                                ? value.detail
+                                : data;
+                            onError?.(error ?? "");
                             closeRef = null;
                             break;
                         }
@@ -181,6 +230,10 @@ export function createChat(options: UseChatOptions = {}) {
                 onError: (err) => {
                     isLoading = false;
                     isStreaming = false;
+                    errorValue =
+                        "problem" in err
+                            ? (err as SseProblemError).problem
+                            : err;
                     error = err.message || "An error occurred while streaming.";
                     onError?.(error ?? "");
                     closeRef = null;
@@ -190,6 +243,7 @@ export function createChat(options: UseChatOptions = {}) {
                     isStreaming = false;
                     if (incomplete && !error) {
                         error = "Stream ended unexpectedly.";
+                        errorValue = new Error(error);
                     }
                     closeRef = null;
                 },
@@ -206,6 +260,26 @@ export function createChat(options: UseChatOptions = {}) {
         isStreaming = false;
     }
 
+    /**
+     * Re-send the most recent user message after a failure.
+     *
+     * Drops the failed user message (and any partial assistant reply streamed
+     * before the error) so the resend doesn't duplicate the exchange, then
+     * replays it with the same options.
+     */
+    function retry() {
+        let failed: ConversationMessage | undefined;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i]?.role === "user") {
+                failed = messages[i];
+                break;
+            }
+        }
+        if (!failed) return;
+        // `send` discards the stale failed exchange before re-adding it.
+        send(failed.content, lastSendOptions);
+    }
+
     function reset() {
         closeRef?.();
         closeRef = null;
@@ -218,6 +292,7 @@ export function createChat(options: UseChatOptions = {}) {
         isStreaming = false;
         isSaved = false;
         error = null;
+        errorValue = null;
     }
 
     function enterConversation(id: string, msgs: ConversationMessage[] = []) {
@@ -232,6 +307,7 @@ export function createChat(options: UseChatOptions = {}) {
         isStreaming = false;
         isSaved = true;
         error = null;
+        errorValue = null;
     }
 
     return {
@@ -253,8 +329,12 @@ export function createChat(options: UseChatOptions = {}) {
         get error() {
             return error;
         },
+        get errorValue() {
+            return errorValue;
+        },
         send,
         stop,
+        retry,
         reset,
         enterConversation,
     };

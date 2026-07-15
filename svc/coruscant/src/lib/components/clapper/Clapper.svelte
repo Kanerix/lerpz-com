@@ -6,11 +6,11 @@ import {
     PromptInputRow,
     PromptSubmitButton,
 } from "$lib/components/prompt";
-import EaselSettings from "./EaselSettings.svelte";
-import EaselStatusBar from "./EaselStatusBar.svelte";
-import { easelStore } from "./easel.store.svelte.js";
-import type { EaselSubmitArgs } from "./easel-context.svelte.js";
-import { setEaselContext } from "./easel-context.svelte.js";
+import ClapperSettings from "./ClapperSettings.svelte";
+import ClapperStatusBar from "./ClapperStatusBar.svelte";
+import { clapperStore } from "./clapper.store.svelte.js";
+import type { ClapperSubmitArgs } from "./clapper-context.svelte.js";
+import { setClapperContext } from "./clapper-context.svelte.js";
 
 let {
     onSubmit,
@@ -21,7 +21,7 @@ let {
     error = null,
     class: className = "",
 }: {
-    onSubmit?: (args: EaselSubmitArgs) => void | Promise<void>;
+    onSubmit?: (args: ClapperSubmitArgs) => void | Promise<void>;
     onEnhance?: (prompt: string) => Promise<string>;
     models?: Model[];
     isModelsLoading?: boolean;
@@ -35,8 +35,8 @@ let isEnhancePending = $state(false);
 
 const isPending = $derived(isSubmitPending || isEnhancePending || isGenerating);
 
-// Only image-generation models make sense in the easel.
-const availableModels = $derived(filterModelsByModality(models, "image"));
+// Only video-generation models make sense in the clapper.
+const availableModels = $derived(filterModelsByModality(models, "video"));
 
 let textareaEl = $state<HTMLTextAreaElement | null>(null);
 let cardEl = $state<HTMLDivElement | null>(null);
@@ -47,7 +47,7 @@ $effect(() => {
 });
 
 $effect(() => {
-    easelStore.setEaselAnchor(cardEl);
+    clapperStore.setClapperAnchor(cardEl);
 });
 
 // Grow the textarea with its content, up to a sensible ceiling.
@@ -60,16 +60,16 @@ function autosize() {
 
 $effect(() => {
     // Re-run autosize when the prompt is changed programmatically (e.g. enhance).
-    easelStore.prompt;
+    clapperStore.prompt;
     autosize();
 });
 
-// Default the model to the first available one, matching the chatbox behaviour.
+// Default the model to the first available one, matching the easel behaviour.
 $effect(() => {
     if (isModelsLoading || availableModels.length === 0) return;
-    if (easelStore.model !== null) return;
+    if (clapperStore.model !== null) return;
     const first = availableModels[0];
-    if (first) easelStore.setModel(first.value);
+    if (first) clapperStore.setModel(first.value);
 });
 
 $effect(() => {
@@ -82,7 +82,7 @@ $effect(() => {
     return () => window.removeEventListener("beforeunload", handler);
 });
 
-setEaselContext({
+setClapperContext({
     get models() {
         return availableModels;
     },
@@ -103,18 +103,18 @@ setEaselContext({
 });
 
 async function submit() {
-    const trimmed = easelStore.prompt.trim();
+    const trimmed = clapperStore.prompt.trim();
     if (!trimmed || isPending) return;
-    const args: EaselSubmitArgs = {
+    const args: ClapperSubmitArgs = {
         prompt: trimmed,
-        model: easelStore.model,
-        aspectRatio: easelStore.aspectRatio,
-        count: easelStore.count,
+        model: clapperStore.model,
+        aspectRatio: clapperStore.aspectRatio,
+        duration: clapperStore.duration,
     };
     isSubmitPending = true;
     try {
         if (onSubmit) await onSubmit(args);
-        easelStore.setPrompt("");
+        clapperStore.setPrompt("");
     } finally {
         isSubmitPending = false;
     }
@@ -139,23 +139,23 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 function handleInput(e: Event) {
-    easelStore.setPrompt((e.target as HTMLTextAreaElement).value);
+    clapperStore.setPrompt((e.target as HTMLTextAreaElement).value);
     autosize();
 }
 </script>
 
 <PromptComposer bind:cardEl class={className}>
   {#snippet statusBar()}
-    <EaselStatusBar {isGenerating} {error} />
+    <ClapperStatusBar {isGenerating} {error} />
   {/snippet}
   <PromptInputRow>
     <textarea
       bind:this={textareaEl}
-      value={easelStore.prompt}
+      value={clapperStore.prompt}
       oninput={handleInput}
       onkeydown={handleKeydown}
       disabled={isPending}
-      placeholder="Describe the image you want to create…"
+      placeholder="Describe the video you want to create…"
       rows="1"
       class={cn(
         "grow resize-none self-stretch bg-transparent px-1 py-1.5 text-sm",
@@ -165,12 +165,12 @@ function handleInput(e: Event) {
     ></textarea>
     <PromptSubmitButton
       loading={isPending}
-      disabled={isPending || !easelStore.prompt.trim()}
-      label="Generate image"
+      disabled={isPending || !clapperStore.prompt.trim()}
+      label="Generate video"
       onclick={submit}
     />
   </PromptInputRow>
-  <EaselSettings {enhance} {isPending} {isEnhancePending} />
+  <ClapperSettings {enhance} {isPending} {isEnhancePending} />
 </PromptComposer>
 
 <style>

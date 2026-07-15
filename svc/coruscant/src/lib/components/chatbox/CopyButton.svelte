@@ -1,5 +1,11 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Button } from "@lerpz/ui/components/button";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@lerpz/ui/components/tooltip";
 import { cn } from "@lerpz/ui/lib/utils";
 import { toast } from "svelte-sonner";
 
@@ -30,15 +36,22 @@ async function copy() {
 }
 </script>
 
-<button
-  type="button"
-  onclick={copy}
-  aria-label={copied ? "Copied to clipboard" : "Copy message"}
-  class={cn(
-    "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground",
-    className,
-  )}
->
-  <Icon icon={copied ? "fa6-solid:check" : "fa6-regular:copy"} class="size-3.5 shrink-0" />
-  <span>{copied ? "Copied" : "Copy"}</span>
-</button>
+<Tooltip side="bottom" align="end">
+  <TooltipTrigger>
+    {#snippet asChild(getProps)}
+      <Button
+        {...getProps()}
+        variant="ghost"
+        size="icon-xs"
+        onclick={copy}
+        aria-label={copied ? "Copied to clipboard" : "Copy message"}
+        class={cn("text-muted-foreground", className)}
+      >
+        <Icon icon={copied ? "fa6-solid:check" : "fa6-regular:copy"} class="size-3.5 shrink-0" />
+      </Button>
+    {/snippet}
+  </TooltipTrigger>
+  <TooltipContent>
+    <p>{copied ? "Copied!" : "Copy message"}</p>
+  </TooltipContent>
+</Tooltip>

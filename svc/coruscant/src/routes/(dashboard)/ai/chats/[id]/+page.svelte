@@ -1,9 +1,9 @@
 <script lang="ts">
 import { Skeleton } from "@lerpz/ui/components/skeleton";
 import { createQuery } from "@tanstack/svelte-query";
-import ChatView from "$lib/components/chatbox/ChatView.svelte";
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import { getChat } from "$lib/api/chats/chats.js";
+import ChatView from "$lib/components/chatbox/ChatView.svelte";
 import type { PageProps } from "./$types.js";
 
 let { params }: PageProps = $props();
@@ -51,5 +51,5 @@ const messages = $derived(
     Error: {query.data?.status}
   </p>
 {:else}
-  <ChatView {messages} isStreaming={isLive && ai.isChatStreaming} error={isLive ? ai.chatError : null} />
+  <ChatView {messages} isStreaming={isLive && ai.isChatStreaming} error={isLive ? ai.chatError : null} onRetry={ai.retryChat} />
 {/if}

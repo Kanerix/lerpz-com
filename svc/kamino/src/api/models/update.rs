@@ -38,6 +38,9 @@ pub struct UpdateModelRequest {
     /// Portkey provider slug the deployment lives under.
     #[serde(default)]
     provider: Option<String>,
+    /// Input/output modalities the model supports (e.g. `text`, `image`).
+    #[serde(default)]
+    modalities: Option<Vec<String>>,
     /// Provider/runtime settings as a JSON object.
     #[serde(default)]
     #[schema(value_type = Option<ModelSettings>)]
@@ -112,7 +115,8 @@ pub async fn handler(
             family = COALESCE($4, family),
             deployment_name = COALESCE($5, deployment_name),
             provider = COALESCE($6, provider),
-            settings = COALESCE($7, settings)
+            modalities = COALESCE($7, modalities),
+            settings = COALESCE($8, settings)
         WHERE id = $1
         RETURNING
             id,
@@ -121,6 +125,7 @@ pub async fn handler(
             family AS "family: ModelFamily",
             deployment_name,
             provider,
+            modalities,
             settings,
             created_at,
             updated_at"#,
@@ -130,6 +135,7 @@ pub async fn handler(
         body.family as _,
         body.deployment_name.as_deref(),
         body.provider.as_deref(),
+        body.modalities.as_deref(),
         body.settings,
     )
     .fetch_optional(&database)

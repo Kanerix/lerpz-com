@@ -28,6 +28,9 @@ pub struct CreateModelRequest {
     deployment_name: String,
     /// Portkey provider slug the deployment lives under.
     provider: String,
+    /// Input/output modalities the model supports (e.g. `text`, `image`). Defaults to `[]`.
+    #[serde(default)]
+    modalities: Vec<String>,
     /// Provider/runtime settings as a JSON object. Defaults to `{}`.
     #[serde(default)]
     #[schema(value_type = Option<ModelSettings>)]
@@ -89,8 +92,8 @@ pub async fn handler(
     let model = sqlx::query_as!(
         Model,
         r#"INSERT INTO models
-            (display_name, description, family, deployment_name, provider, settings)
-        VALUES ($1, $2, $3, $4, $5, $6)
+            (display_name, description, family, deployment_name, provider, modalities, settings)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING
             id,
             display_name,
@@ -98,6 +101,7 @@ pub async fn handler(
             family AS "family: ModelFamily",
             deployment_name,
             provider,
+            modalities,
             settings,
             created_at,
             updated_at"#,
@@ -106,6 +110,7 @@ pub async fn handler(
         body.family as _,
         &body.deployment_name,
         &body.provider,
+        &body.modalities,
         settings,
     )
     .fetch_one(&database)

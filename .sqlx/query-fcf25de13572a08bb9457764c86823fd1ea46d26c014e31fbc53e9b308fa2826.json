@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE models SET\n            display_name = COALESCE($2, display_name),\n            description = COALESCE($3, description),\n            family = COALESCE($4, family),\n            deployment_name = COALESCE($5, deployment_name),\n            provider = COALESCE($6, provider),\n            settings = COALESCE($7, settings)\n        WHERE id = $1\n        RETURNING\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            settings,\n            created_at,\n            updated_at",
+  "query": "UPDATE models SET\n            display_name = COALESCE($2, display_name),\n            description = COALESCE($3, description),\n            family = COALESCE($4, family),\n            deployment_name = COALESCE($5, deployment_name),\n            provider = COALESCE($6, provider),\n            modalities = COALESCE($7, modalities),\n            settings = COALESCE($8, settings)\n        WHERE id = $1\n        RETURNING\n            id,\n            display_name,\n            description,\n            family AS \"family: ModelFamily\",\n            deployment_name,\n            provider,\n            modalities,\n            settings,\n            created_at,\n            updated_at",
   "describe": {
     "columns": [
       {
@@ -46,16 +46,21 @@
       },
       {
         "ordinal": 6,
+        "name": "modalities",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 7,
         "name": "settings",
         "type_info": "Jsonb"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -79,6 +84,7 @@
         },
         "Varchar",
         "Varchar",
+        "TextArray",
         "Jsonb"
       ]
     },
@@ -91,8 +97,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "94a5aad4f4c18a28bc618871d35b0ddda84e3e2e6e0061bf538604512eba74b0"
+  "hash": "fcf25de13572a08bb9457764c86823fd1ea46d26c014e31fbc53e9b308fa2826"
 }

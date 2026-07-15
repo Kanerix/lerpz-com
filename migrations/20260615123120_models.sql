@@ -11,6 +11,8 @@ CREATE TABLE models (
     -- portkey routing
     deployment_name     VARCHAR(255)    NOT NULL,
     provider            VARCHAR(255)    NOT NULL,
+    -- capabilities
+    modalities          TEXT[]          NOT NULL DEFAULT '{}',
     -- configuration
     settings            JSONB           NOT NULL DEFAULT '{}'::jsonb,
     -- other

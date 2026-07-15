@@ -2,6 +2,7 @@ import { getContext, setContext } from "svelte";
 import type { SendChatOptions } from "$lib/ai/chat.svelte.js";
 import type { StartImageOptions } from "$lib/ai/image.svelte.js";
 import type { Model } from "$lib/ai/models.svelte.js";
+import type { StartVideoOptions } from "$lib/ai/video.svelte.js";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 
 export const AI_CONTEXT_KEY = Symbol("ai-context");
@@ -15,6 +16,7 @@ export type AiContextValue = {
     readonly isChatSaved: boolean;
     stopChat: () => void;
     resetChat: () => void;
+    retryChat: () => void;
     enterConversation: (id: string, messages?: ConversationMessage[]) => void;
     sendChat: (prompt: string, options?: SendChatOptions) => void;
     readonly generatedImage: string | null;
@@ -24,6 +26,13 @@ export type AiContextValue = {
     stopImage: () => void;
     resetImage: () => void;
     startImage: (prompt: string, options?: StartImageOptions) => void;
+    readonly generatedVideo: string | null;
+    readonly isVideoLoading: boolean;
+    readonly isVideoDone: boolean;
+    readonly videoError: string | null;
+    stopVideo: () => void;
+    resetVideo: () => void;
+    startVideo: (prompt: string, options?: StartVideoOptions) => void;
     readonly models: Model[];
     readonly isModelsLoading: boolean;
     loadModels: (modality?: string) => Promise<void>;

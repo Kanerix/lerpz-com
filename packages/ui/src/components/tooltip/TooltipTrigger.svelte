@@ -25,7 +25,7 @@ let {
 
 <Tooltip.Trigger
     data-slot="tooltip-trigger"
-    class={cn(className)}
+    class={cn("cursor-pointer", className)}
     {asChild}
     {...rest}
 >
