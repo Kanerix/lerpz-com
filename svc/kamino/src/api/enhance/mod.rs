@@ -58,7 +58,7 @@ async fn enhance_prompt(
 ) -> HandlerResult<String> {
     let model = model
         .filter(|m| !m.trim().is_empty())
-        .unwrap_or_else(|| CONFIG.DEFAULT_COMPLETIONS_MODEL.to_string());
+        .unwrap_or_else(|| CONFIG.DEFAULT_ENHANCE_MODEL.to_string());
 
     tracing::trace!(%model, "enhancing prompt");
 
