@@ -83,9 +83,9 @@ function dismissError() {
           >
             <div class="flex items-start gap-2">
               <Icon icon="fa6-solid:circle-exclamation" class="mt-0.5 size-4 shrink-0" />
-              <div class="flex-1">
+              <div class="min-w-0 flex-1">
                 <p class="font-medium">Authentication failed</p>
-                <p class="mt-1 break-words text-destructive/80">
+                <p class="mt-1 break-all text-destructive/80">
                   {description ?? "Something went wrong while signing you in."}
                 </p>
                 <p class="mt-2 font-mono text-xs text-destructive/60">{error}</p>

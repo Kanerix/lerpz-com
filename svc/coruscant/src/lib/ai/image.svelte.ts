@@ -35,7 +35,14 @@ function parseImageFrame(data: string): string | null {
     return null;
 }
 
-/** Extracts a human-readable message from an `error` event payload. */
+/**
+ * Unwraps the message from an `error` event payload.
+ *
+ * The backend already normalises upstream provider errors into a single plain
+ * string (see the `lerpz-portkey` crate) and sends it JSON-encoded, so all we
+ * do here is unwrap the JSON string. Anything unexpected falls back to a
+ * generic message.
+ */
 function parseErrorMessage(data: string): string {
     try {
         const parsed = JSON.parse(data);
