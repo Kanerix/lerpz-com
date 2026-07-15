@@ -57,11 +57,6 @@ const categories: Category[] = [
                 icon: "fa6-regular:images",
             },
             {
-                title: "Edit",
-                href: "/ai/images/edit",
-                icon: "fa6-solid:pen-to-square",
-            },
-            {
                 title: "Analysis",
                 href: "/ai/images/analysis",
                 icon: "fa6-solid:magnifying-glass",

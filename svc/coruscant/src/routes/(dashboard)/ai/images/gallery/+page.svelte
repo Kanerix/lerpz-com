@@ -1,9 +1,22 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@lerpz/ui/components/dropdown-menu";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
-import { createInfiniteQuery } from "@tanstack/svelte-query";
+import {
+    createInfiniteQuery,
+    type InfiniteData,
+    useQueryClient,
+} from "@tanstack/svelte-query";
+import { toast } from "svelte-sonner";
 import { authenticatedFetch } from "$lib/http/fetch.js";
+import { downloadImage } from "$lib/utils/download.js";
+import { fade, fly } from "$lib/utils/transitions.js";
 
 // DRAFT: this page fetches the paginated image list directly via
 // `authenticatedFetch`. Once the kamino OpenAPI spec is regenerated
@@ -61,6 +74,61 @@ const query = createInfiniteQuery(() => ({
 
 const images = $derived(query.data?.pages.flatMap((page) => page.items) ?? []);
 
+const queryClient = useQueryClient();
+
+const GALLERY_QUERY_KEY = ["/api/v1/images", "gallery"] as const;
+
+// Images currently being deleted, so their card can show a spinner and ignore
+// repeat clicks while the request is in flight.
+let pendingIds = $state<string[]>([]);
+
+async function handleDelete(image: GalleryImage) {
+    if (pendingIds.includes(image.id)) return;
+    pendingIds = [...pendingIds, image.id];
+    try {
+        const res = await authenticatedFetch(`/api/v1/images/${image.id}`, {
+            method: "DELETE",
+        });
+        if (!res.ok) {
+            throw new Error(`Failed to delete image (${res.status})`);
+        }
+        // Drop the image from every cached page so it disappears without
+        // refetching (which would reset the infinite pagination).
+        queryClient.setQueryData<
+            InfiniteData<ImageListResponse, string | null>
+        >(GALLERY_QUERY_KEY, (data) => {
+            if (!data) return data;
+            return {
+                ...data,
+                pages: data.pages.map((page) => ({
+                    ...page,
+                    items: page.items.filter((item) => item.id !== image.id),
+                })),
+            };
+        });
+        toast.success("Image deleted");
+    } catch (err) {
+        toast.error("Couldn't delete image", {
+            description:
+                err instanceof Error ? err.message : "Please try again.",
+        });
+    } finally {
+        pendingIds = pendingIds.filter((id) => id !== image.id);
+    }
+}
+
+async function handleDownload(image: GalleryImage) {
+    const filename = image.format ? `${image.id}.${image.format}` : image.id;
+    try {
+        await downloadImage(image.url, filename);
+    } catch (err) {
+        toast.error("Couldn't download image", {
+            description:
+                err instanceof Error ? err.message : "Please try again.",
+        });
+    }
+}
+
 // Skeleton placeholders with varied heights so the loading state reads as a
 // masonry grid rather than a uniform block.
 const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
@@ -75,10 +143,10 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
   </header>
 
   {#if query.isLoading}
-    <div class="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
+    <div class="flex flex-wrap justify-center gap-3">
       {#each skeletonHeights as height, i (i)}
         <Skeleton
-          class="w-full break-inside-avoid rounded-xl"
+          class="w-72 max-w-full rounded-xl"
           style="height: {height}px"
         />
       {/each}
@@ -107,33 +175,71 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
       </Button>
     </div>
   {:else}
-    <div class="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
-      {#each images as image (image.id)}
-        <a
-          href={image.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="group relative block break-inside-avoid overflow-hidden rounded-xl border border-border bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          title={image.title ?? image.prompt}
+    <div class="flex flex-wrap justify-center gap-3">
+      {#each images as image, i (image.id)}
+        {@const isPending = pendingIds.includes(image.id)}
+        <div
+          class="group relative w-72 max-w-full"
+          in:fly|global={{ y: 16, duration: 350, delay: (i % PAGE_SIZE) * 25 }}
+          out:fade|global={{ duration: 200 }}
         >
-          <img
-            src={image.url}
-            alt={image.title ?? image.prompt}
-            loading="lazy"
-            width={image.width}
-            height={image.height}
-            style="aspect-ratio: {image.width} / {image.height}"
-            class="w-full bg-muted/30 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          />
-          <div
-            class="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+          <a
+            href={image.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="block transform-gpu overflow-hidden rounded-xl border border-border bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            title={image.title ?? image.prompt}
           >
-            <p class="line-clamp-2 text-xs text-white/90">{image.prompt}</p>
-            <p class="mt-1 text-[10px] uppercase tracking-wide text-white/60">
-              {image.model}
-            </p>
-          </div>
-        </a>
+            <img
+              src={image.url}
+              alt={image.title ?? image.prompt}
+              loading="lazy"
+              width={image.width}
+              height={image.height}
+              style="aspect-ratio: {image.width} / {image.height}"
+              class="w-full bg-muted/30 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+            <div
+              class="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+            >
+              <p class="line-clamp-2 text-xs text-white/90">{image.prompt}</p>
+              <p class="mt-1 text-[10px] uppercase tracking-wide text-white/60">
+                {image.model}
+              </p>
+            </div>
+          </a>
+
+          <DropdownMenu align="end" sideOffset={4}>
+            <DropdownMenuTrigger
+              aria-label="Image options"
+              class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-md bg-black/30 text-white opacity-0 outline-none backdrop-blur-sm transition-opacity hover:bg-black/50 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+            >
+              {#if isPending}
+                <Icon icon="fa6-solid:spinner" class="size-3.5 animate-spin" />
+              {:else}
+                <Icon icon="fa6-solid:ellipsis" class="size-3.5" />
+              {/if}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-40">
+              <DropdownMenuItem
+                value="download"
+                onclick={() => handleDownload(image)}
+              >
+                <Icon icon="fa6-solid:download" />
+                Download
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                value="delete"
+                disabled={isPending}
+                onclick={() => handleDelete(image)}
+                class="text-destructive focus:text-destructive hover:text-destructive"
+              >
+                <Icon icon="fa6-solid:trash" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       {/each}
     </div>
 

@@ -16,6 +16,7 @@ import type {
 } from '@tanstack/svelte-query';
 
 import type {
+  ImageAnalysisResponse,
   ImageListResponse,
   ImageRequest,
   ListImagesParams,
@@ -425,6 +426,112 @@ export function createDeleteImage<TData = Awaited<ReturnType<typeof deleteImage>
 
 
   const query = createQuery(() => getDeleteImageQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type analyzeImageResponse200 = {
+  data: ImageAnalysisResponse
+  status: 200
+}
+
+export type analyzeImageResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type analyzeImageResponse404 = {
+  data: ProblemSchema
+  status: 404
+}
+
+export type analyzeImageResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type analyzeImageResponseSuccess = (analyzeImageResponse200) & {
+  headers: Headers;
+};
+export type analyzeImageResponseError = (analyzeImageResponse401 | analyzeImageResponse404 | analyzeImageResponse500) & {
+  headers: Headers;
+};
+
+export type analyzeImageResponse = (analyzeImageResponseSuccess | analyzeImageResponseError)
+
+export const getAnalyzeImageUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/images/${id}/analysis`
+}
+
+/**
+ * Runs a vision model over a previously generated image to produce a descriptive title and a set of tags, persists them to the image's metadata, and returns them. Re-running the analysis overwrites any existing title and tags.
+ * @summary Analyse an image
+ */
+export const analyzeImage = async (id: string, options?: RequestInit): Promise<analyzeImageResponse> => {
+
+  return customFetch<analyzeImageResponse>(getAnalyzeImageUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAnalyzeImageQueryKey = (id: string,) => {
+    return [
+    'POST', `/api/v1/images/${id}/analysis`
+    ] as const;
+    }
+
+
+export const getAnalyzeImageQueryOptions = <TData = Awaited<ReturnType<typeof analyzeImage>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeImageQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeImage>>> = ({ signal }) => analyzeImage(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof analyzeImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeImageQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeImage>>>
+export type AnalyzeImageQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Analyse an image
+ */
+
+export function createAnalyzeImage<TData = Awaited<ReturnType<typeof analyzeImage>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getAnalyzeImageQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return query
 }

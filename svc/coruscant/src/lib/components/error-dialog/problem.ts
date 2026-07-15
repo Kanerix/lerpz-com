@@ -42,3 +42,38 @@ export function getErrorTraceback(error: unknown): string {
         return String(error);
     }
 }
+
+/**
+ * Best-effort recovery of a rich error value from an arbitrary thrown value,
+ * ready to hand to the {@link import('./ErrorDialog.svelte')} component.
+ *
+ * The generated API client's `customFetch` mutator throws an `Error` whose
+ * message is `HTTP <status>: <body>`, where the body is usually an RFC 9457
+ * `problem+json` payload. This unwraps that payload back into a
+ * {@link ProblemSchema} so the dialog can render its rich problem view;
+ * anything that can't be parsed as a problem is returned untouched for the
+ * generic fallback view.
+ */
+export function toProblemError(error: unknown): unknown {
+    if (isProblemSchema(error)) return error;
+
+    const message =
+        error instanceof Error
+            ? error.message
+            : typeof error === "string"
+              ? error
+              : null;
+    if (!message) return error;
+
+    const start = message.indexOf("{");
+    const end = message.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+        try {
+            const parsed: unknown = JSON.parse(message.slice(start, end + 1));
+            if (isProblemSchema(parsed)) return parsed;
+        } catch {
+            // Not a problem payload – fall through and keep the original error.
+        }
+    }
+    return error;
+}

@@ -9,6 +9,7 @@ export * from './editLatestMessageRequest';
 export * from './enhanceRequest';
 export * from './enhanceResponse';
 export * from './healthCheck';
+export * from './imageAnalysisResponse';
 export * from './imageItem';
 export * from './imageListResponse';
 export * from './imageRequest';
