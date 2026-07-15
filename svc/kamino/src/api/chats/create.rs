@@ -43,13 +43,11 @@ pub struct ChatRequest {
     operation_id = "create_chat",
     tag = CHATS_TAG,
     summary = "Create a new chat",
-    description = "Creates a new conversation, streams the AI reply back via Server-Sent Events. \
-        The first event is `conversation_created` with the new conversation ID; \
-        subsequent `reasoning` events carry incremental chain-of-thought chunks \
-        (reasoning models only) and `message` events carry incremental answer \
-        token chunks until the stream ends; \
-        `saved` confirms the reply was persisted and is the final event before the stream closes; \
-        `error` is emitted on failures.",
+    description = "Creates a new conversation and streams the AI reply via \
+        Server-Sent Events. Events: `conversation_created` (new conversation \
+        UUID, sent first), `reasoning` (chain-of-thought chunk, reasoning models \
+        only), `message` (answer token chunk), `saved` (conversation UUID \
+        confirming persistence, sent last), `error` (error message).",
     request_body(
         content = ChatRequest,
         description = "Chat creation parameters",
@@ -58,12 +56,8 @@ pub struct ChatRequest {
     responses(
         (
             status = OK,
-            description = "SSE stream of AI response chunks. Events: \
-                conversation_created (conversation UUID), \
-                reasoning (reasoning token chunk), \
-                message (token chunk), \
-                saved (conversation UUID), \
-                error (error message)",
+            description = "SSE stream of the AI reply; see the endpoint \
+                description for the event sequence",
             content_type = "text/event-stream",
             body = String,
         ),

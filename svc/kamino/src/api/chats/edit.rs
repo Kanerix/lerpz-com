@@ -26,8 +26,8 @@ use crate::{
 };
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct MessageRequest {
-    /// The user's message text
+pub struct EditLatestMessageRequest {
+    /// The replacement text for the conversation's latest user message.
     prompt: String,
     /// Optional model override. Switches the conversation to this model for
     /// this and future messages. Uses the conversation's current model when
@@ -42,22 +42,24 @@ pub struct MessageRequest {
 
 #[utoipa::path(
     method(post),
-    path = "/{id}",
-    operation_id = "send_chat_message",
+    path = "/{id}/messages/latest",
+    operation_id = "edit_latest_chat_message",
     tag = CHATS_TAG,
-    summary = "Send a message in an existing chat",
-    description = "Appends a new user message to the conversation and streams the \
-        AI reply via Server-Sent Events. Requires the conversation to belong to \
-        the authenticated user. Events: `reasoning` (chain-of-thought chunk, \
-        reasoning models only), `message` (answer token chunk), `saved` \
-        (conversation UUID confirming persistence, sent last), `error` (error \
-        message).",
+    summary = "Edit the latest message in a chat",
+    description = "Replaces the content of the conversation's most recent user \
+        message, discards the assistant reply (and any later turns) that followed \
+        it, then regenerates and streams a fresh reply via Server-Sent Events. \
+        Only the latest message can be edited, since editing an earlier one would \
+        require regenerating everything after it. Events: `reasoning` \
+        (chain-of-thought chunk, reasoning models only), `message` (answer token \
+        chunk), `saved` (conversation UUID confirming persistence, sent last), \
+        `error` (error message).",
     params(
         ("id" = Uuid, Path, description = "Conversation ID"),
     ),
     request_body(
-        content = MessageRequest,
-        description = "Message parameters",
+        content = EditLatestMessageRequest,
+        description = "Replacement message parameters",
         content_type = "application/json"
     ),
     responses(
@@ -87,6 +89,12 @@ pub struct MessageRequest {
             content_type = "application/problem+json"
         ),
         (
+            status = CONFLICT,
+            description = "The conversation has no user message to edit",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
             status = INTERNAL_SERVER_ERROR,
             description = "Unexpected server error",
             body = ProblemSchema,
@@ -100,7 +108,7 @@ pub async fn handler(
     Path(conv_id): Path<Uuid>,
     State(openai): State<OpenAI>,
     State(database): State<DatabasePool>,
-    Json(body): Json<MessageRequest>,
+    Json(body): Json<EditLatestMessageRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
     let user_id = token.sub;
     let prompt = body.prompt;
@@ -126,6 +134,52 @@ pub async fn handler(
             ));
         }
     };
+
+    // Only the conversation's most recent user message can be edited. `id` is a
+    // uuidv7, so it is monotonic with insertion order: we use it both to locate
+    // that message and as the boundary for discarding everything after it.
+    let latest_user_id = sqlx::query_scalar!(
+        "SELECT id FROM messages
+        WHERE conversation_id = $1 AND role = 'user'
+        ORDER BY id DESC
+        LIMIT 1",
+        &conv_id,
+    )
+    .fetch_optional(&database)
+    .await?;
+
+    let latest_user_id = match latest_user_id {
+        Some(id) => id,
+        None => {
+            tracing::warn!(%conv_id, "no user message to edit");
+            return Err(Problem::new(
+                StatusCode::CONFLICT,
+                "Conflict",
+                "This conversation has no message to edit.",
+            ));
+        }
+    };
+
+    // Replace the message content and drop the stale reply(ies) that followed it
+    // in a single transaction, so an interrupted edit can't leave the
+    // conversation half-updated.
+    tracing::trace!(%conv_id, %latest_user_id, "editing latest message");
+    let mut tx = database.begin().await?;
+    sqlx::query!(
+        "UPDATE messages SET content = $1 WHERE id = $2",
+        &prompt,
+        &latest_user_id,
+    )
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query!(
+        "DELETE FROM messages WHERE conversation_id = $1 AND id > $2",
+        &conv_id,
+        &latest_user_id,
+    )
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
 
     // Honour a model override from the client, falling back to the model the
     // conversation is currently pinned to. When the model changes, persist it so
@@ -154,7 +208,9 @@ pub async fn handler(
     .fetch_optional(&database)
     .await?;
 
-    tracing::trace!(%conv_id, "loading previous messages");
+    // After the edit the conversation ends with the edited user message, so the
+    // loaded history already contains the prompt to complete against.
+    tracing::trace!(%conv_id, "loading messages");
     let previous_messages = sqlx::query!(
         "SELECT role AS \"role: String\", content
         FROM messages
@@ -163,16 +219,6 @@ pub async fn handler(
         &conv_id,
     )
     .fetch_all(&database)
-    .await?;
-
-    tracing::trace!(%conv_id, "persisting user message");
-    sqlx::query!(
-        "INSERT INTO messages (conversation_id, role, content)
-        VALUES ($1, 'user', $2)",
-        &conv_id,
-        &prompt,
-    )
-    .execute(&database)
     .await?;
 
     let mut messages: Vec<async_openai::types::chat::ChatCompletionRequestMessage> = Vec::new();
@@ -199,13 +245,6 @@ pub async fn handler(
         }
     }
 
-    messages.push(
-        ChatCompletionRequestUserMessageArgs::default()
-            .content(prompt)
-            .build()?
-            .into(),
-    );
-
     let mut request_builder = CreateChatCompletionRequestArgs::default();
 
     request_builder
@@ -224,8 +263,7 @@ pub async fn handler(
     }
 
     let request = request_builder.build()?;
-    let sse_stream =
-        start_completion_sse(openai, request, conv_id, database, model_family).await?;
+    let sse_stream = start_completion_sse(openai, request, conv_id, database, model_family).await?;
 
     Ok(Sse::new(sse_stream))
 }

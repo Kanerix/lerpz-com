@@ -49,6 +49,15 @@ const failedMessageId = $derived.by(() => {
     return null;
 });
 
+// The most recent user message is the only one that can be edited (resent).
+const latestUserMessageId = $derived.by(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i];
+        if (message?.role === "user") return message.id;
+    }
+    return null;
+});
+
 // Distance (px) from the bottom within which we consider the
 // user to be "at the bottom" and therefore following the stream.
 const BOTTOM_THRESHOLD = 64;
@@ -186,6 +195,7 @@ const EXAMPLE_PROMPTS = [
     <ScrollArea bind:viewportRef orientation="vertical" class="h-full w-full">
       <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 pb-48">
       {#each messages as message, index (message.id)}
+        {@const isEditing = chatboxStore.editingMessageId === message.id}
         <div
           in:bubbleIn={{ role: message.role }}
           class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}
@@ -207,7 +217,8 @@ const EXAMPLE_PROMPTS = [
               "min-w-0 rounded-2xl px-4 py-2.5 text-base leading-relaxed wrap-break-word",
               message.role === "user"
                 ? "bg-primary text-primary-foreground rounded-br-md"
-                : "bg-muted text-foreground rounded-bl-md"
+                : "bg-muted text-foreground rounded-bl-md",
+              isEditing && "opacity-60 outline-2 outline-dashed outline-offset-2 outline-primary/60"
             )}>
               <Typewriter
                 text={message.content}
@@ -232,7 +243,7 @@ const EXAMPLE_PROMPTS = [
 
           <div class={cn(
             "flex items-center gap-0.5 transition-opacity",
-            message.id === failedMessageId
+            message.id === failedMessageId || isEditing
               ? "opacity-100"
               : "opacity-0 group-hover:opacity-80 focus-within:opacity-80",
             message.role === "user" ? "justify-end pr-9" : "pl-9"
@@ -252,10 +263,13 @@ const EXAMPLE_PROMPTS = [
                 Try again
               </Button>
             {/if}
-            {#if index === messages.length - 1}
+            {#if message.id === latestUserMessageId && message.id !== failedMessageId}
               <EditButton
-                onEdit={() => chatboxStore.setPrompt(message.content)}
-                tooltipAlign={message.role === "user" ? "end" : "start"}
+                editing={isEditing}
+                disabled={isStreaming && !isEditing}
+                onEdit={() => chatboxStore.startEditing(message.id, message.content)}
+                onCancel={() => chatboxStore.stopEditing()}
+                tooltipAlign="end"
               />
             {/if}
             <CopyButton

@@ -19,6 +19,7 @@ export type AiContextValue = {
     retryChat: () => void;
     enterConversation: (id: string, messages?: ConversationMessage[]) => void;
     sendChat: (prompt: string, options?: SendChatOptions) => void;
+    editChat: (prompt: string, options?: SendChatOptions) => void;
     readonly generatedImage: string | null;
     readonly isImageLoading: boolean;
     readonly isImageDone: boolean;

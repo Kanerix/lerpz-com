@@ -10,6 +10,7 @@ import { createModels } from "$lib/ai/models.svelte.js";
 import { createVideo } from "$lib/ai/video.svelte.js";
 import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
+import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import { DEFAULT_REASONING_LEVEL } from "$lib/components/model-selector/reasoning.js";
 
 let { children }: { children: Snippet } = $props();
@@ -57,6 +58,7 @@ setAiContext({
     retryChat: chat.retry,
     enterConversation: chat.enterConversation,
     sendChat: chat.send,
+    editChat: chat.editLatest,
     get generatedImage() {
         return image.image;
     },
@@ -115,7 +117,12 @@ const showChatbox = $derived(
       const reasoning = model?.reasoning
         ? (args.modelSettings.reasoning ?? DEFAULT_REASONING_LEVEL)
         : null;
-      chat.send(args.prompt, { model: args.model, reasoning });
+      if (chatboxStore.editingMessageId) {
+        chat.editLatest(args.prompt, { model: args.model, reasoning });
+        chatboxStore.stopEditing();
+      } else {
+        chat.send(args.prompt, { model: args.model, reasoning });
+      }
     }}
     onEnhance={async (prompt) => prompt}
     isStreaming={isPending}

@@ -1,11 +1,13 @@
 import { createSseConnection, type SseProblemError } from "$lib/http/sse.js";
 import {
     getCreateChatUrl,
+    getEditLatestChatMessageUrl,
     getSendChatMessageUrl,
 } from "$lib/api/chats/chats.js";
 import type {
     ChatRequest,
     ConversationMessage,
+    EditLatestMessageRequest,
     MessageRequest,
 } from "$lib/api/models/index.js";
 import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
@@ -88,58 +90,15 @@ export function createChat(options: UseChatOptions = {}) {
         }
     }
 
-    function send(prompt: string, sendOptions: SendChatOptions = {}) {
-        closeRef?.();
-        closeRef = null;
-        lastSendOptions = sendOptions;
-        assistantBuf = "";
-        reasoningBuf = "";
-        assistantMsgId = tempId();
-
-        // If the previous send failed, drop that unsent message before adding
-        // the new one instead of leaving it behind.
-        if (error !== null) discardFailedExchange();
-
-        const convId = conversationIdRef;
-        const isNew = convId === null;
-
-        const url = isNew ? getCreateChatUrl() : getSendChatMessageUrl(convId);
-        const body = isNew
-            ? JSON.stringify({
-                  prompt,
-                  model: sendOptions.model ?? options.model ?? null,
-                  reasoning: sendOptions.reasoning ?? null,
-                  title: options.title ?? null,
-              } satisfies ChatRequest)
-            : JSON.stringify({
-                  prompt,
-                  model: sendOptions.model ?? options.model ?? null,
-                  reasoning: sendOptions.reasoning ?? null,
-              } satisfies MessageRequest);
-
-        const userMsg: ConversationMessage = {
-            id: tempId(),
-            role: "user",
-            content: prompt,
-            created_at: new Date().toISOString(),
-        };
-
-        if (isNew) {
-            conversationId = null;
-            messages = [userMsg];
-            isLoading = true;
-            isStreaming = true;
-            isSaved = false;
-            error = null;
-            errorValue = null;
-        } else {
-            messages = [...messages, userMsg];
-            isLoading = true;
-            isStreaming = true;
-            isSaved = false;
-            error = null;
-            errorValue = null;
-        }
+    // Opens the SSE connection for a send or edit and wires the streaming state
+    // updates. Callers are responsible for preparing `messages` (adding or
+    // replacing the user message) before invoking this.
+    function openStream(url: string, body: string) {
+        isLoading = true;
+        isStreaming = true;
+        isSaved = false;
+        error = null;
+        errorValue = null;
 
         const { close } = createSseConnection(
             url,
@@ -254,6 +213,95 @@ export function createChat(options: UseChatOptions = {}) {
         closeRef = close;
     }
 
+    function send(prompt: string, sendOptions: SendChatOptions = {}) {
+        closeRef?.();
+        closeRef = null;
+        lastSendOptions = sendOptions;
+        assistantBuf = "";
+        reasoningBuf = "";
+        assistantMsgId = tempId();
+
+        // If the previous send failed, drop that unsent message before adding
+        // the new one instead of leaving it behind.
+        if (error !== null) discardFailedExchange();
+
+        const convId = conversationIdRef;
+        const isNew = convId === null;
+
+        const url = isNew ? getCreateChatUrl() : getSendChatMessageUrl(convId);
+        const body = isNew
+            ? JSON.stringify({
+                  prompt,
+                  model: sendOptions.model ?? options.model ?? null,
+                  reasoning: sendOptions.reasoning ?? null,
+                  title: options.title ?? null,
+              } satisfies ChatRequest)
+            : JSON.stringify({
+                  prompt,
+                  model: sendOptions.model ?? options.model ?? null,
+                  reasoning: sendOptions.reasoning ?? null,
+              } satisfies MessageRequest);
+
+        const userMsg: ConversationMessage = {
+            id: tempId(),
+            role: "user",
+            content: prompt,
+            created_at: new Date().toISOString(),
+        };
+
+        if (isNew) {
+            conversationId = null;
+            messages = [userMsg];
+        } else {
+            messages = [...messages, userMsg];
+        }
+
+        openStream(url, body);
+    }
+
+    /**
+     * Edit the conversation's latest user message and regenerate its reply.
+     *
+     * Optimistically replaces the latest user message's content and drops the
+     * stale assistant reply (and anything after it), then streams a fresh reply
+     * from the dedicated edit endpoint. Only valid once a conversation exists.
+     */
+    function editLatest(prompt: string, sendOptions: SendChatOptions = {}) {
+        const convId = conversationIdRef;
+        if (convId === null) return;
+
+        closeRef?.();
+        closeRef = null;
+        lastSendOptions = sendOptions;
+        assistantBuf = "";
+        reasoningBuf = "";
+        assistantMsgId = tempId();
+
+        // Find the latest user message and truncate everything after it, since
+        // the backend discards the stale reply when regenerating.
+        let idx = -1;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i]?.role === "user") {
+                idx = i;
+                break;
+            }
+        }
+        if (idx === -1) return;
+
+        const target = messages[idx] as ConversationMessage;
+        const editedUser: ConversationMessage = { ...target, content: prompt };
+        messages = [...messages.slice(0, idx), editedUser];
+
+        const url = getEditLatestChatMessageUrl(convId);
+        const body = JSON.stringify({
+            prompt,
+            model: sendOptions.model ?? options.model ?? null,
+            reasoning: sendOptions.reasoning ?? null,
+        } satisfies EditLatestMessageRequest);
+
+        openStream(url, body);
+    }
+
     function stop() {
         closeRef?.();
         closeRef = null;
@@ -334,6 +382,7 @@ export function createChat(options: UseChatOptions = {}) {
             return errorValue;
         },
         send,
+        editLatest,
         stop,
         retry,
         reset,

@@ -9,6 +9,8 @@ export type ChatboxModelSettings = Record<string, ChatboxModelSettingsForModel>;
 
 class ChatboxStore {
     prompt = $state("");
+    /** Id of the message currently being edited, or `null` when not editing. */
+    editingMessageId = $state<string | null>(null);
     model = $state<string | null>(loadStoredModel(MODEL_STORAGE_KEYS.chat));
     chatboxAnchor = $state<HTMLElement | null>(null);
     chatboxHeight = $state(0);
@@ -18,6 +20,18 @@ class ChatboxStore {
 
     setPrompt(prompt: string) {
         this.prompt = prompt;
+    }
+    /** Enter edit mode for a message, loading its content into the prompt. */
+    startEditing(id: string, content: string) {
+        this.editingMessageId = id;
+        this.prompt = content;
+    }
+    /**
+     * Leave edit mode. Intentionally leaves the prompt untouched so cancelling
+     * an edit keeps whatever the user has typed.
+     */
+    stopEditing() {
+        this.editingMessageId = null;
     }
     setModel(model: string | null) {
         this.model = model;

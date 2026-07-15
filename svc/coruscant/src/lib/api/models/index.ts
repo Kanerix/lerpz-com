@@ -5,6 +5,7 @@ export * from './conversation';
 export * from './conversationDetail';
 export * from './conversationMessage';
 export * from './createModelRequest';
+export * from './editLatestMessageRequest';
 export * from './healthCheck';
 export * from './imageRequest';
 export * from './messageRequest';

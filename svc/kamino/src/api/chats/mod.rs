@@ -5,6 +5,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod create;
 mod delete;
+mod edit;
 mod list;
 mod message;
 mod read;
@@ -34,6 +35,7 @@ pub fn router() -> OpenApiRouter<AppState> {
         .routes(routes!(create::handler))
         .routes(routes!(read::handler))
         .routes(routes!(message::handler))
+        .routes(routes!(edit::handler))
         .routes(routes!(update::handler))
         .routes(routes!(delete::handler))
 }

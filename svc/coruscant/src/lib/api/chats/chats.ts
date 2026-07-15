@@ -19,6 +19,7 @@ import type {
   ChatRequest,
   Conversation,
   ConversationDetail,
+  EditLatestMessageRequest,
   MessageRequest,
   ProblemSchema,
   UpdateChatRequest
@@ -655,6 +656,127 @@ export function createUpdateChat<TData = Awaited<ReturnType<typeof updateChat>>,
 
   const query = createQuery(() => getUpdateChatQueryOptions(id(),
     updateChatRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type editLatestChatMessageResponse200 = {
+  data: string
+  status: 200
+}
+
+export type editLatestChatMessageResponse400 = {
+  data: ProblemSchema
+  status: 400
+}
+
+export type editLatestChatMessageResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type editLatestChatMessageResponse404 = {
+  data: ProblemSchema
+  status: 404
+}
+
+export type editLatestChatMessageResponse409 = {
+  data: ProblemSchema
+  status: 409
+}
+
+export type editLatestChatMessageResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type editLatestChatMessageResponseSuccess = (editLatestChatMessageResponse200) & {
+  headers: Headers;
+};
+export type editLatestChatMessageResponseError = (editLatestChatMessageResponse400 | editLatestChatMessageResponse401 | editLatestChatMessageResponse404 | editLatestChatMessageResponse409 | editLatestChatMessageResponse500) & {
+  headers: Headers;
+};
+
+export type editLatestChatMessageResponse = (editLatestChatMessageResponseSuccess | editLatestChatMessageResponseError)
+
+export const getEditLatestChatMessageUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/chats/${id}/messages/latest`
+}
+
+/**
+ * Replaces the content of the conversation's most recent user message, discards the assistant reply (and any later turns) that followed it, then regenerates and streams a fresh reply via Server-Sent Events. Only the latest message can be edited, since editing an earlier one would require regenerating everything after it. Requires the conversation to belong to the authenticated user. SSE events emitted: `reasoning` (chain-of-thought chunk, reasoning models only), `message` (answer token chunk) streamed until the response ends, `saved` (conversation UUID confirming persistence, sent as the final event before the stream closes), `error` (error message).
+ * @summary Edit the latest message in a chat
+ */
+export const editLatestChatMessage = async (id: string,
+    editLatestMessageRequest: EditLatestMessageRequest, options?: RequestInit): Promise<editLatestChatMessageResponse> => {
+
+  return customFetch<editLatestChatMessageResponse>(getEditLatestChatMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(editLatestMessageRequest)
+  }
+);}
+
+
+
+
+
+export const getEditLatestChatMessageQueryKey = (id: string,
+    editLatestMessageRequest?: EditLatestMessageRequest,) => {
+    return [
+    'POST', `/api/v1/chats/${id}/messages/latest`, editLatestMessageRequest
+    ] as const;
+    }
+
+
+export const getEditLatestChatMessageQueryOptions = <TData = Awaited<ReturnType<typeof editLatestChatMessage>>, TError = ErrorType<ProblemSchema>>(id: string,
+    editLatestMessageRequest: EditLatestMessageRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getEditLatestChatMessageQueryKey(id,editLatestMessageRequest);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof editLatestChatMessage>>> = ({ signal }) => editLatestChatMessage(id,editLatestMessageRequest, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type EditLatestChatMessageQueryResult = NonNullable<Awaited<ReturnType<typeof editLatestChatMessage>>>
+export type EditLatestChatMessageQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Edit the latest message in a chat
+ */
+
+export function createEditLatestChatMessage<TData = Awaited<ReturnType<typeof editLatestChatMessage>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string,
+    editLatestMessageRequest: () =>  EditLatestMessageRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getEditLatestChatMessageQueryOptions(id(),
+    editLatestMessageRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return query
 }
