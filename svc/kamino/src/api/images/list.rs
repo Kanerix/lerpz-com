@@ -128,7 +128,7 @@ pub async fn handler(
     // descending yields newest-first, and `id < cursor` is a cheap,
     // index-backed way to page. Fetch one extra row to detect whether another
     // page exists without a separate count query.
-    tracing::trace!(?params.cursor, %limit, "listing images");
+    tracing::trace!(cursor = ?params.cursor, %limit, "listing images");
     let rows = sqlx::query!(
         r#"SELECT id, prompt, model, title, tags,
                   storage_bucket, storage_key, format, width, height, created_at
