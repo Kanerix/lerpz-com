@@ -54,7 +54,7 @@ async function handleEnhance() {
     <button
       type="button"
       class={cn(
-        "flex size-7 items-center justify-center rounded-full transition-colors",
+        "flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors",
         "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         "disabled:pointer-events-none disabled:opacity-40",
       )}
@@ -71,7 +71,7 @@ async function handleEnhance() {
     <button
       type="button"
       class={cn(
-        "flex size-7 items-center justify-center rounded-full transition-colors",
+        "flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors",
         "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         "disabled:pointer-events-none disabled:opacity-40",
       )}

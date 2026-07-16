@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Button } from "@lerpz/ui/components/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -38,6 +39,18 @@ const query = createQuery(() => ({
     queryKey: [getListChatsUrl()],
     queryFn: ({ signal }: { signal: AbortSignal }) => listChats({ signal }),
 }));
+
+// A human-readable reason the chat list failed to load, covering both network
+// failures (no response) and unexpected non-200 responses.
+const errorMessage = $derived.by(() => {
+    if (query.error instanceof Error && query.error.message) {
+        return query.error.message;
+    }
+    if (query.data && query.data.status !== 200) {
+        return `The server responded with an error (${query.data.status}).`;
+    }
+    return "Something went wrong. Please check your connection and try again.";
+});
 
 // The conversation shown in the info dialog, and whether it is open.
 let infoConversation = $state<Conversation | null>(null);
@@ -141,7 +154,36 @@ const groups = $derived.by(() => {
     </SidebarGroup>
   </div>
 {:else if query.data?.status !== 200}
-  <p class="text-muted-foreground group-data-[state=collapsed]:hidden px-2 py-4 text-center text-xs">Error: {query.data?.status}</p>
+  <SidebarGroup class="group-data-[state=collapsed]:hidden">
+    <SidebarGroupLabel>Chats</SidebarGroupLabel>
+    <SidebarGroupContent>
+      <div
+        class="flex flex-col items-center gap-2 px-2 py-4 text-center"
+        in:fade={{ duration: 150 }}
+      >
+        <div class="flex size-9 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <Icon icon="fa6-solid:triangle-exclamation" class="size-4" />
+        </div>
+        <p class="text-sm font-medium">Couldn't load chats</p>
+        <p class="text-muted-foreground text-xs text-balance">
+          {errorMessage}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          class="mt-1"
+          disabled={query.isFetching}
+          onclick={() => query.refetch()}
+        >
+          <Icon
+            icon="fa6-solid:arrow-rotate-right"
+            class={query.isFetching ? "animate-spin" : ""}
+          />
+          {query.isFetching ? "Retrying…" : "Try again"}
+        </Button>
+      </div>
+    </SidebarGroupContent>
+  </SidebarGroup>
 {:else if (query.data.data?.length ?? 0) === 0}
   <SidebarGroup class="group-data-[state=collapsed]:hidden">
     <SidebarGroupLabel>Chats</SidebarGroupLabel>

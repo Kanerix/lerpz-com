@@ -193,9 +193,10 @@ const EXAMPLE_PROMPTS = [
 {:else}
   <div class="relative h-full w-full p-2">
     <ScrollArea bind:viewportRef orientation="vertical" class="h-full w-full">
-      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 pb-48">
+      <div bind:this={contentRef} class="mx-auto max-w-6xl flex flex-col gap-4 px-3 pt-3 pb-48">
       {#each messages as message, index (message.id)}
         {@const isEditing = chatboxStore.editingMessageId === message.id}
+        {@const isFailed = message.id === failedMessageId}
         <div
           in:bubbleIn={{ role: message.role }}
           class={cn("group flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}
@@ -218,7 +219,8 @@ const EXAMPLE_PROMPTS = [
               message.role === "user"
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-muted text-foreground rounded-bl-md",
-              isEditing && "opacity-60 outline-2 outline-dashed outline-offset-2 outline-primary/60"
+              isEditing && "opacity-60 outline-2 outline-dashed outline-offset-2 outline-primary/60",
+              isFailed && "opacity-60 outline-2 outline-dashed outline-offset-2 outline-destructive/60"
             )}>
               <Typewriter
                 text={message.content}
@@ -243,24 +245,21 @@ const EXAMPLE_PROMPTS = [
 
           <div class={cn(
             "flex items-center gap-0.5 transition-opacity",
-            message.id === failedMessageId || isEditing
+            isFailed || isEditing
               ? "opacity-100"
               : "opacity-0 group-hover:opacity-80 focus-within:opacity-80",
             message.role === "user" ? "justify-end pr-9" : "flex-row-reverse justify-end pl-9"
           )}>
-            {#if message.id === failedMessageId}
-              <span class="inline-flex items-center gap-1 text-xs font-medium text-destructive">
-                <Icon icon="fa6-solid:circle-exclamation" class="size-3.5 shrink-0" />
-                Not sent
-              </span>
+            {#if isFailed}
               <Button
-                variant="destructive"
-                size="sm"
+                variant="ghost"
+                size="icon"
                 onclick={() => onRetry?.()}
-                class="h-7 gap-1.5 rounded-full px-3"
+                class="size-7 rounded-full text-destructive hover:text-destructive"
+                title="Not sent — try again"
+                aria-label="Not sent — try again"
               >
                 <Icon icon="fa6-solid:rotate-right" class="size-3.5 shrink-0" />
-                Try again
               </Button>
             {/if}
             {#if message.id === latestUserMessageId && message.id !== failedMessageId}

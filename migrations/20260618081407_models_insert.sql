@@ -12,3 +12,6 @@ VALUES ('GPT Image 2', 'The newest OpenAI image model', 'openai', '@azure/gpt-im
 
 INSERT INTO models (display_name, description, family, deployment_name, provider, modalities, settings)
 VALUES ('Sora 2', 'The best video model from OpenAI', 'openai', '@azure/sora-2', 'Azure', '{video}', '{"reasoning": false}');
+
+INSERT INTO models (display_name, description, family, deployment_name, provider, modalities, settings)
+VALUES ('Veo 3.1', 'Video model from Google', 'google', '@google/veo-3.1-generate-001', 'Google', '{video}', '{"reasoning": false}');

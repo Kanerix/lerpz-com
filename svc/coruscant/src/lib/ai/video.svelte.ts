@@ -1,11 +1,6 @@
 import { createSseConnection } from "$lib/http/sse.js";
-
-// NOTE: The backend video endpoint is not part of the generated API client yet.
-// This hook mirrors `image.svelte.ts` and targets `/api/v1/videos`, following
-// the same `/api/v1/images` convention. Once the OpenAPI spec gains a video
-// route, swap the inline URL/body for the generated `getCreateVideoUrl` and
-// `VideoRequest` types.
-const CREATE_VIDEO_URL = "/api/v1/videos";
+import { getCreateVideoUrl } from "$lib/api/videos/videos.js";
+import type { VideoRequest } from "$lib/api/models/index.js";
 
 export type UseVideoOptions = {
     model?: string;
@@ -88,10 +83,10 @@ export function createVideo(options: UseVideoOptions = {}) {
             model: startOptions.model ?? options.model ?? null,
             aspect_ratio: startOptions.aspectRatio ?? null,
             duration: startOptions.duration ?? null,
-        });
+        } satisfies VideoRequest);
 
         const { close } = createSseConnection(
-            CREATE_VIDEO_URL,
+            getCreateVideoUrl(),
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

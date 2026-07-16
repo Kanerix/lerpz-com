@@ -189,7 +189,7 @@ const skeletonCount = 9;
                 onclick={() => selectImage(image)}
                 aria-pressed={isSelected}
                 title={image.title ?? image.prompt}
-                class="group relative aspect-square overflow-hidden rounded-lg border bg-muted/30 outline-none transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring {isSelected
+                class="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-muted/30 outline-none transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring {isSelected
                   ? 'border-primary ring-2 ring-primary'
                   : 'border-border hover:border-primary/50'}"
               >

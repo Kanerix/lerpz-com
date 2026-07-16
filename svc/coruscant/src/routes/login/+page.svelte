@@ -1,6 +1,7 @@
 <script lang="ts">
 import { InteractionStatus } from "@azure/msal-browser";
 import Icon from "@iconify/svelte";
+import { Button } from "@lerpz/ui/components/button";
 import {
     Card,
     CardContent,
@@ -91,20 +92,22 @@ function dismissError() {
                 <p class="mt-2 font-mono text-xs text-destructive/60">{error}</p>
               </div>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onclick={dismissError}
-              class="inline-flex h-8 w-full items-center justify-center gap-2 rounded-4xl border border-destructive/40 px-3 text-xs font-medium transition hover:bg-destructive/10"
+              class="w-full border-destructive/40 bg-transparent text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               Dismiss
-            </button>
+            </Button>
           </div>
         {/if}
 
-        <button
+        <Button
+          size="lg"
           onclick={handleLogin}
           disabled={msalStore.inProgress !== InteractionStatus.None}
-          class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-4xl bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/80 disabled:opacity-50"
+          class="w-full gap-2"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" class="size-4" aria-hidden="true">
             <path fill="#f35325" d="M1 1h10v10H1z" />
@@ -113,7 +116,7 @@ function dismissError() {
             <path fill="#ffba08" d="M12 12h10v10H12z" />
           </svg>
           Sign in with Microsoft
-        </button>
+        </Button>
       </CardContent>
 
       <CardFooter>

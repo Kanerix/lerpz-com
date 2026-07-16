@@ -43,6 +43,7 @@ generate_config!(
     DEFAULT_COMPLETIONS_MODEL: Arc<str> = get_env_from,
     DEFAULT_ENHANCE_MODEL: Arc<str> = get_env_from,
     DEFAULT_IMAGE_MODEL: Arc<str> = get_env_from,
+    DEFAULT_VIDEO_MODEL: Arc<str> = get_env_from,
     DATABASE_URL: SecretString = get_env_from,
     REDIS_URL: SecretString = get_env_from,
     AWS_ACCESS_KEY_ID: Arc<str> = get_env_from,

@@ -11,6 +11,7 @@ mod images;
 mod models;
 mod orgs;
 mod sessions;
+mod videos;
 
 #[cfg(debug_assertions)]
 mod failure;
@@ -21,6 +22,7 @@ pub fn router(state: AppState) -> OpenApiRouter<AppState> {
         .nest("/groups", groups::router())
         .nest("/chats", chats::router())
         .nest("/images", images::router())
+        .nest("/videos", videos::router())
         .nest("/enhance", enhance::router())
         .nest("/models", models::router())
         .nest("/agents", agents::router())

@@ -19,12 +19,14 @@ impl Config for PortkeyConfig {
     fn headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
 
-        headers.insert(
-            "Content-Type",
-            "application/json"
-                .parse()
-                .expect("Invalid Content-Type header value for PortkeyConfig"),
-        );
+        // NOTE: don't set `Content-Type` here. These headers are applied to
+        // every request, but `async-openai`/`reqwest` set the correct
+        // `Content-Type` per request (`application/json` for JSON endpoints,
+        // `multipart/form-data` for form uploads such as `POST /videos`).
+        // Forcing `application/json` here appends a second, conflicting
+        // `Content-Type` to multipart requests, so Portkey can't parse the body
+        // (it never sees the `model` field) and rejects the call with
+        // "Invalid provider passed".
         headers.insert(
             "x-portkey-api-key",
             self.api_key
