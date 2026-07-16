@@ -123,7 +123,7 @@ function formatDate(value: string | null | undefined): string {
                 <button
                   type="button"
                   onclick={header.column.getToggleSortingHandler()}
-                  class="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+                  class="inline-flex cursor-pointer items-center gap-1.5 transition-colors hover:text-foreground"
                 >
                   {headerText(header)}
                   {#if header.column.getIsSorted() === "asc"}

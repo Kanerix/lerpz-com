@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { buttonVariants } from "@lerpz/ui/components/button";
+import { Button, buttonVariants } from "@lerpz/ui/components/button";
 import {
     Dialog,
     DialogBackdrop,
@@ -136,18 +136,19 @@ function handleOpenChange(details: { open: boolean }) {
             >
               {conversation?.id ?? "—"}
             </p>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onclick={copyId}
               aria-label={copied ? "Copied ID" : "Copy ID"}
-              class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              class="shrink-0 text-muted-foreground hover:bg-background hover:text-foreground"
             >
               <Icon
                 icon={copied ? "fa6-solid:check" : "fa6-regular:copy"}
                 class="size-3.5"
               />
               <span>{copied ? "Copied" : "Copy"}</span>
-            </button>
+            </Button>
           </div>
         </div>
 

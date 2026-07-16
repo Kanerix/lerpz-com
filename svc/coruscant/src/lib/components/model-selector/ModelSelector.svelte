@@ -145,7 +145,7 @@ function handleListKeydown(e: KeyboardEvent) {
     >
       <button
         type="button"
-        class="flex min-w-0 grow items-center gap-2 rounded-md py-2 pl-2.5 text-left text-sm"
+        class="flex min-w-0 grow cursor-pointer items-center gap-2 rounded-md py-2 pl-2.5 text-left text-sm"
         onmouseenter={() => (previewValue = model.value)}
         onfocus={() => (previewValue = model.value)}
         onclick={() => openDetail(model.value)}
@@ -167,7 +167,7 @@ function handleListKeydown(e: KeyboardEvent) {
       <button
         type="button"
         class={cn(
-          "flex size-7 shrink-0 items-center justify-center rounded-md transition-colors",
+          "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors",
           "text-muted-foreground hover:bg-background/80 hover:text-foreground",
           isFavorite && "text-amber-500 hover:text-amber-500",
         )}
@@ -270,7 +270,7 @@ function handleListKeydown(e: KeyboardEvent) {
         <div class="flex items-center gap-2 border-b p-2">
           <button
             type="button"
-            class="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            class="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             onclick={backToList}
           >
             <Icon icon="fa6-solid:angle-left" class="size-3.5" />
@@ -279,7 +279,7 @@ function handleListKeydown(e: KeyboardEvent) {
           <button
             type="button"
             class={cn(
-              "ml-auto flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
+              "ml-auto flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors",
               "text-muted-foreground hover:bg-muted hover:text-foreground",
               isDetailFavorite && "text-amber-500 hover:text-amber-500",
             )}
@@ -365,7 +365,7 @@ function handleListKeydown(e: KeyboardEvent) {
                         aria-pressed={reasoningLevel === level.value}
                         onclick={() => setReasoningLevel(level.value)}
                         class={cn(
-                          "flex-1 rounded-sm px-2.5 py-1 text-xs font-medium transition-colors",
+                          "flex-1 cursor-pointer rounded-sm px-2.5 py-1 text-xs font-medium transition-colors",
                           reasoningLevel === level.value
                             ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:bg-muted",
@@ -389,7 +389,7 @@ function handleListKeydown(e: KeyboardEvent) {
           <button
             type="button"
             class={cn(
-              "flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               detailModel.value === value
                 ? "bg-muted text-muted-foreground"
                 : "bg-primary text-primary-foreground hover:bg-primary/90",

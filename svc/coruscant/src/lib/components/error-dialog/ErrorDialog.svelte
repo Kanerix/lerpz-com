@@ -140,13 +140,14 @@ function handleOpenChange(details: { open: boolean }) {
                 >
                   {logId}
                 </p>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onclick={() => copyToClipboard(logId, "logId", "Log ID")}
                   aria-label={copiedKey === "logId"
                     ? "Copied Log ID"
                     : "Copy Log ID"}
-                  class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                  class="shrink-0 text-muted-foreground hover:bg-background hover:text-foreground"
                 >
                   <Icon
                     icon={copiedKey === "logId"
@@ -155,7 +156,7 @@ function handleOpenChange(details: { open: boolean }) {
                     class="size-3.5"
                   />
                   <span>{copiedKey === "logId" ? "Copied" : "Copy"}</span>
-                </button>
+                </Button>
               </div>
               <p class="mt-1.5 px-0.5 text-xs text-muted-foreground">
                 Share this Log ID with the developers so they can trace the
@@ -176,14 +177,15 @@ function handleOpenChange(details: { open: boolean }) {
                   >
                     Response
                   </span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="xs"
                     onclick={() =>
                       copyToClipboard(jsonText, "response", "response")}
                     aria-label={copiedKey === "response"
                       ? "Copied response"
                       : "Copy response"}
-                    class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                    class="shrink-0 text-muted-foreground hover:bg-background hover:text-foreground"
                   >
                     <Icon
                       icon={copiedKey === "response"
@@ -192,7 +194,7 @@ function handleOpenChange(details: { open: boolean }) {
                       class="size-3.5"
                     />
                     <span>{copiedKey === "response" ? "Copied" : "Copy"}</span>
-                  </button>
+                  </Button>
                 </div>
                 <ScrollArea orientation="both" class="max-h-64">
                   <pre
@@ -280,14 +282,15 @@ function handleOpenChange(details: { open: boolean }) {
                   >
                     Traceback
                   </span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="xs"
                     onclick={() =>
                       copyToClipboard(traceback, "traceback", "traceback")}
                     aria-label={copiedKey === "traceback"
                       ? "Copied traceback"
                       : "Copy traceback"}
-                    class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                    class="shrink-0 text-muted-foreground hover:bg-background hover:text-foreground"
                   >
                     <Icon
                       icon={copiedKey === "traceback"
@@ -296,7 +299,7 @@ function handleOpenChange(details: { open: boolean }) {
                       class="size-3.5"
                     />
                     <span>{copiedKey === "traceback" ? "Copied" : "Copy"}</span>
-                  </button>
+                  </Button>
                 </div>
                 <pre
                   class="max-h-64 overflow-auto p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words text-foreground/80">{traceback}</pre>
