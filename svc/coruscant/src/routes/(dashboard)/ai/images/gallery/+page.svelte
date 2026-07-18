@@ -14,9 +14,11 @@ import {
     useQueryClient,
 } from "@tanstack/svelte-query";
 import { toast } from "svelte-sonner";
+import type { ImageItem } from "$lib/api/models/index.js";
 import { authenticatedFetch } from "$lib/http/fetch.js";
 import { downloadImage } from "$lib/utils/download.js";
 import { fade, fly } from "$lib/utils/transitions.js";
+import ImageDetailDialog from "./ImageDetailDialog.svelte";
 
 // DRAFT: this page fetches the paginated image list directly via
 // `authenticatedFetch`. Once the kamino OpenAPI spec is regenerated
@@ -117,7 +119,45 @@ async function handleDelete(image: GalleryImage) {
     }
 }
 
-async function handleDownload(image: GalleryImage) {
+// The image shown in the detail popover, and whether it's open.
+let activeImage = $state<GalleryImage | null>(null);
+let detailOpen = $state(false);
+
+function openDetail(image: GalleryImage) {
+    activeImage = image;
+    detailOpen = true;
+}
+
+// A surrounding image picked from inside the popover may not live in the loaded
+// gallery pages, so normalise it into a `GalleryImage` before showing it.
+function selectDetailImage(image: ImageItem) {
+    activeImage = { ...image, title: image.title ?? null };
+}
+
+// Persist a fresh analysis into every cached page (and the active image) so the
+// gallery and popover reflect the new title/tags without a refetch.
+function applyAnalysis(id: string, title: string, tags: string[]) {
+    queryClient.setQueryData<InfiniteData<ImageListResponse, string | null>>(
+        GALLERY_QUERY_KEY,
+        (data) => {
+            if (!data) return data;
+            return {
+                ...data,
+                pages: data.pages.map((page) => ({
+                    ...page,
+                    items: page.items.map((item) =>
+                        item.id === id ? { ...item, title, tags } : item,
+                    ),
+                })),
+            };
+        },
+    );
+    if (activeImage?.id === id) {
+        activeImage = { ...activeImage, title, tags };
+    }
+}
+
+async function handleDownload(image: ImageItem) {
     const filename = image.format ? `${image.id}.${image.format}` : image.id;
     try {
         await downloadImage(image.url, filename);
@@ -183,11 +223,10 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
           in:fly|global={{ y: 16, duration: 350, delay: (i % PAGE_SIZE) * 25 }}
           out:fade|global={{ duration: 200 }}
         >
-          <a
-            href={image.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="block transform-gpu overflow-hidden rounded-xl border border-border bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <button
+            type="button"
+            onclick={() => openDetail(image)}
+            class="block w-full transform-gpu overflow-hidden rounded-xl border border-border bg-muted/30 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             title={image.title ?? image.prompt}
           >
             <img
@@ -207,7 +246,7 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
                 {image.model}
               </p>
             </div>
-          </a>
+          </button>
 
           <DropdownMenu align="end" sideOffset={4}>
             <DropdownMenuTrigger
@@ -261,3 +300,11 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
     {/if}
   {/if}
 </div>
+
+<ImageDetailDialog
+  bind:open={detailOpen}
+  image={activeImage}
+  onSelectImage={selectDetailImage}
+  onDownload={handleDownload}
+  onAnalyzed={applyAnalysis}
+/>
