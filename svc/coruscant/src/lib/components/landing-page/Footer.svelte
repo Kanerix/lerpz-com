@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { publicEnv } from "$lib/env.js";
 
 const footerLinks = {
     Product: [
@@ -9,7 +10,7 @@ const footerLinks = {
     ],
     Resources: [
         { label: "Documentation", href: "/docs" },
-        { label: "API Reference", href: "/docs/api" },
+        { label: "API Reference", href: `${publicEnv.PUBLIC_API_URL}/scalar` },
         { label: "Support", href: "/support" },
     ],
     Company: [
