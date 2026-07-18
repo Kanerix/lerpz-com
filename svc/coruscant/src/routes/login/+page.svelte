@@ -12,8 +12,26 @@ import {
 } from "@lerpz/ui/components/card";
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
+import {
+    loadLegalConsent,
+    storeLegalConsent,
+} from "$lib/auth/legal-consent.js";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import ThemeButton from "$lib/components/ThemeButton.svelte";
+
+// Whether the user has agreed to the legal policies. Starts `false` so the
+// server-rendered markup is stable, then hydrates from the persisted value so a
+// returning user is pre-accepted and never has to tick the box again.
+let legalAccepted = $state(false);
+
+$effect(() => {
+    legalAccepted = loadLegalConsent();
+});
+
+function toggleLegalConsent(accepted: boolean) {
+    legalAccepted = accepted;
+    storeLegalConsent(accepted);
+}
 
 const error = $derived(page.url.searchParams.get("error"));
 const errorDescription = $derived(
@@ -47,6 +65,7 @@ $effect(() => {
 });
 
 async function handleLogin() {
+    if (!legalAccepted) return;
     try {
         await msalStore.loginRedirect();
     } catch {
@@ -59,20 +78,27 @@ function dismissError() {
 }
 </script>
 
-<div class="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+<div class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4">
+  <!-- Ambient background glow -->
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute -top-40 left-1/2 h-125 w-125 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl"></div>
+    <div class="absolute -bottom-40 left-1/2 h-100 w-150 -translate-x-1/2 rounded-full bg-primary/5 blur-3xl"></div>
+  </div>
+
   <div class="absolute top-4 right-4">
     <ThemeButton />
   </div>
 
   <div class="w-full max-w-sm">
-    <div class="mb-8 flex flex-col items-center gap-2">
-      <img src="/lerpz.svg" alt="Lerpz" class="h-12 w-12" />
-      <h1 class="text-2xl font-semibold tracking-tight">Lerpz AI</h1>
+    <div class="mb-8 flex flex-col items-center">
+      <div class="flex size-16 items-center justify-center rounded-2xl border border-border/60 bg-card/60 shadow-sm ring-1 ring-primary/5 backdrop-blur-sm">
+        <img src="/lerpz.svg" alt="Lerpz" class="size-9" />
+      </div>
     </div>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+    <Card class="border-border/60 bg-card/70 shadow-xl backdrop-blur-md">
+      <CardHeader class="text-center">
+        <CardTitle class="text-2xl">Welcome back</CardTitle>
         <CardDescription>Sign in with your organization account to continue.</CardDescription>
       </CardHeader>
 
@@ -103,10 +129,25 @@ function dismissError() {
           </div>
         {/if}
 
+        <label class="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-background/70">
+          <input
+            type="checkbox"
+            checked={legalAccepted}
+            onchange={(e) => toggleLegalConsent(e.currentTarget.checked)}
+            class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
+          />
+          <span class="leading-relaxed">
+            I agree to the
+            <a href="/legal/terms" class="font-medium text-foreground underline underline-offset-2 hover:opacity-80">Terms of Service</a>,
+            <a href="/legal/privacy" class="font-medium text-foreground underline underline-offset-2 hover:opacity-80">Privacy Policy</a>, and
+            <a href="/legal/cookies" class="font-medium text-foreground underline underline-offset-2 hover:opacity-80">Cookie Policy</a>.
+          </span>
+        </label>
+
         <Button
           size="lg"
           onclick={handleLogin}
-          disabled={msalStore.inProgress !== InteractionStatus.None}
+          disabled={msalStore.inProgress !== InteractionStatus.None || !legalAccepted}
           class="w-full gap-2"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" class="size-4" aria-hidden="true">
@@ -125,5 +166,9 @@ function dismissError() {
         </p>
       </CardFooter>
     </Card>
+
+    <p class="mt-6 text-center text-xs text-muted-foreground">
+      Secured by Microsoft Entra ID
+    </p>
   </div>
 </div>

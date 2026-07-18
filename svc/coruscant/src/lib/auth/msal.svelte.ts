@@ -8,7 +8,9 @@ import {
     EventType,
     InteractionStatus,
 } from "@azure/msal-browser";
+import { goto } from "$app/navigation";
 import { publicEnv } from "$lib/env.js";
+import { loadLegalConsent } from "./legal-consent.js";
 import { initializeMsal } from "./msal-auth.js";
 import { loginRequest } from "./msal-config.js";
 
@@ -67,6 +69,14 @@ class MsalStore {
     }
 
     async loginRedirect() {
+        // Require the user to accept the legal policies before we hand them off
+        // to Entra ID. If they haven't (e.g. they clicked "Sign in" from the
+        // landing page), send them to the login page where the consent control
+        // lives instead of starting the external login flow.
+        if (!loadLegalConsent()) {
+            await goto("/login");
+            return;
+        }
         await this.instance?.loginRedirect(loginRequest);
     }
 
