@@ -13,4 +13,9 @@ $effect(() => {
 });
 </script>
 
-<ChatView messages={ai.chatMessages} isStreaming={ai.isChatStreaming} error={ai.chatError} onRetry={ai.retryChat} />
+<ChatView
+    messages={ai.chatMessages}
+    isStreaming={ai.isChatStreaming}
+    error={ai.chatError}
+    onRetry={ai.retryChat}
+/>

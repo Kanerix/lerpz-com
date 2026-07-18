@@ -18,7 +18,6 @@ const isAuthenticated = $derived(msalStore.isAuthenticated);
   <div class="mx-auto flex max-w-[1024px] items-center justify-between px-4 py-3">
     <a href="/" class="flex items-center gap-2.5 font-bold text-foreground transition-opacity hover:opacity-80">
       <img src="/lerpz.svg" alt="Lerpz Logo" class="h-7 w-7" />
-      <span class="text-lg tracking-tight">Lerpz AI</span>
     </a>
 
     <nav class="hidden items-center gap-6 md:flex">

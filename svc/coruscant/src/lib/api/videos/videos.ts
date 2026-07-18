@@ -111,7 +111,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      return  { mutationFn, ...mutationOptions }}
+
+
+  return  { mutationFn, ...mutationOptions }}
 
     export type ListVideosMutationResult = NonNullable<Awaited<ReturnType<typeof listVideos>>>
 
@@ -305,6 +307,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
+
    return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof analyzeVideo>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
@@ -327,3 +330,9 @@ export function createAnalyzeVideo<TData = Awaited<ReturnType<typeof analyzeVide
 
   return query
 }
+
+
+
+
+
+
