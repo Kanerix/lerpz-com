@@ -60,7 +60,7 @@ const latestUserMessageId = $derived.by(() => {
 
 // Distance (px) from the bottom within which we consider the
 // user to be "at the bottom" and therefore following the stream.
-const BOTTOM_THRESHOLD = 64;
+const BOTTOM_THRESHOLD = 32;
 
 let viewportRef = $state<HTMLDivElement | null>(null);
 let contentRef = $state<HTMLDivElement | null>(null);
@@ -165,9 +165,7 @@ const EXAMPLE_PROMPTS = [
   <div class="flex h-full min-h-[60vh] flex-col items-center justify-center px-4 text-center">
     <div class="flex w-full max-w-xl flex-col items-center gap-6">
       <div class="flex flex-col items-center gap-3">
-        <div class="bg-muted rounded-full p-4">
-          <Icon icon="fa6-solid:robot" class="size-8 text-muted-foreground" />
-        </div>
+        <ModelAvatar family={selectedFamily} size="lg" />
         <h2 class="text-xl font-semibold tracking-tight">Start a conversation</h2>
         <p class="text-sm text-muted-foreground max-w-sm">
           Type a message below to begin chatting, or pick an example to get started. Your conversation will be saved automatically.

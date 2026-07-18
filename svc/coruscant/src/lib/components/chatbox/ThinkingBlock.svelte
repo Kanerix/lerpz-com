@@ -1,6 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
+import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { slide } from "svelte/transition";
 import Markdown from "./Markdown.svelte";
 
@@ -41,7 +42,11 @@ const contentId = `thinking-${Math.random().toString(36).slice(2)}`;
       transition:slide={{ duration: 200 }}
       class="border-l border-border ml-4.5 pl-2 text-xs leading-relaxed"
     >
-      <Markdown content={reasoning} />
+      <Typewriter text={reasoning} animate={streaming}>
+        {#snippet children(revealed)}
+          <Markdown content={revealed} />
+        {/snippet}
+      </Typewriter>
     </div>
   {/if}
 </div>
