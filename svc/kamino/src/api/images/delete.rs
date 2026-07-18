@@ -90,20 +90,13 @@ pub async fn handler(
         }
     };
 
-
     tracing::trace!(bucket = %bucket, key = %key, "deleting image from storage (s3)");
     s3.delete_object()
         .bucket(&bucket)
         .key(&key)
         .send()
         .await
-        .map_err(|err| {
-            Problem::new(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal Server Error",
-                err.to_string(),
-            )
-        })?;
+        .map_err(|err| Problem::default().with_error(err))?;
 
     Ok(())
 }

@@ -132,14 +132,17 @@ pub async fn handler(
     // `async-openai` can't deserialize into its error type. Surface the
     // humanized upstream message instead of letting it collapse into an opaque
     // 500.
-    let mut stream = openai.images().generate_stream(request).await.map_err(|err| {
-        tracing::error!("failed to start image stream: {err}");
-        Problem::new(
-            StatusCode::BAD_GATEWAY,
-            "Image generation failed",
-            lerpz_portkey::humanize_error(&err.to_string()),
-        )
-    })?;
+    let mut stream = openai
+        .images()
+        .generate_stream(request)
+        .await
+        .map_err(|err| {
+            Problem::new(
+                StatusCode::BAD_GATEWAY,
+                "Image generation failed",
+                lerpz_portkey::humanize_error(&err.to_string()),
+            )
+        })?;
     let meta_client = lerpz_metadata::Client::from_pool(database);
 
     let sse_stream = async_stream::stream! {

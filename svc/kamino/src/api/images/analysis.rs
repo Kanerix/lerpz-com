@@ -134,15 +134,12 @@ pub async fn handler(
                 "Not Found",
                 "The requested image was not found.",
             ),
-            err => {
-                tracing::error!(%id, error = ?err, "failed to fetch image metadata");
-                Problem::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Internal Server Error",
-                    "Failed to fetch image metadata.",
-                )
-                .with_error(err)
-            }
+            err => Problem::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                "Failed to fetch image metadata.",
+            )
+            .with_error(err),
         })?;
 
     let Metadata::Image {
@@ -186,7 +183,6 @@ pub async fn handler(
         .send()
         .await
         .map_err(|err| {
-            tracing::error!(%id, %bucket, %key, error = ?err, "failed to fetch image from storage");
             Problem::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
@@ -196,7 +192,6 @@ pub async fn handler(
         })?;
 
     let bytes = object.body.collect().await.map_err(|err| {
-        tracing::error!(%id, %bucket, %key, error = ?err, "failed to read image bytes from storage");
         Problem::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Internal Server Error",
@@ -240,7 +235,6 @@ pub async fn handler(
 
     tracing::trace!(%id, "requesting image analysis from model");
     let response = openai.chat().create(request).await.map_err(|err| {
-        tracing::error!(%id, error = ?err, "image analysis model request failed");
         Problem::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Analysis failed",
@@ -299,7 +293,6 @@ pub async fn handler(
         )
         .await
         .map_err(|err| {
-            tracing::error!(%id, error = ?err, "failed to persist image analysis");
             Problem::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
