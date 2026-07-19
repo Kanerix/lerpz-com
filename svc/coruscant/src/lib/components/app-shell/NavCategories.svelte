@@ -87,6 +87,16 @@ const categories: Category[] = [
                 href: "/ai/agents/sessions",
                 icon: "fa6-solid:clock-rotate-left",
             },
+            {
+                title: "Memory",
+                href: "/ai/agents/memory",
+                icon: "fa6-solid:database",
+            },
+            {
+                title: "Marketplace",
+                href: "/ai/agents/marketplace",
+                icon: "fa6-solid:store",
+            },
         ],
     },
 ];
