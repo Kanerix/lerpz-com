@@ -23,9 +23,7 @@ async function responseToError(response: Response): Promise<Error> {
     try {
         body = await response.text();
     } catch {
-        return new Error(
-            response.statusText || `HTTP ${response.status}`,
-        );
+        return new Error(response.statusText || `HTTP ${response.status}`);
     }
 
     try {
@@ -41,9 +39,7 @@ async function responseToError(response: Response): Promise<Error> {
         // Not JSON – fall through to the raw-text fallback below.
     }
 
-    return new Error(
-        body || `HTTP ${response.status}: ${response.statusText}`,
-    );
+    return new Error(body || `HTTP ${response.status}: ${response.statusText}`);
 }
 
 export type SSEEvent = {

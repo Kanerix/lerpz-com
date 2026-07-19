@@ -1,13 +1,14 @@
 <script lang="ts">
-import { page } from "$app/state";
 import { Button } from "@lerpz/ui/components/button";
+import { page } from "$app/state";
 
 const isNotFound = $derived(page.status === 404);
 const title = $derived(isNotFound ? "Page not found" : "Something went wrong");
 const description = $derived(
-  isNotFound
-    ? "The page you're looking for doesn't exist or has been moved."
-    : (page.error?.message ?? "An unexpected error occurred. Please try again later."),
+    isNotFound
+        ? "The page you're looking for doesn't exist or has been moved."
+        : (page.error?.message ??
+              "An unexpected error occurred. Please try again later."),
 );
 </script>
 

@@ -72,7 +72,12 @@ const statusMeta: Record<
     },
 };
 
-const components: { key: keyof HealthCheck; name: string; description: string; icon: string }[] = [
+const components: {
+    key: keyof HealthCheck;
+    name: string;
+    description: string;
+    icon: string;
+}[] = [
     {
         key: "database",
         name: "Database",
@@ -111,7 +116,9 @@ const services = $derived(
 const worstStatus = $derived.by<ServiceStatus>(() => {
     if (query.isLoading) return "unknown";
     if (!apiUp) return "outage";
-    return services.some((s) => s.status === "outage") ? "outage" : "operational";
+    return services.some((s) => s.status === "outage")
+        ? "outage"
+        : "operational";
 });
 
 const summary = $derived.by(() => {

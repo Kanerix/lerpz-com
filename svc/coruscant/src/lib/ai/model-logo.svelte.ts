@@ -19,5 +19,8 @@ export function modelFamilyLogoForTheme(
     family: string | null | undefined,
 ): string | null {
     if (family == null) return null;
-    return modelFamilyLogo(family, modeState.current === "dark" ? "dark" : "light");
+    return modelFamilyLogo(
+        family,
+        modeState.current === "dark" ? "dark" : "light",
+    );
 }
