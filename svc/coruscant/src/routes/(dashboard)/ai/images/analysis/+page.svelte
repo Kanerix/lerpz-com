@@ -9,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@lerpz/ui/components/card";
+import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
 import {
     createInfiniteQuery,
@@ -17,6 +18,7 @@ import {
 } from "@tanstack/svelte-query";
 import {
     analyzeImage,
+    analyzeUploadedImage,
     getListImagesUrl,
     listImages,
 } from "$lib/api/images/images.js";
@@ -29,6 +31,10 @@ import { ErrorDialog } from "$lib/components/error-dialog";
 import { toProblemError } from "$lib/components/error-dialog/problem.js";
 
 const PAGE_SIZE = 24;
+// Uploads are inlined as base64 in the request body, so keep them reasonable.
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+type Mode = "gallery" | "upload";
 
 // The picker is fed by the same list endpoint as the gallery, so images can be
 // analysed straight after they're generated.
@@ -64,10 +70,18 @@ const queryClient = useQueryClient();
 
 const LIST_QUERY_KEY = [getListImagesUrl(), "analysis"] as const;
 
+let mode = $state<Mode>("gallery");
+
 let selectedId = $state<string | null>(null);
 const selected = $derived(
     images.find((image) => image.id === selectedId) ?? null,
 );
+
+// Bring-your-own-image state. The data URL doubles as the preview `src` and the
+// request payload (the API strips the `data:` prefix server-side).
+let uploadDataUrl = $state<string | null>(null);
+let uploadName = $state<string | null>(null);
+let isDragging = $state(false);
 
 let isAnalyzing = $state(false);
 let result = $state<ImageAnalysisResponse | null>(null);
@@ -77,13 +91,34 @@ let errorValue = $state<unknown>(null);
 let errorDialogOpen = $state(false);
 
 // Fall back to any title/tags already persisted on the image so a previously
-// analysed image shows its metadata before it's re-run.
+// analysed image shows its metadata before it's re-run. Uploads have no stored
+// metadata, so they only ever show a freshly computed `result`.
 const analysis = $derived<ImageAnalysisResponse | null>(
     result ??
-        (selected && (selected.title || selected.tags.length > 0)
+        (mode === "gallery" &&
+        selected &&
+        (selected.title || selected.tags.length > 0)
             ? { title: selected.title ?? "", tags: selected.tags }
             : null),
 );
+
+const previewUrl = $derived(
+    mode === "upload" ? uploadDataUrl : (selected?.url ?? null),
+);
+const previewAlt = $derived(
+    mode === "upload"
+        ? (uploadName ?? "Uploaded image")
+        : (selected?.title ?? selected?.prompt ?? "Selected image"),
+);
+const hasImage = $derived(
+    mode === "upload" ? uploadDataUrl !== null : selected !== null,
+);
+
+function setMode(next: Mode) {
+    if (mode === next) return;
+    mode = next;
+    result = null;
+}
 
 function selectImage(image: ImageItem) {
     if (image.id === selectedId) return;
@@ -91,11 +126,78 @@ function selectImage(image: ImageItem) {
     result = null;
 }
 
+function reportError(message: string) {
+    errorValue = toProblemError(new Error(message));
+    errorDialogOpen = true;
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () =>
+            reject(reader.error ?? new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+    });
+}
+
+async function acceptFile(file: File | undefined | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+        reportError("Please choose an image file.");
+        return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+        reportError("That image is too large (max 20 MB).");
+        return;
+    }
+    try {
+        uploadDataUrl = await readAsDataUrl(file);
+        uploadName = file.name;
+        result = null;
+    } catch (err) {
+        errorValue = toProblemError(err);
+        errorDialogOpen = true;
+    }
+}
+
+function onFileInput(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    void acceptFile(input.files?.[0]);
+    // Allow re-selecting the same file to fire `change` again.
+    input.value = "";
+}
+
+function onDrop(event: DragEvent) {
+    event.preventDefault();
+    isDragging = false;
+    void acceptFile(event.dataTransfer?.files?.[0]);
+}
+
+function clearUpload() {
+    uploadDataUrl = null;
+    uploadName = null;
+    result = null;
+}
+
 async function analyze() {
-    if (!selected || isAnalyzing) return;
+    if (isAnalyzing || !hasImage) return;
     isAnalyzing = true;
     try {
-        const res = await analyzeImage(selected.id);
+        if (mode === "upload") {
+            const image = uploadDataUrl;
+            if (!image) return;
+            const res = await analyzeUploadedImage({ image });
+            if (res.status !== 200) {
+                throw new Error(`Failed to analyse image (${res.status})`);
+            }
+            result = res.data;
+            return;
+        }
+
+        const target = selected;
+        if (!target) return;
+        const res = await analyzeImage(target.id);
         if (res.status !== 200) {
             throw new Error(`Failed to analyse image (${res.status})`);
         }
@@ -103,7 +205,7 @@ async function analyze() {
 
         // Persist the new title/tags into the cached list so re-selecting the
         // image (and the gallery) reflects the analysis without a refetch.
-        const analyzedId = selected.id;
+        const analyzedId = target.id;
         const { title, tags } = res.data;
         queryClient.setQueryData<
             InfiniteData<ImageListResponse, string | null>
@@ -133,25 +235,97 @@ async function analyze() {
 const skeletonCount = 9;
 </script>
 
+<ScrollArea class="h-full" orientation="vertical">
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
-  <header class="flex flex-col gap-1">
-    <h1 class="text-2xl font-semibold tracking-tight">Image analysis</h1>
-    <p class="text-sm text-muted-foreground">
-      Pick a generated image to detect a title and tags with a vision model.
-    </p>
+  <header class="flex flex-col gap-3">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-2xl font-semibold tracking-tight">Image analysis</h1>
+      <p class="text-sm text-muted-foreground">
+        Detect a title and tags with a vision model — from your generated
+        images or one you bring yourself.
+      </p>
+    </div>
+
+    <div class="inline-flex w-fit rounded-lg border border-border bg-muted/30 p-1">
+      <Button
+        variant={mode === "gallery" ? "default" : "ghost"}
+        size="sm"
+        onclick={() => setMode("gallery")}
+      >
+        <Icon icon="fa6-solid:images" class="size-3.5" />
+        Your images
+      </Button>
+      <Button
+        variant={mode === "upload" ? "default" : "ghost"}
+        size="sm"
+        onclick={() => setMode("upload")}
+      >
+        <Icon icon="fa6-solid:arrow-up-from-bracket" class="size-3.5" />
+        Bring your own
+      </Button>
+    </div>
   </header>
 
   <div class="grid gap-6 lg:grid-cols-2">
-    <!-- Picker -->
+    <!-- Source -->
     <Card class="flex flex-col">
       <CardHeader>
-        <CardTitle>Select an image</CardTitle>
+        <CardTitle>
+          {mode === "upload" ? "Upload an image" : "Select an image"}
+        </CardTitle>
         <CardDescription>
-          Choose one of your generated images to analyse.
+          {mode === "upload"
+            ? "Drop in any image from your device to analyse it."
+            : "Choose one of your generated images to analyse."}
         </CardDescription>
       </CardHeader>
       <CardContent class="flex flex-1 flex-col gap-4">
-        {#if query.isLoading}
+        {#if mode === "upload"}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <label
+            for="byo-image-input"
+            ondragover={(e) => {
+              e.preventDefault();
+              isDragging = true;
+            }}
+            ondragleave={() => (isDragging = false)}
+            ondrop={onDrop}
+            class="flex flex-1 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-16 text-center transition {isDragging
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50'}"
+          >
+            <Icon
+              icon="fa6-solid:cloud-arrow-up"
+              class="size-8 text-muted-foreground/60"
+            />
+            <div class="flex flex-col gap-1">
+              <p class="text-base font-medium">
+                {uploadName ?? "Drop an image here"}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {uploadName
+                  ? "Click to choose a different image."
+                  : "or click to browse — PNG or JPEG, up to 20 MB."}
+              </p>
+            </div>
+            <input
+              id="byo-image-input"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              onchange={onFileInput}
+            />
+          </label>
+
+          {#if uploadDataUrl}
+            <div class="flex justify-center">
+              <Button variant="outline" size="sm" onclick={clearUpload}>
+                <Icon icon="fa6-solid:xmark" class="size-3.5" />
+                Remove image
+              </Button>
+            </div>
+          {/if}
+        {:else if query.isLoading}
           <div class="grid grid-cols-3 gap-2">
             {#each Array(skeletonCount) as _, i (i)}
               <Skeleton class="aspect-square w-full rounded-lg" />
@@ -240,24 +414,28 @@ const skeletonCount = 9;
         </CardDescription>
       </CardHeader>
       <CardContent class="flex flex-1 flex-col gap-6">
-        {#if !selected}
+        {#if !hasImage}
           <div class="flex flex-1 flex-col items-center justify-center gap-3 text-center text-muted-foreground">
             <Icon
               icon="fa6-solid:magnifying-glass-chart"
               class="size-8 text-muted-foreground/60"
             />
             <div class="flex flex-col gap-1">
-              <p class="text-base font-medium">No image selected</p>
+              <p class="text-base font-medium">
+                {mode === "upload" ? "No image uploaded" : "No image selected"}
+              </p>
               <p class="text-sm">
-                Pick an image on the left, then run the analysis.
+                {mode === "upload"
+                  ? "Upload an image on the left, then run the analysis."
+                  : "Pick an image on the left, then run the analysis."}
               </p>
             </div>
           </div>
         {:else}
           <div class="overflow-hidden rounded-xl border border-border bg-muted/30">
             <img
-              src={selected.url}
-              alt={selected.title ?? selected.prompt}
+              src={previewUrl}
+              alt={previewAlt}
               class="max-h-72 w-full object-contain"
             />
           </div>
@@ -312,5 +490,6 @@ const skeletonCount = 9;
     </Card>
   </div>
 </div>
+</ScrollArea>
 
 <ErrorDialog bind:open={errorDialogOpen} error={errorValue} />
