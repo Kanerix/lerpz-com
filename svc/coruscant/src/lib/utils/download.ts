@@ -71,7 +71,7 @@ function resolveFilename(
 
 /** Map a common image MIME type to a file extension. */
 function extensionForMimeType(mimeType: string): string | undefined {
-    const type = mimeType.split(";")[0].trim().toLowerCase();
+    const type = (mimeType.split(";")[0] ?? mimeType).trim().toLowerCase();
     switch (type) {
         case "image/jpeg":
             return "jpg";

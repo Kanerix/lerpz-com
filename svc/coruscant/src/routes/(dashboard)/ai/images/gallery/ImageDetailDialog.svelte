@@ -19,10 +19,7 @@ import {
     getListImagesUrl,
     listImages,
 } from "$lib/api/images/images.js";
-import type {
-    ImageItem,
-    ImageListResponse,
-} from "$lib/api/models/index.js";
+import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 
 // Number of surrounding images to load for the "more like this" rail. Kept
