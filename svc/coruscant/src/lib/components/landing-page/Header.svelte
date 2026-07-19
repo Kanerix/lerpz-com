@@ -18,7 +18,6 @@ import ThemeButton from "$lib/components/ThemeButton.svelte";
 
 const navLinks = [
     { label: "Tools", href: "/ai" },
-    { label: "Roadmap", href: "/roadmap" },
     { label: "Docs", href: "/docs" },
     { label: "Changelog", href: "/changelog" },
     { label: "Status", href: "/status" },

@@ -5,7 +5,6 @@ import { publicEnv } from "$lib/env.js";
 const footerLinks = {
     Product: [
         { label: "Changelog", href: "/changelog" },
-        { label: "Roadmap", href: "/roadmap" },
         { label: "Status", href: "/status" },
     ],
     Resources: [
