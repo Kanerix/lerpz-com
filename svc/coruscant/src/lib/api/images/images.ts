@@ -16,6 +16,7 @@ import type {
 } from '@tanstack/svelte-query';
 
 import type {
+  AnalyzeUploadRequest,
   ImageAnalysisResponse,
   ImageListResponse,
   ImageRequest,
@@ -221,6 +222,112 @@ export function createCreateImage<TData = Awaited<ReturnType<typeof createImage>
 
 
   const query = createQuery(() => getCreateImageQueryOptions(imageRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type analyzeUploadedImageResponse200 = {
+  data: ImageAnalysisResponse
+  status: 200
+}
+
+export type analyzeUploadedImageResponse400 = {
+  data: ProblemSchema
+  status: 400
+}
+
+export type analyzeUploadedImageResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type analyzeUploadedImageResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type analyzeUploadedImageResponseSuccess = (analyzeUploadedImageResponse200) & {
+  headers: Headers;
+};
+export type analyzeUploadedImageResponseError = (analyzeUploadedImageResponse400 | analyzeUploadedImageResponse401 | analyzeUploadedImageResponse500) & {
+  headers: Headers;
+};
+
+export type analyzeUploadedImageResponse = (analyzeUploadedImageResponseSuccess | analyzeUploadedImageResponseError)
+
+export const getAnalyzeUploadedImageUrl = () => {
+
+
+
+
+  return `/api/v1/images/analysis`
+}
+
+/**
+ * Runs a vision model over a caller-supplied image to produce a descriptive title and a set of tags, and returns them. Unlike analysing a stored image, the upload is not persisted and nothing is written to the database.
+ * @summary Analyse an uploaded image
+ */
+export const analyzeUploadedImage = async (analyzeUploadRequest: AnalyzeUploadRequest, options?: RequestInit): Promise<analyzeUploadedImageResponse> => {
+
+  return customFetch<analyzeUploadedImageResponse>(getAnalyzeUploadedImageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(analyzeUploadRequest)
+  }
+);}
+
+
+
+
+
+export const getAnalyzeUploadedImageQueryKey = (analyzeUploadRequest?: AnalyzeUploadRequest,) => {
+    return [
+    'POST', `/api/v1/images/analysis`, analyzeUploadRequest
+    ] as const;
+    }
+
+
+export const getAnalyzeUploadedImageQueryOptions = <TData = Awaited<ReturnType<typeof analyzeUploadedImage>>, TError = ErrorType<ProblemSchema>>(analyzeUploadRequest: AnalyzeUploadRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeUploadedImageQueryKey(analyzeUploadRequest);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeUploadedImage>>> = ({ signal }) => analyzeUploadedImage(analyzeUploadRequest, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeUploadedImageQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeUploadedImage>>>
+export type AnalyzeUploadedImageQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Analyse an uploaded image
+ */
+
+export function createAnalyzeUploadedImage<TData = Awaited<ReturnType<typeof analyzeUploadedImage>>, TError = ErrorType<ProblemSchema>>(
+ analyzeUploadRequest: () =>  AnalyzeUploadRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getAnalyzeUploadedImageQueryOptions(analyzeUploadRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return query
 }
