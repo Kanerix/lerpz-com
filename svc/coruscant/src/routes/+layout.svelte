@@ -23,7 +23,3 @@ $effect(() => {
   {@render children()}
 </QueryClientProvider>
 <Toaster />
-<!-- TEMPORARY: dev-only, remove once the ErrorDialog has been verified. -->
-{#if import.meta.env.DEV}
-  <DevFailureButton />
-{/if}

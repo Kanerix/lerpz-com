@@ -239,7 +239,7 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
               class="w-full bg-muted/30 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             />
             <div
-              class="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+              class="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-linear-to-t from-black/70 via-black/30 to-transparent p-3 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
             >
               <p class="line-clamp-2 text-xs text-white/90">{image.prompt}</p>
               <p class="mt-1 text-[10px] uppercase tracking-wide text-white/60">

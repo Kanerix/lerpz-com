@@ -181,7 +181,7 @@ const skeletonCount = 9;
             </Button>
           </div>
         {:else}
-          <div class="grid max-h-[28rem] grid-cols-3 gap-2 overflow-y-auto p-1">
+          <div class="grid max-h-112 grid-cols-3 gap-2 overflow-y-auto p-1">
             {#each images as image (image.id)}
               {@const isSelected = image.id === selectedId}
               <button
