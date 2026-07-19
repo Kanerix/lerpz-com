@@ -1,6 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Input } from "@lerpz/ui/components/input";
+import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
 import { createQuery } from "@tanstack/svelte-query";
 import { getListChatsUrl, listChats } from "$lib/api/chats/chats.js";
@@ -34,6 +35,7 @@ const archivedChats = $derived(
 );
 </script>
 
+<ScrollArea class="h-full" orientation="vertical">
 <div class="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-8">
   <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div class="flex flex-col gap-1">
@@ -104,3 +106,4 @@ const archivedChats = $derived(
     {/if}
   {/if}
 </div>
+</ScrollArea>

@@ -7,6 +7,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@lerpz/ui/components/dropdown-menu";
+import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
 import {
     createInfiniteQuery,
@@ -174,6 +175,7 @@ async function handleDownload(image: ImageItem) {
 const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
 </script>
 
+<ScrollArea class="h-full" orientation="vertical">
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
   <header class="flex flex-col gap-1">
     <h1 class="text-2xl font-semibold tracking-tight">Gallery</h1>
@@ -300,6 +302,7 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
     {/if}
   {/if}
 </div>
+</ScrollArea>
 
 <ImageDetailDialog
   bind:open={detailOpen}

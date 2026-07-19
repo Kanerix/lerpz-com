@@ -25,7 +25,7 @@ $effect(() => {
 {:else}
   <div class="overflow-hidden h-screen w-screen">
     <AppShell>
-      <main class="w-full flex-1 min-h-0 overflow-auto">
+      <main class="w-full flex-1 min-h-0 overflow-hidden">
         {@render children()}
       </main>
     </AppShell>
