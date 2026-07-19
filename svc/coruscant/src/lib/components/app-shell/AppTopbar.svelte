@@ -3,6 +3,7 @@ import Icon from "@iconify/svelte";
 import { Input } from "@lerpz/ui/components/input";
 import { SidebarTrigger } from "@lerpz/ui/components/sidebar";
 import ThemeButton from "$lib/components/ThemeButton.svelte";
+import NotificationBell from "./NotificationBell.svelte";
 
 let search = $state("");
 </script>
@@ -26,7 +27,8 @@ let search = $state("");
     />
   </div>
   <div class="grow"></div>
-  <div>
+  <div class="flex items-center gap-1">
+    <NotificationBell />
     <ThemeButton />
   </div>
 </header>
