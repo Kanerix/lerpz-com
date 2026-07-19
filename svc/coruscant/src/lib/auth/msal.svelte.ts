@@ -26,6 +26,25 @@ class MsalStore {
         return this.accounts.length > 0;
     }
 
+    /**
+     * App roles assigned to the active account, sourced from the `roles` claim
+     * on the ID token. Returns an empty array when there is no active account
+     * or the token carries no roles.
+     */
+    get roles(): string[] {
+        const claims = this.activeAccount?.idTokenClaims as
+            | { roles?: unknown }
+            | undefined;
+        const roles = claims?.roles;
+        return Array.isArray(roles)
+            ? roles.filter((role): role is string => typeof role === "string")
+            : [];
+    }
+
+    hasRole(role: string): boolean {
+        return this.roles.includes(role);
+    }
+
     async initialize() {
         if (this.#initialized) return;
         this.#initialized = true;
