@@ -118,7 +118,7 @@ function formatDate(value: string | null | undefined): string {
       {#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
         <tr class="border-b border-border bg-muted/40">
           {#each headerGroup.headers as header (header.id)}
-            <th class="px-3 py-2.5 text-left font-medium text-muted-foreground {header.column.id === 'actions' ? 'text-right' : ''}">
+            <th class="px-3 py-2.5 text-left font-medium text-muted-foreground {header.column.id === 'actions' ? 'text-right' : ''} {header.column.id === 'title' ? 'w-1/4' : ''}">
               {#if header.column.getCanSort()}
                 <button
                   type="button"
@@ -146,7 +146,7 @@ function formatDate(value: string | null | undefined): string {
       {#each table.getRowModel().rows as row (row.id)}
         {@const isPending = pendingIds.includes(row.original.id)}
         <tr class="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/40">
-          <td class="max-w-0 px-3 py-2.5">
+          <td class="w-1/4 max-w-0 px-3 py-2.5">
             <a
               href={`/ai/chats/${row.original.id}`}
               class="block truncate font-medium hover:underline"
