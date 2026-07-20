@@ -18,6 +18,7 @@ export type AiContextValue = {
     resetChat: () => void;
     retryChat: () => void;
     enterConversation: (id: string, messages?: ConversationMessage[]) => void;
+    removeChatMessagesFrom: (messageId: string) => void;
     sendChat: (prompt: string, options?: SendChatOptions) => void;
     editChat: (prompt: string, options?: SendChatOptions) => void;
     readonly generatedImage: string | null;

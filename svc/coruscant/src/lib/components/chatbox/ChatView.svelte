@@ -1,11 +1,27 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
+import {
+    Dialog,
+    DialogBackdrop,
+    DialogContent,
+    DialogDescription,
+    DialogPositioner,
+    DialogTitle,
+} from "@lerpz/ui/components/dialog";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
+import { useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
+import { toast } from "svelte-sonner";
 import { getAiContext } from "$lib/ai/context.svelte.js";
+import {
+    deleteChatMessage,
+    getChat,
+    getGetChatUrl,
+    getListChatsUrl,
+} from "$lib/api/chats/chats.js";
 import type { ConversationMessage } from "$lib/api/models/index.js";
 import ModelAvatar from "$lib/components/avatar/ModelAvatar.svelte";
 import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
@@ -31,6 +47,119 @@ let {
 } = $props();
 
 const ai = getAiContext();
+const queryClient = useQueryClient();
+
+let pendingDeleteId = $state<string | null>(null);
+let isDeleting = $state(false);
+
+const deleteDialogOpen = $derived(pendingDeleteId !== null);
+
+// Streamed messages are held in local state with client-only `__temp_` ids; the
+// server-assigned ids only arrive on a later reload. Actions that hit the API
+// (like deletion) need the real id, so once a stream settles we fetch the
+// conversation once and remember a temp -> real id mapping. Reconciling ids
+// this way keeps the rendered message keys stable, so nothing re-animates.
+let serverIds = $state<Record<string, string>>({});
+// Plain (non-reactive) guard so the reconcile effect can't fire concurrently
+// or re-enter itself while a fetch is in flight.
+let reconciling = false;
+
+function resolveServerId(id: string): string {
+    return serverIds[id] ?? id;
+}
+
+$effect(() => {
+    const convId = ai.conversationId;
+    if (!convId || isStreaming) return;
+
+    const snapshot = messages;
+    const hasUnmapped = snapshot.some(
+        (m) => m.id.startsWith("__temp_") && !serverIds[m.id],
+    );
+    if (!hasUnmapped || reconciling) return;
+
+    reconciling = true;
+    getChat(convId)
+        .then((resp) => {
+            if (resp.status !== 200 || !resp.data) return;
+            const remote = resp.data.messages;
+            // Only reconcile when the histories line up; a mismatch means the
+            // conversation changed mid-flight, so we skip and retry on the next
+            // stable state.
+            if (remote.length !== snapshot.length) return;
+            const next = { ...serverIds };
+            for (let i = 0; i < snapshot.length; i++) {
+                const local = snapshot[i];
+                const server = remote[i];
+                if (
+                    local?.id.startsWith("__temp_") &&
+                    server?.id &&
+                    local.role === server.role
+                ) {
+                    next[local.id] = server.id;
+                }
+            }
+            serverIds = next;
+        })
+        .catch(() => {
+            // Leave ids unmapped; the effect retries when state next changes.
+        })
+        .finally(() => {
+            reconciling = false;
+        });
+});
+
+const deleteCount = $derived.by(() => {
+    if (!pendingDeleteId) return 0;
+    const index = messages.findIndex((m) => m.id === pendingDeleteId);
+    return index === -1 ? 0 : messages.length - index;
+});
+
+function canDeleteMessage(message: ConversationMessage): boolean {
+    return (
+        !isStreaming &&
+        ai.conversationId != null &&
+        !resolveServerId(message.id).startsWith("__temp_")
+    );
+}
+
+function requestDelete(id: string) {
+    pendingDeleteId = id;
+}
+
+function cancelDelete() {
+    if (isDeleting) return;
+    pendingDeleteId = null;
+}
+
+async function confirmDelete() {
+    const convId = ai.conversationId;
+    const targetId = pendingDeleteId;
+    if (!convId || !targetId) return;
+
+    isDeleting = true;
+    try {
+        await deleteChatMessage(convId, resolveServerId(targetId));
+        // Trim local state immediately, then refresh the cached conversation and
+        // chat list so a later reload reflects the server.
+        ai.removeChatMessagesFrom(targetId);
+        await queryClient.invalidateQueries({
+            queryKey: [getGetChatUrl(convId)],
+        });
+        await queryClient.invalidateQueries({
+            queryKey: [getListChatsUrl()],
+        });
+        onDelete?.(targetId);
+        pendingDeleteId = null;
+    } catch (err) {
+        toast.error("Couldn't delete message", {
+            description:
+                err instanceof Error ? err.message : "Please try again.",
+        });
+    } finally {
+        isDeleting = false;
+    }
+}
 
 // Fallback family for assistant avatars: the currently selected model. Used for
 // the streaming placeholder and any message that predates per-message families.
@@ -274,7 +403,8 @@ const EXAMPLE_PROMPTS = [
               tooltipAlign={message.role === "user" ? "end" : "start"}
             />
             <DeleteButton
-              onDelete={() => onDelete?.(message.id)}
+              onDelete={() => requestDelete(message.id)}
+              disabled={!canDeleteMessage(message)}
               tooltipAlign={message.role === "user" ? "end" : "start"}
             />
           </div>
@@ -293,4 +423,36 @@ const EXAMPLE_PROMPTS = [
       </div>
     </ScrollArea>
   </div>
+
+  <Dialog open={deleteDialogOpen} onOpenChange={(details: { open: boolean }) => { if (!details.open) cancelDelete(); }}>
+    <DialogBackdrop />
+    <DialogPositioner>
+      <DialogContent class="w-full max-w-md">
+        <div class="flex flex-col gap-4 p-6">
+          <div class="flex items-start gap-3">
+            <span class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <Icon icon="fa6-solid:triangle-exclamation" class="size-4.5" />
+            </span>
+            <div class="min-w-0 flex-1 space-y-1">
+              <DialogTitle>Delete message?</DialogTitle>
+              <DialogDescription>
+                This permanently deletes this message{deleteCount > 1 ? ` and the ${deleteCount - 1} message${deleteCount - 1 === 1 ? "" : "s"} after it` : ""}. This action can't be undone.
+              </DialogDescription>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" disabled={isDeleting} onclick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" size="sm" disabled={isDeleting} onclick={confirmDelete}>
+              {#if isDeleting}
+                <Icon icon="fa6-solid:spinner" class="size-3.5 animate-spin" />
+              {/if}
+              Delete
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </DialogPositioner>
+  </Dialog>
 {/if}

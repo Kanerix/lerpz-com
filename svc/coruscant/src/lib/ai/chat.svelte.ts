@@ -357,6 +357,15 @@ export function createChat(options: UseChatOptions = {}) {
         errorValue = null;
     }
 
+    // Drop the given message and every message after it from local state. Used
+    // after the server confirms the same deletion so the view updates without a
+    // full reload. No-op when the id isn't present.
+    function removeMessagesFrom(messageId: string) {
+        const index = messages.findIndex((m) => m.id === messageId);
+        if (index === -1) return;
+        messages = messages.slice(0, index);
+    }
+
     function enterConversation(id: string, msgs: ConversationMessage[] = []) {
         closeRef?.();
         closeRef = null;
@@ -399,6 +408,7 @@ export function createChat(options: UseChatOptions = {}) {
         stop,
         retry,
         reset,
+        removeMessagesFrom,
         enterConversation,
     };
 }
