@@ -120,10 +120,15 @@ fn completion_sse(
             let chunk = match chunk_result {
                 Ok(c) => c,
                 Err(err) => {
-                    tracing::error!("{err}");
+                    let upstream = lerpz_portkey::classify_error(&err.to_string());
+                    if upstream.is_user() {
+                        tracing::warn!(%conv_id, reason = %upstream.message, "chat completion rejected by provider");
+                    } else {
+                        tracing::error!("{err}");
+                    }
                     yield Ok(Event::default()
                         .event("error")
-                        .data(lerpz_portkey::humanize_error(&err.to_string())));
+                        .data(upstream.message));
                     break;
                 }
             };

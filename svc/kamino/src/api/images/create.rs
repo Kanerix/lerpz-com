@@ -151,10 +151,15 @@ pub async fn handler(
             let chunk = match chunk_result {
                 Ok(c) => c,
                 Err(err) => {
-                    tracing::error!("failed to get chunk: {err}");
+                    let upstream = lerpz_portkey::classify_error(&err.to_string());
+                    if upstream.is_user() {
+                        tracing::warn!(reason = %upstream.message, "image generation rejected by provider");
+                    } else {
+                        tracing::error!("failed to get chunk: {err}");
+                    }
                     yield Ok(Event::default()
                         .event("error")
-                        .json_data(lerpz_portkey::humanize_error(&err.to_string()))
+                        .json_data(&upstream.message)
                         .expect("failed to serialize error event"));
                     break;
                 }

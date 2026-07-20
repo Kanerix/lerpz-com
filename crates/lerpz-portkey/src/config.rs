@@ -15,6 +15,18 @@ pub struct PortkeyConfig {
     pub api_provider: String,
 }
 
+impl PortkeyConfig {
+    /// Creates a new [`PortkeyConfig`] with the given API base URL, API key, and provider.
+    #[inline]
+    pub fn new(api_base: String, api_key: SecretString, api_provider: String) -> Self {
+        Self {
+            api_base,
+            api_key,
+            api_provider,
+        }
+    }
+}
+
 impl Config for PortkeyConfig {
     fn headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();

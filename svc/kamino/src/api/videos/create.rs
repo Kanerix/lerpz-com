@@ -180,17 +180,28 @@ pub async fn handler(
     // humanized upstream message instead of letting it collapse into an
     // opaque 500.
     let job = openai.videos().create(request).await.map_err(|err| {
-        tracing::error!(
-            %oid,
-            model = %model_name,
-            provider = %CONFIG.PORTKEY_PROVIDER,
-            base_url = %CONFIG.PORTKEY_BASE_URL,
-            "failed to create video job: {err}",
-        );
+        let upstream = lerpz_portkey::classify_error(&err.to_string());
+        if upstream.is_user() {
+            tracing::warn!(
+                %oid,
+                model = %model_name,
+                provider = %CONFIG.PORTKEY_PROVIDER,
+                reason = %upstream.message,
+                "video generation rejected by provider",
+            );
+        } else {
+            tracing::error!(
+                %oid,
+                model = %model_name,
+                provider = %CONFIG.PORTKEY_PROVIDER,
+                base_url = %CONFIG.PORTKEY_BASE_URL,
+                "failed to create video job: {err}",
+            );
+        }
         Problem::new(
             StatusCode::BAD_GATEWAY,
             "Video generation failed",
-            lerpz_portkey::humanize_error(&err.to_string()),
+            upstream.message,
         )
     })?;
     let job_id = job.id.clone();
@@ -209,10 +220,15 @@ pub async fn handler(
             let current = match openai.videos().retrieve(&job_id).await {
                 Ok(v) => v,
                 Err(err) => {
-                    tracing::error!(%job_id, "failed to poll video job: {err}");
+                    let upstream = lerpz_portkey::classify_error(&err.to_string());
+                    if upstream.is_user() {
+                        tracing::warn!(%job_id, reason = %upstream.message, "video generation rejected by provider");
+                    } else {
+                        tracing::error!(%job_id, "failed to poll video job: {err}");
+                    }
                     yield Ok(Event::default()
                         .event("error")
-                        .json_data(lerpz_portkey::humanize_error(&err.to_string()))
+                        .json_data(&upstream.message)
                         .expect("failed to serialize error event"));
                     break;
                 }
@@ -234,10 +250,15 @@ pub async fn handler(
                         .error
                         .map(|e| e.message)
                         .unwrap_or_else(|| "Video generation failed.".to_string());
-                    tracing::error!(%job_id, %message, "video generation failed");
+                    let upstream = lerpz_portkey::classify_error(&message);
+                    if upstream.is_user() {
+                        tracing::warn!(%job_id, reason = %upstream.message, "video generation rejected by provider");
+                    } else {
+                        tracing::error!(%job_id, message = %upstream.message, "video generation failed");
+                    }
                     yield Ok(Event::default()
                         .event("error")
-                        .json_data(lerpz_portkey::humanize_error(&message))
+                        .json_data(&upstream.message)
                         .expect("failed to serialize error event"));
                     break;
                 }

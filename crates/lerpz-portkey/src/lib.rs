@@ -3,7 +3,9 @@
 //! Portkey forwards provider responses (and errors) largely untouched, so
 //! upstreams don't share a single error schema. [`humanize_error`] collapses
 //! whatever shape an error arrives in into a single human-readable line that is
-//! safe to surface to end users.
+//! safe to surface to end users, and [`classify_error`] additionally reports
+//! whether the error was caused by the user's input (e.g. content moderation)
+//! so callers can log it at an appropriate level.
 //!
 //! Two optional, feature-gated integrations are also provided for wiring the
 //! gateway into an AI client:
@@ -15,7 +17,7 @@
 
 mod error;
 
-pub use error::humanize_error;
+pub use error::{ErrorKind, UpstreamError, classify_error, humanize_error};
 
 #[cfg(feature = "async-openai")]
 mod config;

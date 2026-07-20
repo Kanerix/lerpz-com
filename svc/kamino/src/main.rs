@@ -54,11 +54,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let portkey_config = PortkeyConfig {
-        api_base: CONFIG.PORTKEY_BASE_URL.to_string(),
-        api_key: SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
-        api_provider: CONFIG.PORTKEY_PROVIDER.to_string(),
-    };
+    let portkey_config = PortkeyConfig::new(
+        CONFIG.PORTKEY_BASE_URL.to_string(),
+        SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
+        CONFIG.PORTKEY_PROVIDER.to_string(),
+    );
     let openai = Arc::new(Client::with_config(portkey_config));
 
     let database = PgPoolOptions::new()
@@ -137,11 +137,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let html = scalar_html(&scalar_config, None)
-        .replace(
-            "<title>Scalar API Reference</title>",
-            "<title>Lerpz AI — API references</title>",
-        );
+    let html = scalar_html(&scalar_config, None).replace(
+        "<title>Scalar API Reference</title>",
+        "<title>Lerpz AI — API references</title>",
+    );
 
     let app = router
         .route("/api/openapi.json", get(|| async { Json(api) }))
