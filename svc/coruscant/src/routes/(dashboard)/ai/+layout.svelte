@@ -58,6 +58,7 @@ setAiContext({
     resetChat: chat.reset,
     retryChat: chat.retry,
     enterConversation: chat.enterConversation,
+    removeChatMessagesFrom: chat.removeMessagesFrom,
     sendChat: chat.send,
     editChat: chat.editLatest,
     get generatedImage() {

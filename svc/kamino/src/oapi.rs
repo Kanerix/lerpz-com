@@ -12,6 +12,7 @@ pub(crate) const GROUPS_TAG: &str = "groups";
 pub(crate) const ORGS_TAG: &str = "orgs";
 pub(crate) const AGENTS_TAG: &str = "agents";
 pub(crate) const SESSIONS_TAG: &str = "sessions";
+pub(crate) const SETTINGS_TAG: &str = "settings";
 pub(crate) const HEALTH_TAG: &str = "health";
 
 #[derive(OpenApi)]
@@ -37,6 +38,7 @@ pub(crate) const HEALTH_TAG: &str = "health";
         (name = ORGS_TAG, description = "Manage organizations, their members, and top-level settings."),
         (name = AGENTS_TAG, description = "Manage AI agents and their configuration."),
         (name = SESSIONS_TAG, description = "Manage agent sessions and their lifecycle."),
+        (name = SETTINGS_TAG, description = "Manage the authenticated user's account settings and preferences."),
         (name = HEALTH_TAG, description = "Monitor API health and verify connectivity to backing services."),
     )
 )]

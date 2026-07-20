@@ -1,0 +1,51 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n            theme AS \"theme: _\",\n            notify_product_updates,\n            notify_activity_digest,\n            notify_security_alerts\n        FROM user_settings\n        WHERE user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "theme: _",
+        "type_info": {
+          "Custom": {
+            "name": "theme_pref",
+            "kind": {
+              "Enum": [
+                "light",
+                "dark",
+                "system"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "notify_product_updates",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "notify_activity_digest",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "notify_security_alerts",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d9160c6cfeeb8d086f87c4121c65fc17e3322beb35cb64aa814806eb6bcb3c34"
+}

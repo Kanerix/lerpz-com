@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO user_settings (\n            user_id,\n            theme,\n            notify_product_updates,\n            notify_activity_digest,\n            notify_security_alerts\n        )\n        VALUES (\n            $1,\n            COALESCE($2::theme_pref, 'system'),\n            COALESCE($3, TRUE),\n            COALESCE($4, FALSE),\n            COALESCE($5, TRUE)\n        )\n        ON CONFLICT (user_id) DO UPDATE SET\n            theme = COALESCE($2::theme_pref, user_settings.theme),\n            notify_product_updates = COALESCE($3, user_settings.notify_product_updates),\n            notify_activity_digest = COALESCE($4, user_settings.notify_activity_digest),\n            notify_security_alerts = COALESCE($5, user_settings.notify_security_alerts)\n        RETURNING\n            theme AS \"theme: _\",\n            notify_product_updates,\n            notify_activity_digest,\n            notify_security_alerts",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "theme: _",
+        "type_info": {
+          "Custom": {
+            "name": "theme_pref",
+            "kind": {
+              "Enum": [
+                "light",
+                "dark",
+                "system"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "notify_product_updates",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "notify_activity_digest",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "notify_security_alerts",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        {
+          "Custom": {
+            "name": "theme_pref",
+            "kind": {
+              "Enum": [
+                "light",
+                "dark",
+                "system"
+              ]
+            }
+          }
+        },
+        "Bool",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4912f562ec5e257cc8b00a840d4906f8a1e652bfceee521d400cb91a3bbd0016"
+}

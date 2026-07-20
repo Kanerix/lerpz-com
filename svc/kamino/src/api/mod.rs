@@ -11,6 +11,7 @@ mod images;
 mod models;
 mod orgs;
 mod sessions;
+mod settings;
 mod videos;
 
 #[cfg(debug_assertions)]
@@ -27,6 +28,7 @@ pub fn router(state: AppState) -> OpenApiRouter<AppState> {
         .nest("/models", models::router())
         .nest("/agents", agents::router())
         .nest("/sessions", sessions::router())
+        .nest("/settings", settings::router())
         .routes(routes!(health::handler))
         .with_state(state);
 
