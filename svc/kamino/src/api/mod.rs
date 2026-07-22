@@ -9,7 +9,6 @@ mod groups;
 mod health;
 mod images;
 mod models;
-mod orgs;
 mod sessions;
 mod settings;
 mod videos;
@@ -19,7 +18,6 @@ mod failure;
 
 pub fn router(state: AppState) -> OpenApiRouter<AppState> {
     let router = OpenApiRouter::new()
-        .nest("/orgs", orgs::router())
         .nest("/groups", groups::router())
         .nest("/chats", chats::router())
         .nest("/images", images::router())
