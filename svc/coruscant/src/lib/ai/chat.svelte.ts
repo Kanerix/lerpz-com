@@ -10,7 +10,10 @@ import type {
     EditLatestMessageRequest,
     MessageRequest,
 } from "$lib/api/models/index.js";
-import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
+import {
+    isProblemSchema,
+    toProblemError,
+} from "$lib/components/error-dialog/problem.js";
 
 export type ChatMessage = ConversationMessage;
 
@@ -357,6 +360,13 @@ export function createChat(options: UseChatOptions = {}) {
         errorValue = null;
     }
 
+    // Surface an error thrown by a chat-adjacent action (e.g. deleting a
+    // message) through the shared error dialog. Only `errorValue` is set so the
+    // status bar, which is reserved for send/stream failures, stays untouched.
+    function reportError(err: unknown) {
+        errorValue = toProblemError(err);
+    }
+
     // Drop the given message and every message after it from local state. Used
     // after the server confirms the same deletion so the view updates without a
     // full reload. No-op when the id isn't present.
@@ -408,6 +418,7 @@ export function createChat(options: UseChatOptions = {}) {
         stop,
         retry,
         reset,
+        reportError,
         removeMessagesFrom,
         enterConversation,
     };

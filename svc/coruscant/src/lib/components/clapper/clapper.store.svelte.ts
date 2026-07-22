@@ -12,7 +12,9 @@ export type AspectRatioOption = {
     h: number;
 };
 
-// The ratios most video models understand. `16:9` is the safe default for video.
+// Video generation only renders landscape (`16:9`) or portrait (`9:16`); any
+// other ratio is coerced to portrait server-side, so we don't offer them.
+// `16:9` is the safe default for video.
 export const WIDESCREEN_RATIO: AspectRatioOption = {
     value: "16:9",
     label: "Widescreen",
@@ -23,8 +25,6 @@ export const WIDESCREEN_RATIO: AspectRatioOption = {
 export const ASPECT_RATIOS: AspectRatioOption[] = [
     WIDESCREEN_RATIO,
     { value: "9:16", label: "Vertical", w: 9, h: 16 },
-    { value: "1:1", label: "Square", w: 1, h: 1 },
-    { value: "4:3", label: "Classic", w: 4, h: 3 },
 ];
 
 export const DEFAULT_ASPECT_RATIO = WIDESCREEN_RATIO.value;
@@ -39,20 +39,22 @@ export type DurationOption = {
     label: string;
 };
 
-// Clip lengths the models understand. Kept short since generation cost scales
-// with duration.
-export const SHORT_DURATION: DurationOption = { value: 4, label: "4 seconds" };
-
+// Clip lengths the models understand. Video generation clamps requests to the
+// 4-8 second range and defaults to the longest, so those are the values we
+// expose.
 export const DURATIONS: DurationOption[] = [
-    SHORT_DURATION,
+    { value: 4, label: "4 seconds" },
     { value: 6, label: "6 seconds" },
     { value: 8, label: "8 seconds" },
 ];
 
-export const DEFAULT_DURATION = SHORT_DURATION.value;
+export const DEFAULT_DURATION = 8;
 
 export function resolveDuration(value: number): DurationOption {
-    return DURATIONS.find((d) => d.value === value) ?? SHORT_DURATION;
+    return (
+        DURATIONS.find((d) => d.value === value) ??
+        DURATIONS[DURATIONS.length - 1]
+    );
 }
 
 class ClapperStore {

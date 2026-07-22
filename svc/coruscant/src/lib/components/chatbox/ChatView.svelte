@@ -14,7 +14,6 @@ import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
 import { useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
-import { toast } from "svelte-sonner";
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import {
     deleteChatMessage,
@@ -152,10 +151,10 @@ async function confirmDelete() {
         onDelete?.(targetId);
         pendingDeleteId = null;
     } catch (err) {
-        toast.error("Couldn't delete message", {
-            description:
-                err instanceof Error ? err.message : "Please try again.",
-        });
+        // Close the confirmation dialog first so the error dialog isn't stacked
+        // on top of it.
+        pendingDeleteId = null;
+        ai.reportChatError(err);
     } finally {
         isDeleting = false;
     }

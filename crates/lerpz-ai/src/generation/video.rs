@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use async_openai::{Client, config::Config};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use http::HeaderMap;
+use http::{HeaderMap, HeaderValue};
 use serde_json::{Value, json};
 
 use crate::{
@@ -26,6 +26,24 @@ const MAX_POLL_ATTEMPTS: usize = 90;
 /// Container format Veo renders to.
 const VIDEO_FORMAT: &str = "mp4";
 
+/// Routing details for Google's Vertex AI, required by the Veo ([`start_veo`])
+/// path and ignored by the default one.
+///
+/// Veo runs on Vertex AI's native long-running endpoint, which Portkey reaches
+/// as a custom-host pass-through. Credentials are resolved by Portkey from the
+/// `@<provider>/<model>` integration slug, so none are carried here.
+#[derive(Debug, Clone)]
+pub struct VertexConfig {
+    /// Vertex AI regional base URL, e.g.
+    /// `https://us-central1-aiplatform.googleapis.com/v1`. Sent to Portkey as
+    /// the `x-portkey-custom-host`.
+    pub custom_host: String,
+    /// Google Cloud project id that owns the Vertex deployment.
+    pub project_id: String,
+    /// Vertex AI location/region, e.g. `us-central1`.
+    pub location: String,
+}
+
 /// Parameters for a video generation request.
 #[derive(Debug, Clone)]
 pub struct VideoRequest {
@@ -37,6 +55,8 @@ pub struct VideoRequest {
     pub aspect_ratio: Option<String>,
     /// Clip length in seconds. Clamped to the range the provider supports.
     pub duration: Option<u16>,
+    /// Vertex AI routing, required by the Veo (Google) path.
+    pub vertex: Option<VertexConfig>,
 }
 
 /// An event emitted while a video generation job completes.
@@ -63,12 +83,26 @@ pub enum VideoEvent {
     },
 }
 
+/// How a created operation is polled to completion.
+///
+/// OpenAI-style providers (e.g. Sora) expose the operation as a resource to
+/// `GET`, whereas Vertex AI requires a `POST` to `:fetchPredictOperation` with
+/// the operation name in the body.
+enum PollStrategy {
+    /// `GET` the operation resource at the stored URL.
+    Get,
+    /// `POST` `:fetchPredictOperation` with `{ operationName }`.
+    FetchPredict,
+}
+
 /// A created, long-running video generation operation awaiting completion.
 pub struct VideoJob {
     http: reqwest::Client,
     headers: HeaderMap,
-    operation_url: String,
-    /// The provider's operation identifier, useful for logging.
+    poll_url: String,
+    poll_strategy: PollStrategy,
+    /// The provider's operation identifier, useful for logging and as the
+    /// `:fetchPredictOperation` argument.
     pub operation_name: String,
     width: u32,
     height: u32,
@@ -84,7 +118,10 @@ enum VideoPayload {
     Uri(String),
 }
 
-/// Creates a video generation job.
+/// Creates a video generation job using the default (OpenAI-style) API.
+///
+/// Posts to `/videos:generate` with the model in the request body, which is how
+/// providers such as Azure's Sora expose video generation.
 pub(super) async fn start<C: Config>(
     client: &Client<C>,
     request: VideoRequest,
@@ -92,7 +129,6 @@ pub(super) async fn start<C: Config>(
     let config = client.config();
     let headers = config.headers();
     let generate_url = config.url("/videos:generate");
-    let http = reqwest::Client::new();
 
     let (aspect_ratio, width, height) = resolve_aspect_ratio(request.aspect_ratio.as_deref());
     let duration = resolve_duration(request.duration);
@@ -104,6 +140,97 @@ pub(super) async fn start<C: Config>(
     });
 
     tracing::debug!(model = %request.model, "creating video generation job");
+
+    let (http, operation_name) = submit_job(&headers, generate_url, body).await?;
+    let poll_url = config.url(&operation_path(&operation_name));
+
+    Ok(VideoJob {
+        http,
+        headers,
+        poll_url,
+        poll_strategy: PollStrategy::Get,
+        operation_name,
+        width,
+        height,
+        duration,
+    })
+}
+
+/// Creates a video generation job on Google's Vertex AI (Veo).
+///
+/// Veo has no OpenAI-style `/videos:generate` endpoint; it uses Vertex AI's
+/// native long-running `:predictLongRunning` action, reached through Portkey as
+/// a custom-host pass-through. The provider integration slug (kept with its
+/// leading `@`) lets Portkey attach the Vertex credentials, so no auth is sent
+/// here. The follow-up poll uses `:fetchPredictOperation`.
+pub(super) async fn start_veo<C: Config>(
+    client: &Client<C>,
+    request: VideoRequest,
+) -> Result<VideoJob, UpstreamError> {
+    let vertex = request.vertex.as_ref().ok_or_else(|| {
+        UpstreamError::provider("missing Vertex configuration for Veo generation")
+    })?;
+
+    let config = client.config();
+    let mut headers = config.headers();
+
+    let (provider, model) = split_model_reference(&request.model);
+    if let Some(provider) = provider {
+        let value = provider
+            .parse()
+            .map_err(|_| UpstreamError::provider("invalid video provider slug"))?;
+        headers.insert("x-portkey-provider", value);
+    }
+
+    // Vertex's native endpoints aren't Portkey gateway routes, so proxy them to
+    // the regional Vertex host. This header rides along on the poll too, since
+    // the `VideoJob` reuses these headers.
+    let host = HeaderValue::from_str(&vertex.custom_host)
+        .map_err(|_| UpstreamError::provider("invalid Vertex custom host"))?;
+    headers.insert("x-portkey-custom-host", host);
+
+    let (aspect_ratio, width, height) = resolve_aspect_ratio(request.aspect_ratio.as_deref());
+    let duration = resolve_duration(request.duration);
+
+    let base = format!(
+        "/projects/{}/locations/{}/publishers/google/models/{model}",
+        vertex.project_id, vertex.location
+    );
+    let generate_url = config.url(&format!("{base}:predictLongRunning"));
+
+    let body = json!({
+        "instances": [{ "prompt": request.prompt }],
+        "parameters": {
+            "aspectRatio": aspect_ratio,
+            "durationSeconds": duration,
+        },
+    });
+
+    tracing::debug!(model = %model, "creating Veo video generation job");
+
+    let (http, operation_name) = submit_job(&headers, generate_url, body).await?;
+    let poll_url = config.url(&format!("{base}:fetchPredictOperation"));
+
+    Ok(VideoJob {
+        http,
+        headers,
+        poll_url,
+        poll_strategy: PollStrategy::FetchPredict,
+        operation_name,
+        width,
+        height,
+        duration,
+    })
+}
+
+/// Submits a create request and returns the HTTP client plus the operation name
+/// to poll. Shared across the provider-specific `start` variants.
+async fn submit_job(
+    headers: &HeaderMap,
+    generate_url: String,
+    body: Value,
+) -> Result<(reqwest::Client, String), UpstreamError> {
+    let http = reqwest::Client::new();
 
     let response = http
         .post(&generate_url)
@@ -118,8 +245,20 @@ pub(super) async fn start<C: Config>(
     // opaque failure.
     let status = response.status();
     if !status.is_success() {
-        let text = response.text().await.unwrap_or_default();
-        return Err(classify_error(&text));
+        return Err(match response.text().await {
+            // A classifiable provider error body.
+            Ok(body) if !body.trim().is_empty() => classify_error(&body),
+            // A non-2xx status with an empty body: `classify_error` would
+            // collapse that into a blank message, so fall back to the status.
+            Ok(_) => UpstreamError::provider(format!(
+                "The video provider returned HTTP {status} with an empty body."
+            )),
+            // The body itself couldn't be read; keep both the status and the
+            // read error so the failure stays diagnosable.
+            Err(err) => UpstreamError::provider(format!(
+                "The video provider returned HTTP {status} and its body could not be read: {err}"
+            )),
+        });
     }
 
     let job: Value = response
@@ -133,19 +272,9 @@ pub(super) async fn start<C: Config>(
         })?
         .to_string();
 
-    let operation_url = config.url(&operation_path(&operation_name));
+    tracing::debug!(%operation_name, "video generation job created");
 
-    tracing::debug!(%operation_name, model = %request.model, "video generation job created");
-
-    Ok(VideoJob {
-        http,
-        headers,
-        operation_url,
-        operation_name,
-        width,
-        height,
-        duration,
-    })
+    Ok((http, operation_name))
 }
 
 impl VideoJob {
@@ -165,7 +294,18 @@ impl VideoJob {
                     break;
                 }
 
-                let poll = match self.http.get(&self.operation_url).headers(self.headers.clone()).send().await {
+                let request = match self.poll_strategy {
+                    PollStrategy::Get => {
+                        self.http.get(&self.poll_url).headers(self.headers.clone())
+                    }
+                    PollStrategy::FetchPredict => self
+                        .http
+                        .post(&self.poll_url)
+                        .headers(self.headers.clone())
+                        .json(&json!({ "operationName": self.operation_name })),
+                };
+
+                let poll = match request.send().await {
                     Ok(poll) => poll,
                     Err(err) => {
                         yield Err(classify_error(&err.to_string()));
@@ -195,6 +335,24 @@ impl VideoJob {
 
                 if let Some(error) = operation.get("error") {
                     yield Err(classify_error(&error.to_string()));
+                    break;
+                }
+
+                // Vertex reports a safety-filtered render as a completed
+                // operation with no video and a filter count/reason instead.
+                if let Some(response) = operation.get("response")
+                    && response
+                        .get("raiMediaFilteredCount")
+                        .and_then(Value::as_u64)
+                        .unwrap_or(0)
+                        > 0
+                {
+                    let reason = response
+                        .pointer("/raiMediaFilteredReasons/0")
+                        .and_then(Value::as_str)
+                        .unwrap_or("The video was blocked by the safety filter.");
+                    tracing::warn!(operation_name = %self.operation_name, "video blocked by safety filter");
+                    yield Err(UpstreamError::provider(reason.to_string()));
                     break;
                 }
 
@@ -233,6 +391,20 @@ impl VideoJob {
                 break;
             }
         })
+    }
+}
+
+/// Split an `@<provider>/<model>` catalog reference into its provider slug and
+/// bare model name.
+///
+/// The provider slug keeps its leading `@` so Portkey resolves it to the saved
+/// integration (and its credentials); e.g. `@google-us-central1/veo-3.1` ->
+/// (`@google-us-central1`, `veo-3.1`). References without a `/` are returned
+/// unchanged with no provider.
+fn split_model_reference(model: &str) -> (Option<&str>, &str) {
+    match model.split_once('/') {
+        Some((provider, model)) => (Some(provider), model),
+        None => (None, model),
     }
 }
 

@@ -57,6 +57,7 @@ setAiContext({
     stopChat: chat.stop,
     resetChat: chat.reset,
     retryChat: chat.retry,
+    reportChatError: chat.reportError,
     enterConversation: chat.enterConversation,
     removeChatMessagesFrom: chat.removeMessagesFrom,
     sendChat: chat.send,

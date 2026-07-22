@@ -7,10 +7,11 @@
 //! request is issued and how its response is interpreted, whereas the provider
 //! slug only decides *where* the gateway forwards it.
 //!
-//! Every family currently shares the [`Family::Default`] behaviour, which is the
+//! Most families share the [`Family::Default`] behaviour, which is the
 //! implementation that works across the providers routed through Portkey today.
-//! New families can override individual generation kinds by adding a variant and
-//! a match arm, without touching the callers.
+//! A family can override individual generation kinds by adding a variant and a
+//! match arm (e.g. [`Family::Google`] overrides video to use Veo's native
+//! long-running endpoint), without touching the callers.
 //!
 //! Each generation kind produces a normalized, boxed event stream
 //! ([`ImageStream`], [`VideoStream`], [`ChatStream`]) so that different families
@@ -32,7 +33,7 @@ mod video;
 
 pub use chat::ChatEvent;
 pub use image::{ImageEvent, ImageRequest};
-pub use video::{VideoEvent, VideoJob, VideoRequest};
+pub use video::{VideoEvent, VideoJob, VideoRequest, VertexConfig};
 
 /// A boxed stream of image generation events.
 pub type ImageStream = Pin<Box<dyn Stream<Item = Result<ImageEvent, UpstreamError>> + Send>>;
@@ -50,20 +51,18 @@ pub type ChatStream = Pin<Box<dyn Stream<Item = Result<ChatEvent, UpstreamError>
 pub enum Family {
     /// The default behaviour, used for any family without special handling.
     Default,
+    /// Google (Gemini/Veo). Image and chat use the default behaviour; video
+    /// uses Veo's native long-running endpoint.
+    Google,
 }
 
 impl Family {
     /// Resolves a model family name to its [`Family`] handler.
     ///
     /// Unknown or unspecified families fall back to [`Family::Default`].
-    #[allow(
-        clippy::match_single_binding,
-        reason = "kept as a match so bespoke families can be added as arms"
-    )]
     pub fn from_name(name: Option<&str>) -> Self {
         match name.map(str::trim) {
-            // Every family currently uses the default behaviour. Add arms here
-            // as families gain bespoke image/video/chat handling.
+            Some("google") => Family::Google,
             _ => Family::Default,
         }
     }
@@ -78,7 +77,7 @@ impl Family {
         request: ImageRequest,
     ) -> Result<ImageStream, UpstreamError> {
         match self {
-            Family::Default => image::generate(client, request).await,
+            Family::Default | Family::Google => image::generate(client, request).await,
         }
     }
 
@@ -94,6 +93,7 @@ impl Family {
     ) -> Result<VideoJob, UpstreamError> {
         match self {
             Family::Default => video::start(client, request).await,
+            Family::Google => video::start_veo(client, request).await,
         }
     }
 
@@ -107,7 +107,7 @@ impl Family {
         request: CreateChatCompletionRequest,
     ) -> Result<ChatStream, OpenAIError> {
         match self {
-            Family::Default => chat::stream(client, request).await,
+            Family::Default | Family::Google => chat::stream(client, request).await,
         }
     }
 }

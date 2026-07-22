@@ -9,8 +9,8 @@ export interface VideoRequest {
      */
   aspect_ratio?: string | null;
   /**
-     * Clip length in seconds. Rounded down to the nearest supported value
-     * (4, 8 or 12). Defaults to 4 seconds.
+     * Clip length in seconds. Clamped to the range Veo supports (4-8).
+     * Defaults to 8 seconds.
      * @minimum 0
      * @nullable
      */

@@ -8,7 +8,7 @@ use axum::{
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::Utc;
-use lerpz_ai::generation::{Family, VideoEvent, VideoRequest as VideoGenRequest};
+use lerpz_ai::generation::{Family, VertexConfig, VideoEvent, VideoRequest as VideoGenRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -136,6 +136,13 @@ pub async fn handler(
         model: model_name.clone(),
         aspect_ratio: body.aspect_ratio.clone(),
         duration: body.duration,
+        // The Google/Veo path runs on Vertex AI's native endpoint and needs the
+        // project/region and custom host; other families ignore this.
+        vertex: matches!(family, Family::Google).then(|| VertexConfig {
+            custom_host: CONFIG.VERTEX_BASE_URL.to_string(),
+            project_id: CONFIG.VERTEX_PROJECT_ID.to_string(),
+            location: CONFIG.VERTEX_LOCATION.to_string(),
+        }),
     };
 
     tracing::debug!(%oid, model = %model_name, "creating video generation job");
