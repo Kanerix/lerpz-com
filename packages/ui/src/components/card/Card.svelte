@@ -12,7 +12,7 @@ let {
 <div
   data-slot="card"
   class={cn(
-    "bg-card text-card-foreground rounded-2xl border shadow-sm",
+    "bg-card text-card-foreground rounded-lg border shadow-sm",
     className
   )}
   {...rest}

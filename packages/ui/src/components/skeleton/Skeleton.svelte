@@ -9,6 +9,6 @@ let {
 
 <div
     data-slot="skeleton"
-    class={cn("bg-accent rounded-md animate-pulse", className)}
+    class={cn("bg-accent rounded-lg animate-pulse", className)}
     {...rest}
 ></div>

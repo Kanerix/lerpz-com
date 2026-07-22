@@ -16,7 +16,7 @@ const sidebar = useSidebar();
   data-sidebar="group-label"
   class={cn(
     "flex h-8 shrink-0 items-center px-2 text-xs font-medium",
-    "text-sidebar-foreground/70 rounded-md outline-none ring-sidebar-ring",
+    "text-sidebar-foreground/70 rounded-lg outline-none ring-sidebar-ring",
     sidebar.state === "collapsed" && "h-0 overflow-hidden opacity-0",
     className
   )}

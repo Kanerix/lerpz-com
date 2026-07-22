@@ -31,7 +31,7 @@ const uid = $props.id();
   {onclick}
   class={cn(
     "relative flex items-center gap-2 px-3 py-2 text-sm",
-    "cursor-pointer select-none rounded-xl outline-none transition-colors",
+    "cursor-pointer select-none rounded-lg outline-none transition-colors",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0",
     "[&_svg:not([class*='size-'])]:size-4",
     "focus:bg-accent focus:text-accent-foreground",

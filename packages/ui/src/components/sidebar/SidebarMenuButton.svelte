@@ -8,7 +8,7 @@ const variants = cva(
     [
         "peer/menu-button flex w-full items-center gap-2 overflow-hidden",
         "group-data-[state=collapsed]:justify-center",
-        "rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring",
+        "rounded-lg p-2 text-left text-sm outline-none ring-sidebar-ring",
         "cursor-pointer",
         "transition-[width,height,padding] focus-visible:ring-2",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

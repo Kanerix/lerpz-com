@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 export const buttonVariants = cva(
     [
         "inline-flex shrink-0 items-center justify-center whitespace-nowrap",
-        "rounded-4xl border border-transparent bg-clip-padding transition-all",
+        "rounded-lg border border-transparent bg-clip-padding transition-all",
         "text-sm font-medium select-none outline-none cursor-pointer",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0",
         "[&_svg:not([class*='size-'])]:size-4",

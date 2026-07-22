@@ -17,7 +17,7 @@ const item = $derived({ value, label: "" });
   {item}
   class={cn(
     "relative flex w-full items-center gap-2 py-2 pr-8 pl-3 text-sm",
-    "cursor-pointer select-none rounded-xl outline-none",
+    "cursor-pointer select-none rounded-lg outline-none",
     "focus:bg-accent focus:text-accent-foreground",
     "hover:bg-accent hover:text-accent-foreground",
     "data-disabled:pointer-events-none data-disabled:opacity-50",

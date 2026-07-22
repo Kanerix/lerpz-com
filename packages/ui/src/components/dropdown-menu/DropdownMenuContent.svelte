@@ -17,7 +17,7 @@ let {
       data-slot="dropdown-menu-content"
       class={cn(
         "z-50 min-w-48 p-1 bg-popover text-popover-foreground",
-        "rounded-2xl border shadow-2xl outline-none",
+        "rounded-lg border shadow-2xl outline-none",
         "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
         "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
         className

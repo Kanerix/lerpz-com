@@ -16,7 +16,7 @@ let {
 
 const classes = $derived(
     cn(
-        "flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 text-sm",
+        "flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2 text-sm",
         "text-sidebar-foreground outline-none ring-sidebar-ring",
         "transition-colors focus-visible:ring-2 cursor-pointer",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

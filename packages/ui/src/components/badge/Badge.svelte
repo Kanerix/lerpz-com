@@ -6,7 +6,7 @@ import { cn } from "../../lib/utils.js";
 const badgeVariants = cva(
     [
         "inline-flex items-center px-2.5 py-0.5 text-xs font-semibold",
-        "rounded-full border transition-colors",
+        "rounded-lg border transition-colors",
     ],
     {
         variants: {
