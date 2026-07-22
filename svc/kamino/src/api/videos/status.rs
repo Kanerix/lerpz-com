@@ -13,12 +13,12 @@ use sqlx::Row as _;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use super::job_store;
+use super::list::public_url;
 use crate::{
     oapi::VIDEOS_TAG,
-    state::{AppState, DatabasePool},
+    state::{AppState, DatabasePool, RedisPool},
 };
-
-use super::list::public_url;
 
 /// The completed video attached to a finished job.
 ///
@@ -90,7 +90,7 @@ pub struct VideoJobResponse {
         ),
         (
             status = NOT_FOUND,
-            description = "No such job for this user",
+            description = "No such job for this user, or it has expired",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -106,6 +106,7 @@ pub struct VideoJobResponse {
 pub async fn handler(
     token: AzureAccessToken,
     State(database): State<DatabasePool>,
+    State(redis): State<RedisPool>,
     Path(id): Path<Uuid>,
 ) -> HandlerResult<Json<VideoJobResponse>> {
     let oid = token.oid.ok_or(Problem::new(
@@ -114,57 +115,74 @@ pub async fn handler(
         "Missing Object ID from token",
     ))?;
 
-    // Join the (optional) completed video so a single round-trip returns both
-    // the job status and, when finished, the persisted video.
-    let row = sqlx::query(
-        r#"SELECT j.status AS status, j.error AS error, j.video_id AS video_id,
-                  v.prompt AS prompt, v.model AS model, v.title AS title, v.tags AS tags,
-                  v.storage_bucket AS storage_bucket, v.storage_key AS storage_key,
-                  v.format AS format, v.width AS width, v.height AS height,
-                  v.duration AS duration, v.created_at AS created_at
-           FROM video_jobs j
-           LEFT JOIN video_metadata v ON v.id = j.video_id
-           WHERE j.id = $1 AND j.oid = $2"#,
-    )
-    .bind(id)
-    .bind(oid)
-    .fetch_optional(&database)
-    .await?
-    .ok_or(Problem::new(
-        StatusCode::NOT_FOUND,
-        "Job not found",
-        "No video generation job exists with that id.",
-    ))?;
+    let not_found = || {
+        Problem::new(
+            StatusCode::NOT_FOUND,
+            "Job not found",
+            "No video generation job exists with that id, or it has expired.",
+        )
+    };
 
-    let status: String = row.try_get("status")?;
-    let error: Option<String> = row.try_get("error")?;
-    let video_id: Option<Uuid> = row.try_get("video_id")?;
+    let record = job_store::read(&redis, id)
+        .await
+        .map_err(|err| {
+            Problem::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to read job",
+                err,
+            )
+        })?
+        .ok_or_else(not_found)?;
 
-    let video = match video_id {
+    // Don't leak another user's jobs; an ownership mismatch is a "not found".
+    if record.oid != oid {
+        return Err(not_found());
+    }
+
+    // On completion the durable record lives in `video_metadata`; load it by id
+    // to build the result the same way the list endpoint does.
+    let video = match record.video_id {
         Some(vid) => {
-            let bucket: String = row.try_get("storage_bucket")?;
-            let key: String = row.try_get("storage_key")?;
-            Some(JobVideo {
-                id: vid,
-                url: public_url(&bucket, &key),
-                prompt: row.try_get("prompt")?,
-                model: row.try_get("model")?,
-                title: row.try_get("title")?,
-                tags: row.try_get::<Option<Vec<String>>, _>("tags")?.unwrap_or_default(),
-                format: row.try_get("format")?,
-                width: row.try_get("width")?,
-                height: row.try_get("height")?,
-                duration: row.try_get("duration")?,
-                created_at: row.try_get("created_at")?,
-            })
+            let row = sqlx::query(
+                r#"SELECT prompt, model, title, tags, storage_bucket, storage_key,
+                          format, width, height, duration, created_at
+                   FROM video_metadata
+                   WHERE id = $1"#,
+            )
+            .bind(vid)
+            .fetch_optional(&database)
+            .await?;
+
+            match row {
+                Some(row) => {
+                    let bucket: String = row.try_get("storage_bucket")?;
+                    let key: String = row.try_get("storage_key")?;
+                    Some(JobVideo {
+                        id: vid,
+                        url: public_url(&bucket, &key),
+                        prompt: row.try_get("prompt")?,
+                        model: row.try_get("model")?,
+                        title: row.try_get("title")?,
+                        tags: row
+                            .try_get::<Option<Vec<String>>, _>("tags")?
+                            .unwrap_or_default(),
+                        format: row.try_get("format")?,
+                        width: row.try_get("width")?,
+                        height: row.try_get("height")?,
+                        duration: row.try_get("duration")?,
+                        created_at: row.try_get("created_at")?,
+                    })
+                }
+                None => None,
+            }
         }
         None => None,
     };
 
     Ok(Json(VideoJobResponse {
         id,
-        status,
-        error,
+        status: record.status,
+        error: record.error,
         video,
     }))
 }

@@ -19,10 +19,11 @@ use tokio_stream::StreamExt as _;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use super::job_store::{self, JobRecord};
 use crate::{
     config::CONFIG,
     oapi::VIDEOS_TAG,
-    state::{AppState, DatabasePool, OpenAI, S3Client},
+    state::{AppState, DatabasePool, OpenAI, RedisPool, S3Client},
 };
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -113,6 +114,7 @@ pub async fn handler(
     token: AzureAccessToken,
     State(openai): State<OpenAI>,
     State(database): State<DatabasePool>,
+    State(redis): State<RedisPool>,
     State(s3): State<S3Client>,
     Json(body): Json<VideoRequest>,
 ) -> HandlerResult<CreateVideoResponse> {
@@ -155,7 +157,7 @@ pub async fn handler(
     tracing::debug!(%oid, model = %model_name, "creating video generation job");
 
     // Kick off the provider render. A failure here means the job could not be
-    // created at all, so surface it synchronously rather than via a job row.
+    // created at all, so surface it synchronously rather than via a job record.
     let job = family.start_video(openai.as_ref(), request).await.map_err(|upstream| {
         if upstream.is_user() {
             tracing::warn!(%oid, model = %model_name, reason = %upstream.message, "video generation rejected by provider");
@@ -174,17 +176,31 @@ pub async fn handler(
     // Record the job as in-progress so the client has something to poll while
     // the background task drives the render to completion.
     let job_id = Uuid::now_v7();
-    sqlx::query("INSERT INTO video_jobs (id, oid, status) VALUES ($1, $2, 'in_progress')")
-        .bind(job_id)
-        .bind(&oid)
-        .execute(&database)
-        .await?;
+    job_store::write(
+        &redis,
+        job_id,
+        &JobRecord {
+            oid: oid.clone(),
+            status: "in_progress".to_string(),
+            error: None,
+            video_id: None,
+        },
+    )
+    .await
+    .map_err(|err| {
+        Problem::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to create job",
+            err,
+        )
+    })?;
 
     tracing::debug!(%job_id, %operation_name, model = %model_name, "video generation job created");
 
     // Drive the render in the background. The task owns everything it needs, so
     // it outlives the request. Note: an in-flight task is lost on restart, which
-    // leaves its row stuck in `in_progress` — acceptable for this scope.
+    // leaves its record stuck in `in_progress` until the TTL expires it —
+    // acceptable for this scope.
     let prompt = body.prompt;
     tokio::spawn(run_job(
         job_id,
@@ -194,6 +210,7 @@ pub async fn handler(
         operation_name,
         job,
         database,
+        redis,
         s3,
     ));
 
@@ -203,24 +220,11 @@ pub async fn handler(
     })
 }
 
-/// Marks a job as failed with a human-readable reason.
-async fn fail_job(database: &DatabasePool, job_id: Uuid, message: &str) {
-    if let Err(err) =
-        sqlx::query("UPDATE video_jobs SET status = 'failed', error = $2 WHERE id = $1")
-            .bind(job_id)
-            .bind(message)
-            .execute(database)
-            .await
-    {
-        tracing::error!(%job_id, "failed to persist job failure: {err}");
-    }
-}
-
 /// Runs a video generation job to completion in the background.
 ///
 /// Polls the provider operation, and on success saves the video to storage,
-/// persists its metadata, and links it to the job row. Any failure transitions
-/// the job to `failed` with a message the client can display.
+/// persists its metadata, and links it to the job record. Any failure
+/// transitions the job to `failed` with a message the client can display.
 #[allow(clippy::too_many_arguments)]
 async fn run_job(
     job_id: Uuid,
@@ -230,6 +234,7 @@ async fn run_job(
     operation_name: String,
     job: lerpz_ai::generation::VideoJob,
     database: DatabasePool,
+    redis: RedisPool,
     s3: S3Client,
 ) {
     let mut stream = job.poll();
@@ -237,7 +242,7 @@ async fn run_job(
     // The job yields a single terminal event once rendering finishes.
     let Some(event) = stream.next().await else {
         tracing::error!(%job_id, %operation_name, "video generation poll ended without an event");
-        fail_job(&database, job_id, "The video generation ended unexpectedly.").await;
+        job_store::fail(&redis, job_id, &oid, "The video generation ended unexpectedly.").await;
         return;
     };
 
@@ -248,16 +253,17 @@ async fn run_job(
             } else {
                 tracing::error!(%operation_name, "video generation failed: {}", upstream.message);
             }
-            fail_job(&database, job_id, &upstream.message).await;
+            job_store::fail(&redis, job_id, &oid, &upstream.message).await;
             return;
         }
         Ok(VideoEvent::Link { url }) => {
             // We only got a link, not bytes, so we can't persist the video. Fail
             // the job rather than silently dropping the render.
             tracing::error!(%operation_name, %url, "video provider only returned a link; cannot persist");
-            fail_job(
-                &database,
+            job_store::fail(
+                &redis,
                 job_id,
+                &oid,
                 "The video could not be downloaded for storage.",
             )
             .await;
@@ -305,24 +311,28 @@ async fn run_job(
 
     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &video_bytes).await {
         tracing::error!(%operation_name, "{err}");
-        fail_job(&database, job_id, &err.to_string()).await;
+        job_store::fail(&redis, job_id, &oid, &err.to_string()).await;
         return;
     }
 
     tracing::trace!(%operation_name, "persisting metadata to database");
-    let meta_client = lerpz_metadata::Client::from_pool(database.clone());
+    let meta_client = lerpz_metadata::Client::from_pool(database);
     if let Err(err) = meta_client.insert(metadata).await {
         tracing::error!(%operation_name, "{err}");
-        fail_job(&database, job_id, &err.to_string()).await;
+        job_store::fail(&redis, job_id, &oid, &err.to_string()).await;
         return;
     }
 
-    if let Err(err) = sqlx::query(
-        "UPDATE video_jobs SET status = 'completed', video_id = $2 WHERE id = $1",
+    if let Err(err) = job_store::write(
+        &redis,
+        job_id,
+        &JobRecord {
+            oid,
+            status: "completed".to_string(),
+            error: None,
+            video_id: Some(id),
+        },
     )
-    .bind(job_id)
-    .bind(id)
-    .execute(&database)
     .await
     {
         tracing::error!(%job_id, "failed to mark job completed: {err}");

@@ -4,6 +4,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod analysis;
 mod create;
+mod job_store;
 mod list;
 mod status;
 
