@@ -13,7 +13,9 @@ const tools = [
         icon: "fa6-regular:comment",
         title: "AI Chat",
         description:
-            "Have conversations with large language models. Ask questions, summarise documents, or draft content — directly in your browser.",
+            "Have conversations with large language models. Ask questions, \
+            summarise documents, or draft content — with your full chat history \
+            a click away.",
         badge: "Available",
         badgeVariant: "default" as const,
     },
@@ -21,17 +23,29 @@ const tools = [
         icon: "fa6-regular:image",
         title: "Image Generation",
         description:
-            "Generate images from text prompts. Useful for mockups, visual references, and creative work without needing external tools.",
-        badge: "Beta",
-        badgeVariant: "outline" as const,
+            "Generate images from text prompts and keep them organised in your \
+            personal gallery — ideal for mockups, visual references, and \
+            creative work.",
+        badge: "Available",
+        badgeVariant: "default" as const,
     },
     {
         icon: "fa6-solid:magnifying-glass",
-        title: "Semantic Search",
+        title: "Image Analysis",
         description:
-            "Search internal documents and knowledge bases by meaning rather than exact keywords.",
-        badge: "Coming soon",
+            "Upload your own images and let AI describe, analyse, and answer \
+            questions about what's in them.",
+        badge: "New",
         badgeVariant: "secondary" as const,
+    },
+    {
+        icon: "fa6-solid:video",
+        title: "Video Generation",
+        description:
+            "Turn prompts into short videos and browse everything you've created \
+            from a dedicated gallery.",
+        badge: "Beta",
+        badgeVariant: "outline" as const,
     },
 ];
 </script>
@@ -44,7 +58,7 @@ const tools = [
     </p>
   </div>
 
-  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     {#each tools as tool}
       <Card>
         <CardHeader>

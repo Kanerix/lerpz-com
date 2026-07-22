@@ -18,8 +18,9 @@ const isAuthenticated = $derived(msalStore.isAuthenticated);
   </h1>
 
   <p class="max-w-xl text-lg text-muted-foreground leading-relaxed">
-    Sign in with your work account to access AI chat, image generation, and more —
-    centralised and maintained for everyone in the organisation.
+    Sign in with your work account to access AI chat, image and video
+    generation, and more — centralised and maintained for everyone in the
+    organisation.
   </p>
 
   <div class="flex items-center gap-3 pt-2">
