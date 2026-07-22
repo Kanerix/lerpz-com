@@ -18,39 +18,8 @@ export type NewNotification = Omit<
     "id" | "read" | "createdAt"
 >;
 
-// DRAFT: seeded with sample notifications so the bell has something to show
-// while the backend feed doesn't exist yet. Replace `seed` (and wire `add`) to
-// a real source — e.g. a SignalR/websocket stream or polling — when available.
-const seed: AppNotification[] = [
-    {
-        id: "welcome",
-        title: "Welcome to Lerpz",
-        body: "Explore the AI tools from the sidebar to get started.",
-        icon: "fa6-solid:wand-magic-sparkles",
-        href: "/ai/chats",
-        read: false,
-        createdAt: Date.now() - 1000 * 60 * 5,
-    },
-    {
-        id: "new-model",
-        title: "New model available",
-        body: "GPT-4o is now selectable in chat and agents.",
-        icon: "fa6-solid:robot",
-        read: false,
-        createdAt: Date.now() - 1000 * 60 * 60 * 3,
-    },
-    {
-        id: "maintenance",
-        title: "Scheduled maintenance",
-        body: "Image generation may be briefly unavailable this weekend.",
-        icon: "fa6-solid:screwdriver-wrench",
-        read: true,
-        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-];
-
 class NotificationStore {
-    notifications = $state<AppNotification[]>(seed);
+    notifications = $state<AppNotification[]>([]);
 
     /** Number of notifications the user hasn't read yet. */
     get unreadCount(): number {
