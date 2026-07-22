@@ -1,16 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@lerpz/ui/components/dropdown-menu";
 import { cn } from "@lerpz/ui/lib/utils";
-import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
@@ -52,7 +43,7 @@ $effect(() => {
 </script>
 
 <header class="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
-  <div class="mx-auto flex h-16 max-w-[1024px] items-center justify-between gap-4 px-4">
+  <div class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4">
     <a
       href="/"
       class="flex shrink-0 items-center gap-2.5 font-semibold tracking-tight text-foreground transition-opacity hover:opacity-80"
@@ -82,44 +73,14 @@ $effect(() => {
       <ThemeButton />
 
       {#if isAuthenticated}
-        <div class="hidden items-center sm:flex">
-          <DropdownMenu align="end" sideOffset={8}>
-            <DropdownMenuTrigger
-              aria-label="Account menu"
-              class="flex items-center rounded-full outline-none ring-offset-background transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <UserAvatar size="default" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-60">
-              <DropdownMenuLabel class="p-0 font-normal">
-                <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <UserAvatar size="default" />
-                  <div class="grid flex-1 leading-tight">
-                    <span class="truncate font-medium">{account?.name}</span>
-                    <span class="truncate text-xs text-muted-foreground">{account?.username}</span>
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem value="dashboard" onclick={() => goto("/ai/chats")}>
-                <Icon icon="fa6-solid:table-columns" />
-                Dashboard
-              </DropdownMenuItem>
-              <DropdownMenuItem value="switch" onclick={() => msalStore.switchAccount()}>
-                <Icon icon="fa6-solid:arrow-right-arrow-left" />
-                Switch account
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                value="logout"
-                onclick={() => msalStore.logoutRedirect()}
-                class="text-destructive focus:text-destructive hover:text-destructive"
-              >
-                <Icon icon="fa6-solid:right-from-bracket" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div class="hidden items-center gap-1 sm:flex">
+          <a
+            href="/ai/chats"
+            aria-label="Go to dashboard"
+            class="flex items-center rounded-full outline-none ring-offset-background transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <UserAvatar size="default" />
+          </a>
         </div>
       {:else}
         <Button class="hidden sm:inline-flex" disabled={signingIn} onclick={signIn}>
@@ -145,7 +106,7 @@ $effect(() => {
 
   {#if mobileOpen}
     <div class="border-t border-border/60 bg-background/95 backdrop-blur-md md:hidden">
-      <nav class="mx-auto flex max-w-[1024px] flex-col gap-1 px-4 py-3">
+      <nav class="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-3">
         {#each navLinks as link}
           {@const active = isActive(link.href)}
           <a

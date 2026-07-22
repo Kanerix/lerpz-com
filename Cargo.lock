@@ -2643,6 +2643,7 @@ dependencies = [
  "lerpz-portkey",
  "lerpz-utils",
  "redis",
+ "reqwest 0.12.28",
  "scalar_api_reference",
  "schemars",
  "secrecy",

@@ -25,7 +25,7 @@ const footerLinks = {
 </script>
 
 <footer class="border-t border-border/60 bg-card/40">
-  <div class="mx-auto max-w-[1024px] px-4 py-12">
+  <div class="mx-auto max-w-5xl px-4 py-12">
     <div class="grid grid-cols-2 gap-10 md:grid-cols-5">
       <div class="col-span-2 flex flex-col gap-4 md:col-span-1">
         <a href="/" class="flex items-center gap-2 font-semibold text-foreground transition-opacity hover:opacity-75">

@@ -1,6 +1,17 @@
 @import "@lerpz/ui/globals.css";
 
 /*
+ * Always reserve space for the vertical scrollbar so the centred page content
+ * keeps the same width and horizontal position whether or not a route is tall
+ * enough to scroll. Without this, navigating between a scrolling page (e.g. the
+ * landing page) and a shorter one (e.g. /status) shifts the layout by the
+ * scrollbar width and reads as an inconsistent max-width.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
+/*
  * Respect the user's "reduce motion" OS/browser setting for CSS-driven
  * transitions and animations (JS/Svelte transitions are handled separately via
  * `$lib/utils/transitions`). We keep animations technically "running" but make

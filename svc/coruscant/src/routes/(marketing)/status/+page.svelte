@@ -13,8 +13,6 @@ import { Skeleton } from "@lerpz/ui/components/skeleton";
 import { createQuery } from "@tanstack/svelte-query";
 import { getHealthCheckUrl } from "$lib/api/health/health.js";
 import type { HealthCheck } from "$lib/api/models/index.js";
-import Footer from "$lib/components/landing-page/Footer.svelte";
-import Header from "$lib/components/landing-page/Header.svelte";
 import { authenticatedFetch } from "$lib/http/fetch.js";
 
 type ServiceStatus = "operational" | "outage" | "unknown";
@@ -136,103 +134,89 @@ const lastUpdated = $derived.by(() => {
   <meta name="description" content="Live status of Lerpz AI services." />
 </svelte:head>
 
-<div class="relative flex min-h-screen flex-col">
-  <div
-    aria-hidden="true"
-    class="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center"
-  >
-    <div class="mt-16 h-150 w-225 rounded-full dark:bg-primary/10 blur-3xl"></div>
-  </div>
-  <Header />
+<section class="flex flex-col gap-6 py-8 md:py-12">
+  <p class="text-sm font-medium text-muted-foreground uppercase tracking-widest">System Status</p>
 
-  <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-12 md:py-16">
-    <section class="flex flex-col gap-6 py-8 md:py-12">
-      <p class="text-sm font-medium text-muted-foreground uppercase tracking-widest">System Status</p>
-
-      <div class="flex flex-col gap-4 rounded-xl border p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex items-center gap-4">
-          <span class="relative flex size-3">
-            {#if query.isLoading}
-              <span class="relative inline-flex size-3 rounded-full {statusMeta[worstStatus].dot}"></span>
-            {:else}
-              <span
-                class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 {statusMeta[worstStatus].dot}"
-              ></span>
-              <span class="relative inline-flex size-3 rounded-full {statusMeta[worstStatus].dot}"></span>
-            {/if}
-          </span>
-          <div class="flex flex-col gap-0.5">
-            <h1 class="text-2xl font-semibold tracking-tight {statusMeta[worstStatus].text}">
-              {summary}
-            </h1>
-            <p class="text-sm text-muted-foreground">
-              {#if lastUpdated}
-                Last checked {lastUpdated}
-              {:else}
-                Fetching latest data…
-              {/if}
-            </p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <Badge variant={statusMeta[worstStatus].badgeVariant} class="w-fit gap-1.5">
-            <Icon icon={statusMeta[worstStatus].icon} class="size-3.5" />
-            {statusMeta[worstStatus].label}
-          </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onclick={() => query.refetch()}
-            disabled={query.isFetching}
-          >
-            <Icon
-              icon="fa6-solid:arrows-rotate"
-              class="size-3.5 {query.isFetching ? 'animate-spin' : ''}"
-            />
-            Refresh
-          </Button>
-        </div>
-      </div>
-    </section>
-
-    <section class="flex flex-col gap-6 py-8 md:py-12">
-      <div class="flex flex-col gap-2">
-        <h2 class="text-2xl font-semibold tracking-tight">Services</h2>
-        <p class="text-muted-foreground">Live status of the core components powering Lerpz AI.</p>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {#each services as service (service.key)}
-          {@const meta = statusMeta[service.status]}
-          <Card>
-            <CardHeader>
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon icon={service.icon} class="size-5" />
-                </div>
-                {#if query.isLoading}
-                  <Skeleton class="h-5 w-24 rounded-full" />
-                {:else}
-                  <Badge variant={meta.badgeVariant} class="gap-1.5">
-                    <Icon icon={meta.icon} class="size-3" />
-                    {meta.label}
-                  </Badge>
-                {/if}
-              </div>
-              <CardTitle class="text-base font-semibold">{service.name}</CardTitle>
-              <CardDescription class="text-sm leading-relaxed">{service.description}</CardDescription>
-            </CardHeader>
-          </Card>
-        {/each}
-      </div>
-
-      {#if !query.isLoading && !apiUp}
-        <p class="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          We couldn't reach the health endpoint. Component statuses may be inaccurate.
+  <div class="flex flex-col gap-4 rounded-xl border p-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-4">
+      <span class="relative flex size-3">
+        {#if query.isLoading}
+          <span class="relative inline-flex size-3 rounded-full {statusMeta[worstStatus].dot}"></span>
+        {:else}
+          <span
+            class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 {statusMeta[worstStatus].dot}"
+          ></span>
+          <span class="relative inline-flex size-3 rounded-full {statusMeta[worstStatus].dot}"></span>
+        {/if}
+      </span>
+      <div class="flex flex-col gap-0.5">
+        <h1 class="text-2xl font-semibold tracking-tight {statusMeta[worstStatus].text}">
+          {summary}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          {#if lastUpdated}
+            Last checked {lastUpdated}
+          {:else}
+            Fetching latest data…
+          {/if}
         </p>
-      {/if}
-    </section>
-  </main>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <Badge variant={statusMeta[worstStatus].badgeVariant} class="w-fit gap-1.5">
+        <Icon icon={statusMeta[worstStatus].icon} class="size-3.5" />
+        {statusMeta[worstStatus].label}
+      </Badge>
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={() => query.refetch()}
+        disabled={query.isFetching}
+      >
+        <Icon
+          icon="fa6-solid:arrows-rotate"
+          class="size-3.5 {query.isFetching ? 'animate-spin' : ''}"
+        />
+        Refresh
+      </Button>
+    </div>
+  </div>
+</section>
 
-  <Footer />
-</div>
+<section class="flex flex-col gap-6 py-8 md:py-12">
+  <div class="flex flex-col gap-2">
+    <h2 class="text-2xl font-semibold tracking-tight">Services</h2>
+    <p class="text-muted-foreground">Live status of the core components powering Lerpz AI.</p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    {#each services as service (service.key)}
+      {@const meta = statusMeta[service.status]}
+      <Card>
+        <CardHeader>
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Icon icon={service.icon} class="size-5" />
+            </div>
+            {#if query.isLoading}
+              <Skeleton class="h-5 w-24 rounded-full" />
+            {:else}
+              <Badge variant={meta.badgeVariant} class="gap-1.5">
+                <Icon icon={meta.icon} class="size-3" />
+                {meta.label}
+              </Badge>
+            {/if}
+          </div>
+          <CardTitle class="text-base font-semibold">{service.name}</CardTitle>
+          <CardDescription class="text-sm leading-relaxed">{service.description}</CardDescription>
+        </CardHeader>
+      </Card>
+    {/each}
+  </div>
+
+  {#if !query.isLoading && !apiUp}
+    <p class="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      We couldn't reach the health endpoint. Component statuses may be inaccurate.
+    </p>
+  {/if}
+</section>
