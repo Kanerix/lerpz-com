@@ -1,43 +1,41 @@
 <script lang="ts">
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import Clapper from "$lib/components/clapper/Clapper.svelte";
+import type { ClapperSubmitArgs } from "$lib/components/clapper/clapper-context.svelte.js";
+import { clapperStore } from "$lib/components/clapper/clapper.store.svelte.js";
+import VideoStage from "$lib/components/video-stage/VideoStage.svelte";
 
 const ai = getAiContext();
+
+// Remember the last submission so a failed render can be retried verbatim.
+let lastArgs = $state<ClapperSubmitArgs | null>(null);
+
+function generate(args: ClapperSubmitArgs) {
+    lastArgs = args;
+    ai.startVideo(args.prompt, {
+        model: args.model,
+        aspectRatio: args.aspectRatio,
+        duration: args.duration,
+    });
+}
 </script>
 
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 py-4">
   <!-- Results -->
   <div class="flex min-h-0 flex-1 items-center justify-center overflow-y-auto">
-    {#if ai.generatedVideo}
-      <!-- svelte-ignore a11y_media_has_caption -->
-      <video
-        src={ai.generatedVideo}
-        controls
-        autoplay
-        loop
-        class="max-h-full max-w-full rounded-2xl object-contain shadow-lg"
-      ></video>
-    {:else if ai.isVideoLoading}
-      <p class="text-sm text-muted-foreground">Generating video…</p>
-    {:else}
-      <div class="text-center text-muted-foreground">
-        <p class="text-base font-medium">Describe a video to bring it to life</p>
-        <p class="text-sm">
-          Write a prompt below, pick a model, aspect ratio and duration, then generate.
-        </p>
-      </div>
-    {/if}
+    <VideoStage
+      video={ai.generatedVideo}
+      isLoading={ai.isVideoLoading}
+      error={ai.videoError}
+      aspectRatio={clapperStore.aspectRatio}
+      onRetry={lastArgs ? () => generate(lastArgs!) : undefined}
+      onDismiss={ai.resetVideo}
+    />
   </div>
 
   <!-- Prompt -->
   <Clapper
-    onSubmit={async (args) => {
-      ai.startVideo(args.prompt, {
-        model: args.model,
-        aspectRatio: args.aspectRatio,
-        duration: args.duration,
-      });
-    }}
+    onSubmit={async (args) => generate(args)}
     onEnhance={ai.enhanceVideo}
     isGenerating={ai.isVideoLoading}
     error={ai.videoError}

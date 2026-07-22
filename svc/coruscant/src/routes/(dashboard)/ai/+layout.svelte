@@ -13,6 +13,7 @@ import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import { DEFAULT_REASONING_LEVEL } from "$lib/components/model-selector/reasoning.js";
+import { notificationStore } from "$lib/notifications/notifications.svelte.js";
 
 let { children }: { children: Snippet } = $props();
 
@@ -28,8 +29,36 @@ const chat = createChat({
 });
 
 const image = createImage();
-const video = createVideo();
+// Video renders run as background jobs, so surface their outcome through the
+// notification bell — the user may have moved to another AI page by the time a
+// render finishes. `lastVideoPrompt` gives the notification a meaningful body.
+let lastVideoPrompt = "";
+const video = createVideo({
+    onDone: () => {
+        notificationStore.add({
+            title: "Video ready",
+            body: lastVideoPrompt || "Your video finished generating.",
+            icon: "fa6-solid:clapperboard",
+            href: "/ai/videos",
+        });
+    },
+    onError: (message) => {
+        notificationStore.add({
+            title: "Video generation failed",
+            body: message,
+            icon: "fa6-solid:triangle-exclamation",
+            href: "/ai/videos",
+        });
+    },
+});
 const modelsHook = createModels();
+
+function startVideo(prompt: string, options?: Parameters<typeof video.start>[1]) {
+    // Cap the remembered prompt so a long one doesn't bloat the notification.
+    lastVideoPrompt =
+        prompt.length > 140 ? `${prompt.slice(0, 139)}…` : prompt;
+    video.start(prompt, options);
+}
 
 $effect(() => {
     modelsHook.loadModels();
@@ -91,7 +120,7 @@ setAiContext({
     },
     stopVideo: video.stop,
     resetVideo: video.reset,
-    startVideo: video.start,
+    startVideo,
     get models() {
         return modelsHook.models;
     },
