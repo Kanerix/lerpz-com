@@ -10,7 +10,7 @@ authors.workspace = true
 # Internal
 lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
 lerpz-metadata = { workspace = true }
-lerpz-portkey = { workspace = true, features = ["async-openai"] }
+lerpz-ai = { workspace = true, features = ["portkey", "async-openai", "generation"] }
 lerpz-utils = { workspace = true }
 # Services
 aws-sdk-s3 = { workspace = true }
@@ -37,6 +37,7 @@ tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true }
 tower-http = { workspace = true, features = ["cors", "trace"] }
 async-stream = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
 utoipa = { workspace = true, features = ["macros", "chrono", "uuid"] }
 utoipa-axum  = { workspace = true }
 scalar_api_reference = { workspace = true, features = ["axum"] }

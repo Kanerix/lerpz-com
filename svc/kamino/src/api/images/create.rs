@@ -1,9 +1,5 @@
 use std::convert::Infallible;
 
-use async_openai::types::images::{
-    CreateImageRequestArgs, ImageGenCompletedEvent, ImageGenPartialImageEvent, ImageGenStreamEvent,
-    ImageModel, ImageQuality, ImageSize,
-};
 use axum::{
     Json,
     extract::State,
@@ -13,6 +9,7 @@ use axum::{
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::Utc;
 use image::ImageReader;
+use lerpz_ai::generation::{Family, ImageEvent, ImageRequest as ImageGenRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -111,51 +108,43 @@ pub async fn handler(
         .unwrap_or(&CONFIG.DEFAULT_IMAGE_MODEL)
         .to_string();
 
-    let mut request_builder = CreateImageRequestArgs::default();
+    // Resolve the model's family so generation can be dispatched to the right
+    // provider behaviour. Unknown models fall back to the default family.
+    let model_family = sqlx::query_scalar!(
+        "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
+        &model_name,
+    )
+    .fetch_optional(&database)
+    .await?;
+    let family = Family::from_name(model_family.as_deref());
 
-    request_builder
-        .model(ImageModel::Other(model_name.clone()))
-        .prompt(body.prompt.clone())
-        .n(body.amount.unwrap_or(1))
-        .quality(ImageQuality::Low)
-        .size(ImageSize::S1024x1024)
-        .partial_images(3)
-        .stream(true);
-
-    if let Some(upn) = token.upn {
-        request_builder.user(upn);
+    let request = ImageGenRequest {
+        prompt: body.prompt.clone(),
+        model: model_name.clone(),
+        amount: body.amount.unwrap_or(1),
+        user: token.upn.clone(),
     };
 
-    let request = request_builder.build()?;
-    // Portkey passes upstream provider errors straight through, often in a
-    // non-OpenAI shape (e.g. `{"status":"failure","message":"…"}`), which
-    // `async-openai` can't deserialize into its error type. Surface the
-    // humanized upstream message instead of letting it collapse into an opaque
-    // 500.
-    let mut stream = openai
-        .images()
-        .generate_stream(request)
-        .await
-        .map_err(|err| {
-            Problem::new(
-                StatusCode::BAD_GATEWAY,
-                "Image generation failed",
-                lerpz_portkey::humanize_error(&err.to_string()),
-            )
-        })?;
+    let mut stream = family.generate_image(openai.as_ref(), request).await.map_err(|err| {
+        Problem::new(
+            StatusCode::BAD_GATEWAY,
+            "Image generation failed",
+            err.message,
+        )
+    })?;
+
     let meta_client = lerpz_metadata::Client::from_pool(database);
+    let prompt = body.prompt;
 
     let sse_stream = async_stream::stream! {
-        tracing::trace!("starting image stream");
-        while let Some(chunk_result) = stream.next().await {
-            let chunk = match chunk_result {
-                Ok(c) => c,
-                Err(err) => {
-                    let upstream = lerpz_portkey::classify_error(&err.to_string());
+        while let Some(event) = stream.next().await {
+            let event = match event {
+                Ok(event) => event,
+                Err(upstream) => {
                     if upstream.is_user() {
                         tracing::warn!(reason = %upstream.message, "image generation rejected by provider");
                     } else {
-                        tracing::error!("failed to get chunk: {err}");
+                        tracing::error!("image generation failed: {}", upstream.message);
                     }
                     yield Ok(Event::default()
                         .event("error")
@@ -165,23 +154,21 @@ pub async fn handler(
                 }
             };
 
-            match chunk {
-                ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent { b64_json, partial_image_index, output_format, .. }) => {
-                    tracing::trace!(index = %partial_image_index, format = %output_format, "generated partial image");
+            match event {
+                ImageEvent::Partial { b64, format } => {
                     yield Ok(Event::default()
                         .event("partial_image")
-                        .json_data(json!({ "b64": b64_json, "format": output_format.to_string() }))
+                        .json_data(json!({ "b64": b64, "format": format }))
                         .expect("failed to serialize partial_image event"));
                 }
-                ImageGenStreamEvent::Completed(ImageGenCompletedEvent { b64_json, output_format, .. }) => {
-                    tracing::trace!(format = %output_format, "generated complete image");
+                ImageEvent::Completed { b64, format } => {
                     yield Ok(Event::default()
                         .event("completed_image")
-                        .json_data(json!({ "b64": b64_json, "format": output_format.to_string() }))
+                        .json_data(json!({ "b64": b64, "format": format }))
                         .expect("failed to serialize completed_image event"));
 
                     tracing::trace!("decoding complete image");
-                    let image_bytes: Vec<u8> = match BASE64.decode(&b64_json) {
+                    let image_bytes: Vec<u8> = match BASE64.decode(&b64) {
                         Ok(bytes) => bytes,
                         Err(err) => {
                             tracing::error!("{err}");
@@ -232,7 +219,7 @@ pub async fn handler(
                     let metadata = Metadata::Image {
                         general: GeneralMetadata { id, created_at: now, updated_at: now },
                         generation: GenerationMetadata {
-                            prompt: body.prompt.clone(),
+                            prompt: prompt.clone(),
                             model: model_name.clone(),
                         },
                         storage: StorageMetadata::S3 {
@@ -240,7 +227,7 @@ pub async fn handler(
                             key,
                         },
                         analysis: None,
-                        format: output_format.to_string(),
+                        format,
                         width,
                         height,
                     };
@@ -271,7 +258,7 @@ pub async fn handler(
                         }
                     }
                 }
-            };
+            }
         }
     };
 

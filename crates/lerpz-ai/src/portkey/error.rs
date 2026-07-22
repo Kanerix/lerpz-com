@@ -38,11 +38,17 @@ impl UpstreamError {
 
     /// Creates a provider error with the given message.
     #[inline]
-    fn new_provider(message: impl Into<String>) -> Self {
+    pub fn provider(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
             kind: ErrorKind::Provider,
         }
+    }
+
+    /// Creates a provider error with the given message.
+    #[inline]
+    fn new_provider(message: impl Into<String>) -> Self {
+        Self::provider(message)
     }
 }
 

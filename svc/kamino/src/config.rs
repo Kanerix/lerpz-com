@@ -38,7 +38,6 @@ generate_config!(
     ENTRA_ID_CLIENT_ID: Arc<str> = get_env_from,
     ENTRA_ID_SCOPE: Arc<str> = get_env_from,
     PORTKEY_BASE_URL: Arc<str> = get_env_from,
-    PORTKEY_PROVIDER: Arc<str> = get_env_from,
     PORTKEY_API_KEY: SecretString = get_env_from,
     DEFAULT_COMPLETIONS_MODEL: Arc<str> = get_env_from,
     DEFAULT_ENHANCE_MODEL: Arc<str> = get_env_from,

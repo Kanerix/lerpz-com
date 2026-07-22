@@ -1,6 +1,5 @@
-use std::{convert::Infallible, time::Duration};
+use std::convert::Infallible;
 
-use async_openai::types::videos::{CreateVideoRequestArgs, VideoSeconds, VideoSize, VideoStatus};
 use axum::{
     Json,
     extract::State,
@@ -9,6 +8,7 @@ use axum::{
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::Utc;
+use lerpz_ai::generation::{Family, VideoEvent, VideoRequest as VideoGenRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -19,7 +19,7 @@ use lerpz_metadata::{
 };
 use serde::Deserialize;
 use serde_json::json;
-use tokio_stream::Stream;
+use tokio_stream::{Stream, StreamExt as _};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -28,11 +28,6 @@ use crate::{
     oapi::VIDEOS_TAG,
     state::{AppState, DatabasePool, OpenAI, S3Client},
 };
-
-/// How long to wait between polls of the generation job.
-const POLL_INTERVAL: Duration = Duration::from_secs(5);
-/// Container format Sora renders to.
-const VIDEO_FORMAT: &str = "mp4";
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct VideoRequest {
@@ -46,45 +41,20 @@ pub struct VideoRequest {
     ///
     /// Defaults to portrait (`9:16`) if not provided or unrecognised.
     aspect_ratio: Option<String>,
-    /// Clip length in seconds. Rounded down to the nearest supported value
-    /// (4, 8 or 12). Defaults to 4 seconds.
+    /// Clip length in seconds. Clamped to the range Veo supports (4-8).
+    /// Defaults to 8 seconds.
     duration: Option<u16>,
 }
 
-/// Map a requested aspect ratio to a supported output resolution.
-fn resolve_size(aspect_ratio: Option<&str>) -> VideoSize {
-    match aspect_ratio.map(str::trim) {
-        Some("16:9") | Some("landscape") => VideoSize::S1280x720,
-        _ => VideoSize::S720x1280,
-    }
-}
-
-/// Map a requested duration to a supported clip length.
-fn resolve_seconds(duration: Option<u16>) -> VideoSeconds {
-    match duration.unwrap_or(4) {
-        0..=5 => VideoSeconds::Four,
-        6..=10 => VideoSeconds::Eight,
-        _ => VideoSeconds::Twelve,
-    }
-}
-
-/// Pixel dimensions for a given output resolution.
-fn dimensions(size: &VideoSize) -> (u32, u32) {
-    match size {
-        VideoSize::S720x1280 => (720, 1280),
-        VideoSize::S1280x720 => (1280, 720),
-        VideoSize::S1024x1792 => (1024, 1792),
-        VideoSize::S1792x1024 => (1792, 1024),
-    }
-}
-
-/// Clip length in seconds as a number.
-fn seconds_value(seconds: &VideoSeconds) -> u32 {
-    match seconds {
-        VideoSeconds::Four => 4,
-        VideoSeconds::Eight => 8,
-        VideoSeconds::Twelve => 12,
-    }
+/// Build a small `error` SSE event carrying a human-readable message.
+///
+/// The message is JSON-encoded (a bare string) to match what the frontend
+/// unwraps from `error` events.
+fn error_event(message: &str) -> Result<Event, Infallible> {
+    Ok(Event::default()
+        .event("error")
+        .json_data(message)
+        .expect("failed to serialize error event"))
 }
 
 #[utoipa::path(
@@ -105,8 +75,8 @@ fn seconds_value(seconds: &VideoSeconds) -> u32 {
         (
             status = OK,
             description = "SSE stream of video generation events. Events: \
-                partial_video ({ progress } completion percentage), \
-                completed_video ({ b64, format } final video), \
+                completed_video ({ b64, format } inline video, or { url } when \
+                the provider only exposes a link), \
                 saved ({ id } persisted metadata), \
                 error (error message)",
             content_type = "text/event-stream"
@@ -151,52 +121,30 @@ pub async fn handler(
         .unwrap_or(&CONFIG.DEFAULT_VIDEO_MODEL)
         .to_string();
 
-    let size = resolve_size(body.aspect_ratio.as_deref());
-    let seconds = resolve_seconds(body.duration);
+    // Resolve the model's family so generation can be dispatched to the right
+    // provider behaviour. Unknown models fall back to the default family.
+    let model_family = sqlx::query_scalar!(
+        "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
+        &model_name,
+    )
+    .fetch_optional(&database)
+    .await?;
+    let family = Family::from_name(model_family.as_deref());
 
-    let mut request_builder = CreateVideoRequestArgs::default();
-    request_builder
-        .model(model_name.clone())
-        .prompt(body.prompt.clone())
-        .size(size)
-        .seconds(seconds);
+    let request = VideoGenRequest {
+        prompt: body.prompt.clone(),
+        model: model_name.clone(),
+        aspect_ratio: body.aspect_ratio.clone(),
+        duration: body.duration,
+    };
 
-    let request = request_builder.build()?;
+    tracing::debug!(%oid, model = %model_name, "creating video generation job");
 
-    tracing::debug!(
-        %oid,
-        model = %model_name,
-        provider = %CONFIG.PORTKEY_PROVIDER,
-        base_url = %CONFIG.PORTKEY_BASE_URL,
-        "creating video generation job",
-    );
-
-    // Sora generation is asynchronous: creating the job returns immediately
-    // with a handle we then poll until it completes or fails.
-    //
-    // Portkey passes upstream provider errors straight through, often in a
-    // non-OpenAI shape (e.g. `{"status":"failure","message":"…"}`), which
-    // `async-openai` can't deserialize into its error type. Surface the
-    // humanized upstream message instead of letting it collapse into an
-    // opaque 500.
-    let job = openai.videos().create(request).await.map_err(|err| {
-        let upstream = lerpz_portkey::classify_error(&err.to_string());
+    let job = family.start_video(openai.as_ref(), request).await.map_err(|upstream| {
         if upstream.is_user() {
-            tracing::warn!(
-                %oid,
-                model = %model_name,
-                provider = %CONFIG.PORTKEY_PROVIDER,
-                reason = %upstream.message,
-                "video generation rejected by provider",
-            );
+            tracing::warn!(%oid, model = %model_name, reason = %upstream.message, "video generation rejected by provider");
         } else {
-            tracing::error!(
-                %oid,
-                model = %model_name,
-                provider = %CONFIG.PORTKEY_PROVIDER,
-                base_url = %CONFIG.PORTKEY_BASE_URL,
-                "failed to create video job: {err}",
-            );
+            tracing::error!(%oid, model = %model_name, "video generation request failed: {}", upstream.message);
         }
         Problem::new(
             StatusCode::BAD_GATEWAY,
@@ -204,92 +152,44 @@ pub async fn handler(
             upstream.message,
         )
     })?;
-    let job_id = job.id.clone();
 
-    tracing::debug!(%job_id, model = %model_name, "video generation job created");
+    let operation_name = job.operation_name.clone();
+    tracing::debug!(%operation_name, model = %model_name, "video generation job created");
 
     let meta_client = lerpz_metadata::Client::from_pool(database);
+    let prompt = body.prompt;
 
     let sse_stream = async_stream::stream! {
-        tracing::trace!(%job_id, "starting video generation poll");
-        let mut last_progress = job.progress;
+        let mut stream = job.poll();
 
-        loop {
-            tokio::time::sleep(POLL_INTERVAL).await;
-
-            let current = match openai.videos().retrieve(&job_id).await {
-                Ok(v) => v,
-                Err(err) => {
-                    let upstream = lerpz_portkey::classify_error(&err.to_string());
+        // The job yields a single terminal event once rendering finishes.
+        if let Some(event) = stream.next().await {
+            match event {
+                Err(upstream) => {
                     if upstream.is_user() {
-                        tracing::warn!(%job_id, reason = %upstream.message, "video generation rejected by provider");
+                        tracing::warn!(%operation_name, reason = %upstream.message, "video generation rejected by provider");
                     } else {
-                        tracing::error!(%job_id, "failed to poll video job: {err}");
+                        tracing::error!(%operation_name, "video generation failed: {}", upstream.message);
                     }
+                    yield error_event(&upstream.message);
+                }
+                Ok(VideoEvent::Link { url }) => {
                     yield Ok(Event::default()
-                        .event("error")
-                        .json_data(&upstream.message)
-                        .expect("failed to serialize error event"));
-                    break;
+                        .event("completed_video")
+                        .json_data(json!({ "url": url }))
+                        .expect("failed to serialize completed_video event"));
                 }
-            };
-
-            match current.status {
-                VideoStatus::Queued | VideoStatus::InProgress => {
-                    if current.progress != last_progress {
-                        last_progress = current.progress;
-                        tracing::trace!(%job_id, progress = %current.progress, "video generation progress");
-                        yield Ok(Event::default()
-                            .event("partial_video")
-                            .json_data(json!({ "progress": current.progress }))
-                            .expect("failed to serialize partial_video event"));
-                    }
-                }
-                VideoStatus::Failed => {
-                    let message = current
-                        .error
-                        .map(|e| e.message)
-                        .unwrap_or_else(|| "Video generation failed.".to_string());
-                    let upstream = lerpz_portkey::classify_error(&message);
-                    if upstream.is_user() {
-                        tracing::warn!(%job_id, reason = %upstream.message, "video generation rejected by provider");
-                    } else {
-                        tracing::error!(%job_id, message = %upstream.message, "video generation failed");
-                    }
-                    yield Ok(Event::default()
-                        .event("error")
-                        .json_data(&upstream.message)
-                        .expect("failed to serialize error event"));
-                    break;
-                }
-                VideoStatus::Completed => {
-                    tracing::trace!(%job_id, "downloading completed video");
-                    let video_bytes = match openai.videos().download_content(&job_id).await {
-                        Ok(bytes) => bytes.to_vec(),
-                        Err(err) => {
-                            tracing::error!(%job_id, "failed to download video: {err}");
-                            yield Ok(Event::default()
-                                .event("error")
-                                .json_data(lerpz_portkey::humanize_error(&err.to_string()))
-                                .expect("failed to serialize error event"));
-                            break;
-                        }
-                    };
-                    tracing::trace!(%job_id, bytes = video_bytes.len(), "downloaded completed video");
-
+                Ok(VideoEvent::Completed { bytes: video_bytes, format, width, height, duration }) => {
                     yield Ok(Event::default()
                         .event("completed_video")
                         .json_data(json!({
                             "b64": BASE64.encode(&video_bytes),
-                            "format": VIDEO_FORMAT,
+                            "format": format,
                         }))
                         .expect("failed to serialize completed_video event"));
 
-                    let (width, height) = dimensions(&current.size);
-                    let duration = seconds_value(&current.seconds);
-
                     let id = Uuid::now_v7();
-                    let key = format!("videos/{oid}/{id}.{VIDEO_FORMAT}");
+                    let key = format!("videos/{oid}/{id}.{format}");
                     let now = Utc::now();
 
                     tracing::trace!(
@@ -301,7 +201,7 @@ pub async fn handler(
                     let metadata = Metadata::Video {
                         general: GeneralMetadata { id, created_at: now, updated_at: now },
                         generation: GenerationMetadata {
-                            prompt: body.prompt.clone(),
+                            prompt: prompt.clone(),
                             model: model_name.clone(),
                         },
                         storage: StorageMetadata::S3 {
@@ -309,40 +209,31 @@ pub async fn handler(
                             key,
                         },
                         analysis: None,
-                        format: VIDEO_FORMAT.to_string(),
+                        format,
                         width,
                         height,
                         duration,
                     };
 
                     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &video_bytes).await {
-                        tracing::error!(%job_id, "{err}");
-                        yield Ok(Event::default()
-                            .event("error")
-                            .json_data(err.to_string())
-                            .expect("failed to serialize error event"));
-                        break;
-                    }
-
-                    tracing::trace!(%job_id, "persisting metadata to database");
-                    match meta_client.insert(metadata).await {
-                        Ok(_) => {
-                            tracing::trace!(%job_id, %id, "video generation complete");
-                            yield Ok(Event::default()
-                                .event("saved")
-                                .json_data(json!({ "id": id }))
-                                .expect("failed to serialize saved event"));
-                        }
-                        Err(err) => {
-                            tracing::error!(%job_id, "{err}");
-                            yield Ok(Event::default()
-                                .event("error")
-                                .json_data(err.to_string())
-                                .expect("failed to serialize error event"));
+                        tracing::error!(%operation_name, "{err}");
+                        yield error_event(&err.to_string());
+                    } else {
+                        tracing::trace!(%operation_name, "persisting metadata to database");
+                        match meta_client.insert(metadata).await {
+                            Ok(_) => {
+                                tracing::trace!(%operation_name, %id, "video generation complete");
+                                yield Ok(Event::default()
+                                    .event("saved")
+                                    .json_data(json!({ "id": id }))
+                                    .expect("failed to serialize saved event"));
+                            }
+                            Err(err) => {
+                                tracing::error!(%operation_name, "{err}");
+                                yield error_event(&err.to_string());
+                            }
                         }
                     }
-
-                    break;
                 }
             }
         }

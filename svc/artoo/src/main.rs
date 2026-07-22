@@ -7,7 +7,7 @@ use axum::routing::get;
 use http::Method;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::shutdown_signal;
-use lerpz_portkey::build_client;
+use lerpz_ai::portkey::build_client;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::QueryPointsBuilder;
 use rig_core::client::EmbeddingsClient;

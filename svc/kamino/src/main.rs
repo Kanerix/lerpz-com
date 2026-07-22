@@ -14,7 +14,7 @@ use bb8_redis::RedisConnectionManager;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::middleware::instance::CaptureInstanceLayer;
 use lerpz_axum::shutdown_signal;
-use lerpz_portkey::PortkeyConfig;
+use lerpz_ai::portkey::PortkeyConfig;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
 use serde_json::json;
@@ -57,7 +57,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let portkey_config = PortkeyConfig::new(
         CONFIG.PORTKEY_BASE_URL.to_string(),
         SecretString::from(CONFIG.PORTKEY_API_KEY.clone()),
-        CONFIG.PORTKEY_PROVIDER.to_string(),
     );
     let openai = Arc::new(Client::with_config(portkey_config));
 

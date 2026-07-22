@@ -16,7 +16,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use lerpz_portkey::build_client;
+//! use lerpz_ai::portkey::build_client;
 //! use secrecy::SecretString;
 //!
 //! let client = build_client(

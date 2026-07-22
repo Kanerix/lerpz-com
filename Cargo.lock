@@ -111,8 +111,8 @@ dependencies = [
  "axum 0.8.9",
  "dotenvy",
  "http 1.4.2",
+ "lerpz-ai",
  "lerpz-axum",
- "lerpz-portkey",
  "lerpz-utils",
  "qdrant-client",
  "reqwest 0.12.28",
@@ -2638,9 +2638,9 @@ dependencies = [
  "cookie",
  "dotenvy",
  "image",
+ "lerpz-ai",
  "lerpz-axum",
  "lerpz-metadata",
- "lerpz-portkey",
  "lerpz-utils",
  "redis",
  "reqwest 0.12.28",
@@ -2676,6 +2676,25 @@ name = "lebe"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a79a3332a6609480d7d0c9eab957bca6b455b91bb84e66d19f5ff66294b85b8"
+
+[[package]]
+name = "lerpz-ai"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-openai",
+ "async-stream",
+ "base64",
+ "http 1.4.2",
+ "reqwest 0.12.28",
+ "rig-core",
+ "secrecy",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+]
 
 [[package]]
 name = "lerpz-axum"
@@ -2729,18 +2748,6 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.19",
  "uuid",
-]
-
-[[package]]
-name = "lerpz-portkey"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-openai",
- "http 1.4.2",
- "rig-core",
- "secrecy",
- "serde_json",
 ]
 
 [[package]]

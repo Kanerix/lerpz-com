@@ -1,78 +1,21 @@
 //! Shared Server-Sent Events streaming logic for chat completions.
 //!
 //! Both creating a chat and sending a message in an existing chat stream the
-//! assistant reply back the same way, so the streaming loop lives here.
-//!
-//! Reasoning models routed through Portkey emit their chain-of-thought in one
-//! of two shapes the typed `async-openai` stream drops: a flat
-//! `reasoning_content` (a.k.a. `reasoning`) delta field, or Anthropic-style
-//! incremental `content_blocks` carrying `thinking` deltas. We therefore use
-//! the `byot` ("bring your own type") API with a minimal [`StreamChunk`] type
-//! that preserves both.
+//! assistant reply back the same way, so the streaming loop lives here. The
+//! provider-specific mechanics of talking to the model live in the `lerpz-ai`
+//! crate; this module maps its [`ChatEvent`]s onto SSE events and persists the
+//! assembled reply.
 
 use std::convert::Infallible;
-use std::pin::Pin;
 
-use async_openai::error::OpenAIError;
 use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::response::sse::Event;
+use lerpz_ai::generation::{ChatEvent, ChatStream, Family};
 use lerpz_axum::problem::HandlerResult;
-use serde::Deserialize;
 use tokio_stream::{Stream, StreamExt as _};
 use uuid::Uuid;
 
 use crate::state::{DatabasePool, OpenAI};
-
-/// A minimal view of a streamed chat completion chunk.
-///
-/// Unknown fields are ignored, so this stays forward-compatible with whatever
-/// else the provider includes in each chunk.
-#[derive(Debug, Deserialize)]
-struct StreamChunk {
-    #[serde(default)]
-    choices: Vec<StreamChoice>,
-}
-
-#[derive(Debug, Deserialize)]
-struct StreamChoice {
-    #[serde(default)]
-    delta: StreamDelta,
-    #[serde(default)]
-    finish_reason: Option<String>,
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct StreamDelta {
-    /// Incremental answer tokens.
-    #[serde(default)]
-    content: Option<String>,
-    /// Incremental reasoning / chain-of-thought tokens. Providers disagree on
-    /// the field name, so accept both `reasoning_content` and `reasoning`.
-    #[serde(default, alias = "reasoning")]
-    reasoning_content: Option<String>,
-    /// Anthropic-style streaming (via Portkey) delivers incremental reasoning
-    /// and answer text as `content_blocks` instead of `reasoning_content`. We
-    /// read the `thinking` deltas from here; the answer text is already
-    /// mirrored in `content`, so we ignore the `text` blocks to avoid
-    /// duplicating it.
-    #[serde(default)]
-    content_blocks: Vec<ContentBlock>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ContentBlock {
-    #[serde(default)]
-    delta: ContentBlockDelta,
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct ContentBlockDelta {
-    /// Incremental reasoning / chain-of-thought tokens.
-    #[serde(default)]
-    thinking: Option<String>,
-}
-
-type ChunkStream = Pin<Box<dyn Stream<Item = Result<StreamChunk, OpenAIError>> + Send>>;
 
 /// Starts streaming a chat completion and returns an SSE stream of the reply.
 ///
@@ -91,23 +34,14 @@ pub(super) async fn start_completion_sse(
     database: DatabasePool,
     model_family: Option<String>,
 ) -> HandlerResult<impl Stream<Item = Result<Event, Infallible>>> {
-    tracing::trace!(
-        %conv_id,
-        model = ?request.model,
-        reasoning = ?request.reasoning_effort,
-        "starting chat stream"
-    );
-
-    let stream = openai
-        .chat()
-        .create_stream_byot::<_, StreamChunk>(request)
-        .await?;
+    let family = Family::from_name(model_family.as_deref());
+    let stream = family.chat_stream(openai.as_ref(), request).await?;
 
     Ok(completion_sse(stream, conv_id, database, model_family))
 }
 
 fn completion_sse(
-    mut stream: ChunkStream,
+    mut stream: ChatStream,
     conv_id: Uuid,
     database: DatabasePool,
     model_family: Option<String>,
@@ -116,59 +50,31 @@ fn completion_sse(
         let mut content_buf = String::new();
         let mut reasoning_buf = String::new();
 
-        while let Some(chunk_result) = stream.next().await {
-            let chunk = match chunk_result {
-                Ok(c) => c,
-                Err(err) => {
-                    let upstream = lerpz_portkey::classify_error(&err.to_string());
+        while let Some(event) = stream.next().await {
+            match event {
+                Err(upstream) => {
                     if upstream.is_user() {
                         tracing::warn!(%conv_id, reason = %upstream.message, "chat completion rejected by provider");
                     } else {
-                        tracing::error!("{err}");
+                        tracing::error!(%conv_id, "chat completion failed: {}", upstream.message);
                     }
-                    yield Ok(Event::default()
-                        .event("error")
-                        .data(upstream.message));
+                    yield Ok(Event::default().event("error").data(upstream.message));
                     break;
                 }
-            };
-
-            let mut content = String::new();
-            let mut reasoning = String::new();
-            let mut filtered = false;
-
-            for choice in &chunk.choices {
-                if let Some(ref delta) = choice.delta.reasoning_content {
-                    reasoning.push_str(delta);
+                Ok(ChatEvent::Reasoning(reasoning)) => {
+                    reasoning_buf.push_str(&reasoning);
+                    yield Ok(Event::default().event("reasoning").data(reasoning));
                 }
-                for block in &choice.delta.content_blocks {
-                    if let Some(ref delta) = block.delta.thinking {
-                        reasoning.push_str(delta);
-                    }
+                Ok(ChatEvent::Message(content)) => {
+                    content_buf.push_str(&content);
+                    yield Ok(Event::default().event("message").data(content));
                 }
-                if let Some(ref delta) = choice.delta.content {
-                    content.push_str(delta);
-                }
-                if choice.finish_reason.as_deref() == Some("content_filter") {
+                Ok(ChatEvent::Filtered) => {
                     tracing::warn!(%conv_id, "content filter triggered");
-                    filtered = true;
+                    yield Ok(Event::default()
+                        .event("error")
+                        .data("content filter triggered"));
                 }
-            }
-
-            if !reasoning.is_empty() {
-                reasoning_buf.push_str(&reasoning);
-                yield Ok(Event::default().event("reasoning").data(reasoning));
-            }
-
-            if !content.is_empty() {
-                content_buf.push_str(&content);
-                yield Ok(Event::default().event("message").data(content));
-            }
-
-            if filtered {
-                yield Ok(Event::default()
-                    .event("error")
-                    .data("content filter triggered"));
             }
         }
 
