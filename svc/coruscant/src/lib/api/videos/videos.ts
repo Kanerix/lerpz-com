@@ -19,7 +19,6 @@ import type {
   CreateVideoResponse,
   ListVideosParams,
   ProblemSchema,
-  VideoAnalysisResponse,
   VideoJobResponse,
   VideoListResponse,
   VideoRequest
@@ -291,110 +290,6 @@ export const getVideoJob = async (id: string, options?: RequestInit): Promise<ge
 
   }
 );}
-
-
-
-
-export type analyzeVideoResponse200 = {
-  data: VideoAnalysisResponse
-  status: 200
-}
-
-export type analyzeVideoResponse401 = {
-  data: ProblemSchema
-  status: 401
-}
-
-export type analyzeVideoResponse404 = {
-  data: ProblemSchema
-  status: 404
-}
-
-export type analyzeVideoResponse500 = {
-  data: ProblemSchema
-  status: 500
-}
-
-export type analyzeVideoResponseSuccess = (analyzeVideoResponse200) & {
-  headers: Headers;
-};
-export type analyzeVideoResponseError = (analyzeVideoResponse401 | analyzeVideoResponse404 | analyzeVideoResponse500) & {
-  headers: Headers;
-};
-
-export type analyzeVideoResponse = (analyzeVideoResponseSuccess | analyzeVideoResponseError)
-
-export const getAnalyzeVideoUrl = (id: string,) => {
-
-
-
-
-  return `/api/v1/videos/${id}/analysis`
-}
-
-/**
- * Runs a vision model over a previously generated video to produce a descriptive title and a set of tags, persists them to the video's metadata, and returns them. Re-running the analysis overwrites any existing title and tags.
- * @summary Analyse a video
- */
-export const analyzeVideo = async (id: string, options?: RequestInit): Promise<analyzeVideoResponse> => {
-
-  return customFetch<analyzeVideoResponse>(getAnalyzeVideoUrl(id),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-
-
-
-export const getAnalyzeVideoQueryKey = (id: string,) => {
-    return [
-    'POST', `/api/v1/videos/${id}/analysis`
-    ] as const;
-    }
-
-
-export const getAnalyzeVideoQueryOptions = <TData = Awaited<ReturnType<typeof analyzeVideo>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeVideo>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getAnalyzeVideoQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeVideo>>> = ({ signal }) => analyzeVideo(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof analyzeVideo>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type AnalyzeVideoQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeVideo>>>
-export type AnalyzeVideoQueryError = ErrorType<ProblemSchema>
-
-
-/**
- * @summary Analyse a video
- */
-
-export function createAnalyzeVideo<TData = Awaited<ReturnType<typeof analyzeVideo>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeVideo>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getAnalyzeVideoQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
 
 
 

@@ -32,6 +32,43 @@ export async function downloadImage(
     const blob = await response.blob();
     const name = resolveFilename(url, filename, blob.type);
 
+    saveBlob(blob, name);
+}
+
+/**
+ * Trigger a browser download of an arbitrary file (e.g. a video) to the current
+ * user's computer.
+ *
+ * Like {@link downloadImage}, the file is fetched into a {@link Blob} so the
+ * `download` attribute is honoured even for cross-origin URLs (which requires
+ * the host to permit CORS). Unlike `downloadImage`, the filename is required
+ * since there's no MIME-based fallback for non-image types.
+ *
+ * Must run in the browser (it touches `document`).
+ *
+ * @param url The file URL to download.
+ * @param filename The name to save the file as.
+ * @param options Optional settings, e.g. an `AbortSignal` to cancel the fetch.
+ * @throws If the fetch fails or the response is not OK.
+ */
+export async function downloadFile(
+    url: string,
+    filename: string,
+    options?: { signal?: AbortSignal },
+): Promise<void> {
+    const response = await fetch(url, { signal: options?.signal });
+    if (!response.ok) {
+        throw new Error(
+            `Failed to download file: ${response.status} ${response.statusText}`,
+        );
+    }
+
+    const blob = await response.blob();
+    saveBlob(blob, filename);
+}
+
+/** Save a blob to disk by clicking a temporary object-URL anchor. */
+function saveBlob(blob: Blob, name: string) {
     const objectUrl = URL.createObjectURL(blob);
     try {
         const anchor = document.createElement("a");

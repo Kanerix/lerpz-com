@@ -20,6 +20,7 @@ import {
     listImages,
 } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
+import { formatDate } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 
 // Number of surrounding images to load for the "more like this" rail. Kept
@@ -110,27 +111,14 @@ const detailRows = $derived(
               },
               {
                   label: "Created",
-                  value: formatDate(image.created_at),
-                  badge: false,
-              },
-          ]
-        : [],
-);
+                      value: formatDate(image.created_at),
+                      badge: false,
+                  },
+              ]
+            : [],
+    );
 
-function formatDate(value: string | null | undefined): string {
-    if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-}
-
-async function analyze() {
+    async function analyze() {
     if (!image || isAnalyzing) return;
     const target = image;
     isAnalyzing = true;

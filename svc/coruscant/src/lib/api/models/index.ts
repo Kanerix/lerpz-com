@@ -27,7 +27,6 @@ export * from './updateChatRequest';
 export * from './updateModelRequest';
 export * from './updateSettingsRequest';
 export * from './userSettings';
-export * from './videoAnalysisResponse';
 export * from './videoItem';
 export * from './videoJobResponse';
 export * from './videoListResponse';
