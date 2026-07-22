@@ -24,6 +24,8 @@ import ThemeButton from "$lib/components/ThemeButton.svelte";
 // returning user is pre-accepted and never has to tick the box again.
 let legalAccepted = $state(false);
 
+let signingIn = $state(false);
+
 $effect(() => {
     legalAccepted = loadLegalConsent();
 });
@@ -66,10 +68,12 @@ $effect(() => {
 
 async function handleLogin() {
     if (!legalAccepted) return;
+    signingIn = true;
     try {
         await msalStore.loginRedirect();
     } catch {
         console.error("Login failed");
+        signingIn = false;
     }
 }
 
@@ -147,15 +151,19 @@ function dismissError() {
         <Button
           size="lg"
           onclick={handleLogin}
-          disabled={msalStore.inProgress !== InteractionStatus.None || !legalAccepted}
+          disabled={signingIn || msalStore.inProgress !== InteractionStatus.None || !legalAccepted}
           class="w-full gap-2"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" class="size-4" aria-hidden="true">
-            <path fill="#f35325" d="M1 1h10v10H1z" />
-            <path fill="#81bc06" d="M12 1h10v10H12z" />
-            <path fill="#05a6f0" d="M1 12h10v10H1z" />
-            <path fill="#ffba08" d="M12 12h10v10H12z" />
-          </svg>
+          {#if signingIn}
+            <Icon icon="fa6-solid:spinner" class="size-4 animate-spin" />
+          {:else}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" class="size-4" aria-hidden="true">
+              <path fill="#f35325" d="M1 1h10v10H1z" />
+              <path fill="#81bc06" d="M12 1h10v10H12z" />
+              <path fill="#05a6f0" d="M1 12h10v10H1z" />
+              <path fill="#ffba08" d="M12 12h10v10H12z" />
+            </svg>
+          {/if}
           Sign in with Microsoft
         </Button>
       </CardContent>

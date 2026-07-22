@@ -5,6 +5,17 @@ import { TextLoop } from "@lerpz/ui/components/text-loop";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 
 const isAuthenticated = $derived(msalStore.isAuthenticated);
+
+let signingIn = $state(false);
+
+async function signIn() {
+    signingIn = true;
+    try {
+        await msalStore.loginRedirect();
+    } finally {
+        signingIn = false;
+    }
+}
 </script>
 
 <section class="flex flex-col gap-6 py-16 md:py-24">
@@ -30,9 +41,13 @@ const isAuthenticated = $derived(msalStore.isAuthenticated);
         <Icon icon="fa6-solid:arrow-right" class="size-4" />
       </Button>
     {:else}
-      <Button size="lg" onclick={() => msalStore.loginRedirect()}>
+      <Button size="lg" disabled={signingIn} onclick={signIn}>
         Sign in
-        <Icon icon="fa6-solid:arrow-right" class="size-4" />
+        {#if signingIn}
+          <Icon icon="fa6-solid:spinner" class="size-4 animate-spin" />
+        {:else}
+          <Icon icon="fa6-solid:arrow-right" class="size-4" />
+        {/if}
       </Button>
     {/if}
     <Button variant="ghost" size="lg" href="/docs">Documentation</Button>

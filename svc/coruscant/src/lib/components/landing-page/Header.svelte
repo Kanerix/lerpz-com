@@ -33,6 +33,17 @@ function isActive(href: string): boolean {
 
 let mobileOpen = $state(false);
 
+let signingIn = $state(false);
+
+async function signIn() {
+    signingIn = true;
+    try {
+        await msalStore.loginRedirect();
+    } finally {
+        signingIn = false;
+    }
+}
+
 // Collapse the mobile menu whenever navigation changes the current route.
 $effect(() => {
     void pathname;
@@ -118,7 +129,10 @@ $effect(() => {
           </DropdownMenu>
         </div>
       {:else}
-        <Button class="hidden sm:inline-flex" onclick={() => msalStore.loginRedirect()}>
+        <Button class="hidden sm:inline-flex" disabled={signingIn} onclick={signIn}>
+          {#if signingIn}
+            <Icon icon="fa6-solid:spinner" class="size-4 animate-spin" />
+          {/if}
           Sign in
         </Button>
       {/if}
@@ -174,7 +188,12 @@ $effect(() => {
               Sign out
             </Button>
           {:else}
-            <Button onclick={() => msalStore.loginRedirect()}>Sign in</Button>
+            <Button disabled={signingIn} onclick={signIn}>
+              {#if signingIn}
+                <Icon icon="fa6-solid:spinner" class="size-4 animate-spin" />
+              {/if}
+              Sign in
+            </Button>
           {/if}
         </div>
       </nav>
