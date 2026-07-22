@@ -16,9 +16,11 @@ import type {
 } from '@tanstack/svelte-query';
 
 import type {
+  CreateVideoResponse,
   ListVideosParams,
   ProblemSchema,
   VideoAnalysisResponse,
+  VideoJobResponse,
   VideoListResponse,
   VideoRequest
 } from '../models';
@@ -132,27 +134,35 @@ export const createListVideos = <TError = ErrorType<ProblemSchema>,
       > => {
       return createMutation(() => ({ ...getListVideosMutationOptions(options?.()) }), queryClient);
     }
+    export type createVideoResponse202 = {
+      data: CreateVideoResponse
+      status: 202
+    }
+
     export type createVideoResponse400 = {
-  data: ProblemSchema
-  status: 400
-}
+      data: ProblemSchema
+      status: 400
+    }
 
-export type createVideoResponse401 = {
-  data: ProblemSchema
-  status: 401
-}
+    export type createVideoResponse401 = {
+      data: ProblemSchema
+      status: 401
+    }
 
-export type createVideoResponse500 = {
-  data: ProblemSchema
-  status: 500
-}
+    export type createVideoResponse500 = {
+      data: ProblemSchema
+      status: 500
+    }
 
-;
-export type createVideoResponseError = (createVideoResponse400 | createVideoResponse401 | createVideoResponse500) & {
-  headers: Headers;
-};
+    export type createVideoResponseSuccess = (createVideoResponse202) & {
+      headers: Headers;
+    };
+    ;
+    export type createVideoResponseError = (createVideoResponse400 | createVideoResponse401 | createVideoResponse500) & {
+      headers: Headers;
+    };
 
-export type createVideoResponse = (createVideoResponseError)
+    export type createVideoResponse = (createVideoResponseSuccess | createVideoResponseError)
 
 export const getCreateVideoUrl = () => {
 
@@ -226,6 +236,61 @@ export function createCreateVideo<TData = Awaited<ReturnType<typeof createVideo>
 }
 
 
+
+
+
+
+export type getVideoJobResponse200 = {
+  data: VideoJobResponse
+  status: 200
+}
+
+export type getVideoJobResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
+
+export type getVideoJobResponse404 = {
+  data: ProblemSchema
+  status: 404
+}
+
+export type getVideoJobResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
+
+export type getVideoJobResponseSuccess = (getVideoJobResponse200) & {
+  headers: Headers;
+};
+export type getVideoJobResponseError = (getVideoJobResponse401 | getVideoJobResponse404 | getVideoJobResponse500) & {
+  headers: Headers;
+};
+
+export type getVideoJobResponse = (getVideoJobResponseSuccess | getVideoJobResponseError)
+
+export const getGetVideoJobUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/videos/jobs/${id}`
+}
+
+/**
+ * Returns the current status of a video generation job. Poll this endpoint after creating a video until `status` is `completed` (the `video` field carries the result) or `failed` (the `error` field carries the reason).
+ * @summary Get video job status
+ */
+export const getVideoJob = async (id: string, options?: RequestInit): Promise<getVideoJobResponse> => {
+
+  return customFetch<getVideoJobResponse>(getGetVideoJobUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
 
 
 

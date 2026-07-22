@@ -76,7 +76,7 @@ pub struct VideoListResponse {
 /// stable URL can be derived directly from the bucket and key. Path-style
 /// addressing is used to match the S3 client configuration
 /// (`force_path_style`).
-fn public_url(bucket: &str, key: &str) -> String {
+pub(super) fn public_url(bucket: &str, key: &str) -> String {
     format!(
         "{}/{}/{}",
         CONFIG.AWS_S3_ENDPOINT.trim_end_matches('/'),

@@ -1,5 +1,7 @@
-import { createSseConnection } from "$lib/http/sse.js";
-import { getCreateVideoUrl } from "$lib/api/videos/videos.js";
+import {
+    createVideo as createVideoJob,
+    getVideoJob,
+} from "$lib/api/videos/videos.js";
 import type { VideoRequest } from "$lib/api/models/index.js";
 
 export type UseVideoOptions = {
@@ -17,141 +19,142 @@ export type StartVideoOptions = {
     duration?: number | null;
 };
 
-/**
- * Video frames arrive from the backend as a JSON object. A completed clip may
- * be delivered either as a ready-to-play URL (`url`) or as base64-encoded bytes
- * (`b64`) alongside the container format (e.g. `mp4`). Either way we resolve it
- * to a value assignable to a `<video src>`.
- */
-function parseVideoFrame(data: string): string | null {
-    try {
-        const parsed = JSON.parse(data);
-        if (parsed && typeof parsed.url === "string") {
-            return parsed.url;
-        }
-        if (parsed && typeof parsed.b64 === "string") {
-            const format =
-                typeof parsed.format === "string" ? parsed.format : "mp4";
-            return `data:video/${format};base64,${parsed.b64}`;
-        }
-    } catch {
-        // Malformed payload – ignore this frame.
-    }
-    return null;
-}
+/** How often (ms) to poll the job status endpoint while a render is running. */
+const POLL_INTERVAL = 3000;
 
 /**
- * Unwraps the message from an `error` event payload. The backend normalises
- * upstream provider errors into a single JSON-encoded string, so we just unwrap
- * it and fall back to a generic message.
+ * Drives video generation as a background job: POST to create a job, then poll
+ * its status until it reaches a terminal state. A completed job carries a
+ * ready-to-play `url`; a failed job carries an error message.
  */
-function parseErrorMessage(data: string): string {
-    try {
-        const parsed = JSON.parse(data);
-        if (typeof parsed === "string") return parsed;
-    } catch {
-        // Fall through to the generic message.
-    }
-    return "An error occurred while generating the video.";
-}
-
 export function createVideo(options: UseVideoOptions = {}) {
     let video = $state<string | null>(null);
     let isLoading = $state(false);
     let isDone = $state(false);
     let error = $state<string | null>(null);
 
-    let closeRef: (() => void) | null = null;
+    // Bumped on every start/stop/reset so an in-flight poll loop from a previous
+    // run can detect it has been superseded and bail out.
+    let runId = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     const onDone = options.onDone;
     const onError = options.onError;
 
+    function clearTimer() {
+        if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    }
+
     $effect(() => {
-        return () => closeRef?.();
+        return () => {
+            runId += 1;
+            clearTimer();
+        };
     });
 
-    function start(prompt: string, startOptions: StartVideoOptions = {}) {
-        closeRef?.();
-        closeRef = null;
+    function fail(message: string) {
+        error = message;
+        isLoading = false;
+        isDone = true;
+        onError?.(message);
+    }
+
+    function succeed(url: string) {
+        video = url;
+        isLoading = false;
+        isDone = true;
+        onDone?.(url);
+    }
+
+    async function poll(jobId: string, id: number) {
+        if (id !== runId) return;
+        try {
+            const res = await getVideoJob(jobId);
+            if (id !== runId) return;
+
+            if (res.status !== 200) {
+                fail(`The server responded with an error (${res.status}).`);
+                return;
+            }
+
+            const job = res.data;
+            switch (job.status) {
+                case "completed": {
+                    const url = job.video?.url ?? null;
+                    if (url !== null) {
+                        succeed(url);
+                    } else {
+                        fail("The video finished but no URL was returned.");
+                    }
+                    break;
+                }
+                case "failed":
+                    fail(
+                        job.error ??
+                            "An error occurred while generating the video.",
+                    );
+                    break;
+                default:
+                    timer = setTimeout(() => poll(jobId, id), POLL_INTERVAL);
+                    break;
+            }
+        } catch (err) {
+            if (id !== runId) return;
+            fail(
+                err instanceof Error
+                    ? err.message
+                    : "An error occurred while checking the video status.",
+            );
+        }
+    }
+
+    async function start(prompt: string, startOptions: StartVideoOptions = {}) {
+        runId += 1;
+        const id = runId;
+        clearTimer();
         video = null;
         isLoading = true;
         isDone = false;
         error = null;
 
-        const body = JSON.stringify({
+        const body: VideoRequest = {
             prompt,
             model: startOptions.model ?? options.model ?? null,
             aspect_ratio: startOptions.aspectRatio ?? null,
             duration: startOptions.duration ?? null,
-        } satisfies VideoRequest);
+        };
 
-        const { close } = createSseConnection(
-            getCreateVideoUrl(),
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body,
-            },
-            {
-                doneSignal: null,
-                onMessage: (data, event) => {
-                    switch (event) {
-                        // Progressive preview frames and the final render both
-                        // carry a video payload.
-                        case "partial_video":
-                        case "completed_video": {
-                            const url = parseVideoFrame(data);
-                            if (url !== null) video = url;
-                            break;
-                        }
-                        // Metadata persisted successfully. Emitted after
-                        // `completed_video`, so it must NOT be treated as video
-                        // data; it simply confirms the save.
-                        case "saved":
-                            break;
-                        // In-band error from the server.
-                        case "error": {
-                            error = parseErrorMessage(data);
-                            isLoading = false;
-                            isDone = true;
-                            onError?.(error);
-                            closeRef?.();
-                            closeRef = null;
-                            break;
-                        }
-                    }
-                },
-                onError: (err) => {
-                    isLoading = false;
-                    isDone = true;
-                    error =
-                        err.message ||
-                        "An error occurred while streaming the video.";
-                    onError?.(error ?? "");
-                    closeRef = null;
-                },
-                onClose: () => {
-                    isLoading = false;
-                    isDone = true;
-                    if (video !== null && error === null) onDone?.(video);
-                    closeRef = null;
-                },
-            },
-        );
-
-        closeRef = close;
+        try {
+            const res = await createVideoJob(body);
+            if (id !== runId) return;
+            if (res.status !== 202) {
+                fail(`The server responded with an error (${res.status}).`);
+                return;
+            }
+            void poll(res.data.id, id);
+        } catch (err) {
+            if (id !== runId) return;
+            fail(
+                err instanceof Error
+                    ? err.message
+                    : "An error occurred while starting the video.",
+            );
+        }
     }
 
     function stop() {
-        closeRef?.();
-        closeRef = null;
+        runId += 1;
+        clearTimer();
         isLoading = false;
         isDone = true;
     }
 
     function reset() {
-        closeRef?.();
-        closeRef = null;
+        runId += 1;
+        clearTimer();
         video = null;
         isLoading = false;
         isDone = false;

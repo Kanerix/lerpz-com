@@ -1,12 +1,9 @@
-use std::convert::Infallible;
-
 use axum::{
     Json,
     extract::State,
     http::StatusCode,
-    response::{Sse, sse::Event},
+    response::{IntoResponse, Response},
 };
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::Utc;
 use lerpz_ai::generation::{Family, VertexConfig, VideoEvent, VideoRequest as VideoGenRequest};
 use lerpz_axum::{
@@ -17,9 +14,8 @@ use lerpz_metadata::{
     Metadata, MetadataClient,
     models::{GeneralMetadata, GenerationMetadata, StorageMetadata},
 };
-use serde::Deserialize;
-use serde_json::json;
-use tokio_stream::{Stream, StreamExt as _};
+use serde::{Deserialize, Serialize};
+use tokio_stream::StreamExt as _;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -46,15 +42,19 @@ pub struct VideoRequest {
     duration: Option<u16>,
 }
 
-/// Build a small `error` SSE event carrying a human-readable message.
-///
-/// The message is JSON-encoded (a bare string) to match what the frontend
-/// unwraps from `error` events.
-fn error_event(message: &str) -> Result<Event, Infallible> {
-    Ok(Event::default()
-        .event("error")
-        .json_data(message)
-        .expect("failed to serialize error event"))
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CreateVideoResponse {
+    /// Identifier of the created job. Poll `GET /videos/jobs/{id}` with this to
+    /// track progress.
+    id: Uuid,
+    /// Current lifecycle status. Always `in_progress` for a freshly created job.
+    status: String,
+}
+
+impl IntoResponse for CreateVideoResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::ACCEPTED, Json(self)).into_response()
+    }
 }
 
 #[utoipa::path(
@@ -63,6 +63,10 @@ fn error_event(message: &str) -> Result<Event, Infallible> {
     operation_id = "create_video",
     tag = VIDEOS_TAG,
     summary = "Create a new video",
+    description = "Starts a video generation job and returns immediately with a \
+        job id. The render runs in the background; poll \
+        `GET /videos/jobs/{id}` until the job reaches a terminal state \
+        (`completed` or `failed`).",
     request_body(
         content = VideoRequest,
         description = "Video generation parameters",
@@ -73,13 +77,10 @@ fn error_event(message: &str) -> Result<Event, Infallible> {
     ),
     responses(
         (
-            status = OK,
-            description = "SSE stream of video generation events. Events: \
-                completed_video ({ b64, format } inline video, or { url } when \
-                the provider only exposes a link), \
-                saved ({ id } persisted metadata), \
-                error (error message)",
-            content_type = "text/event-stream"
+            status = ACCEPTED,
+            description = "Job accepted. Poll the returned id for status.",
+            body = CreateVideoResponse,
+            content_type = "application/json"
         ),
         (
             status = BAD_REQUEST,
@@ -90,6 +91,12 @@ fn error_event(message: &str) -> Result<Event, Infallible> {
         (
             status = UNAUTHORIZED,
             description = "Missing or invalid authentication token",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = BAD_GATEWAY,
+            description = "The video provider rejected the request",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -108,7 +115,7 @@ pub async fn handler(
     State(database): State<DatabasePool>,
     State(s3): State<S3Client>,
     Json(body): Json<VideoRequest>,
-) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
+) -> HandlerResult<CreateVideoResponse> {
     let oid = token.oid.ok_or(Problem::new(
         StatusCode::INTERNAL_SERVER_ERROR,
         "Unkown token format",
@@ -147,6 +154,8 @@ pub async fn handler(
 
     tracing::debug!(%oid, model = %model_name, "creating video generation job");
 
+    // Kick off the provider render. A failure here means the job could not be
+    // created at all, so surface it synchronously rather than via a job row.
     let job = family.start_video(openai.as_ref(), request).await.map_err(|upstream| {
         if upstream.is_user() {
             tracing::warn!(%oid, model = %model_name, reason = %upstream.message, "video generation rejected by provider");
@@ -161,90 +170,164 @@ pub async fn handler(
     })?;
 
     let operation_name = job.operation_name.clone();
-    tracing::debug!(%operation_name, model = %model_name, "video generation job created");
 
-    let meta_client = lerpz_metadata::Client::from_pool(database);
+    // Record the job as in-progress so the client has something to poll while
+    // the background task drives the render to completion.
+    let job_id = Uuid::now_v7();
+    sqlx::query("INSERT INTO video_jobs (id, oid, status) VALUES ($1, $2, 'in_progress')")
+        .bind(job_id)
+        .bind(&oid)
+        .execute(&database)
+        .await?;
+
+    tracing::debug!(%job_id, %operation_name, model = %model_name, "video generation job created");
+
+    // Drive the render in the background. The task owns everything it needs, so
+    // it outlives the request. Note: an in-flight task is lost on restart, which
+    // leaves its row stuck in `in_progress` — acceptable for this scope.
     let prompt = body.prompt;
+    tokio::spawn(run_job(
+        job_id,
+        oid,
+        prompt,
+        model_name,
+        operation_name,
+        job,
+        database,
+        s3,
+    ));
 
-    let sse_stream = async_stream::stream! {
-        let mut stream = job.poll();
+    Ok(CreateVideoResponse {
+        id: job_id,
+        status: "in_progress".to_string(),
+    })
+}
 
-        // The job yields a single terminal event once rendering finishes.
-        if let Some(event) = stream.next().await {
-            match event {
-                Err(upstream) => {
-                    if upstream.is_user() {
-                        tracing::warn!(%operation_name, reason = %upstream.message, "video generation rejected by provider");
-                    } else {
-                        tracing::error!(%operation_name, "video generation failed: {}", upstream.message);
-                    }
-                    yield error_event(&upstream.message);
-                }
-                Ok(VideoEvent::Link { url }) => {
-                    yield Ok(Event::default()
-                        .event("completed_video")
-                        .json_data(json!({ "url": url }))
-                        .expect("failed to serialize completed_video event"));
-                }
-                Ok(VideoEvent::Completed { bytes: video_bytes, format, width, height, duration }) => {
-                    yield Ok(Event::default()
-                        .event("completed_video")
-                        .json_data(json!({
-                            "b64": BASE64.encode(&video_bytes),
-                            "format": format,
-                        }))
-                        .expect("failed to serialize completed_video event"));
+/// Marks a job as failed with a human-readable reason.
+async fn fail_job(database: &DatabasePool, job_id: Uuid, message: &str) {
+    if let Err(err) =
+        sqlx::query("UPDATE video_jobs SET status = 'failed', error = $2 WHERE id = $1")
+            .bind(job_id)
+            .bind(message)
+            .execute(database)
+            .await
+    {
+        tracing::error!(%job_id, "failed to persist job failure: {err}");
+    }
+}
 
-                    let id = Uuid::now_v7();
-                    let key = format!("videos/{oid}/{id}.{format}");
-                    let now = Utc::now();
+/// Runs a video generation job to completion in the background.
+///
+/// Polls the provider operation, and on success saves the video to storage,
+/// persists its metadata, and links it to the job row. Any failure transitions
+/// the job to `failed` with a message the client can display.
+#[allow(clippy::too_many_arguments)]
+async fn run_job(
+    job_id: Uuid,
+    oid: String,
+    prompt: String,
+    model_name: String,
+    operation_name: String,
+    job: lerpz_ai::generation::VideoJob,
+    database: DatabasePool,
+    s3: S3Client,
+) {
+    let mut stream = job.poll();
 
-                    tracing::trace!(
-                        bucket = %CONFIG.AWS_S3_BUCKET,
-                        key = %key,
-                        "saving video to storage (s3)",
-                    );
-
-                    let metadata = Metadata::Video {
-                        general: GeneralMetadata { id, created_at: now, updated_at: now },
-                        generation: GenerationMetadata {
-                            prompt: prompt.clone(),
-                            model: model_name.clone(),
-                        },
-                        storage: StorageMetadata::S3 {
-                            bucket: CONFIG.AWS_S3_BUCKET.to_string(),
-                            key,
-                        },
-                        analysis: None,
-                        format,
-                        width,
-                        height,
-                        duration,
-                    };
-
-                    if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &video_bytes).await {
-                        tracing::error!(%operation_name, "{err}");
-                        yield error_event(&err.to_string());
-                    } else {
-                        tracing::trace!(%operation_name, "persisting metadata to database");
-                        match meta_client.insert(metadata).await {
-                            Ok(_) => {
-                                tracing::trace!(%operation_name, %id, "video generation complete");
-                                yield Ok(Event::default()
-                                    .event("saved")
-                                    .json_data(json!({ "id": id }))
-                                    .expect("failed to serialize saved event"));
-                            }
-                            Err(err) => {
-                                tracing::error!(%operation_name, "{err}");
-                                yield error_event(&err.to_string());
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    // The job yields a single terminal event once rendering finishes.
+    let Some(event) = stream.next().await else {
+        tracing::error!(%job_id, %operation_name, "video generation poll ended without an event");
+        fail_job(&database, job_id, "The video generation ended unexpectedly.").await;
+        return;
     };
 
-    Ok(Sse::new(sse_stream))
+    let (video_bytes, format, width, height, duration) = match event {
+        Err(upstream) => {
+            if upstream.is_user() {
+                tracing::warn!(%operation_name, reason = %upstream.message, "video generation rejected by provider");
+            } else {
+                tracing::error!(%operation_name, "video generation failed: {}", upstream.message);
+            }
+            fail_job(&database, job_id, &upstream.message).await;
+            return;
+        }
+        Ok(VideoEvent::Link { url }) => {
+            // We only got a link, not bytes, so we can't persist the video. Fail
+            // the job rather than silently dropping the render.
+            tracing::error!(%operation_name, %url, "video provider only returned a link; cannot persist");
+            fail_job(
+                &database,
+                job_id,
+                "The video could not be downloaded for storage.",
+            )
+            .await;
+            return;
+        }
+        Ok(VideoEvent::Completed {
+            bytes,
+            format,
+            width,
+            height,
+            duration,
+        }) => (bytes, format, width, height, duration),
+    };
+
+    let id = Uuid::now_v7();
+    let key = format!("videos/{oid}/{id}.{format}");
+    let now = Utc::now();
+
+    tracing::trace!(
+        bucket = %CONFIG.AWS_S3_BUCKET,
+        key = %key,
+        "saving video to storage (s3)",
+    );
+
+    let metadata = Metadata::Video {
+        general: GeneralMetadata {
+            id,
+            created_at: now,
+            updated_at: now,
+        },
+        generation: GenerationMetadata {
+            prompt,
+            model: model_name,
+        },
+        storage: StorageMetadata::S3 {
+            bucket: CONFIG.AWS_S3_BUCKET.to_string(),
+            key,
+        },
+        analysis: None,
+        format,
+        width,
+        height,
+        duration,
+    };
+
+    if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &video_bytes).await {
+        tracing::error!(%operation_name, "{err}");
+        fail_job(&database, job_id, &err.to_string()).await;
+        return;
+    }
+
+    tracing::trace!(%operation_name, "persisting metadata to database");
+    let meta_client = lerpz_metadata::Client::from_pool(database.clone());
+    if let Err(err) = meta_client.insert(metadata).await {
+        tracing::error!(%operation_name, "{err}");
+        fail_job(&database, job_id, &err.to_string()).await;
+        return;
+    }
+
+    if let Err(err) = sqlx::query(
+        "UPDATE video_jobs SET status = 'completed', video_id = $2 WHERE id = $1",
+    )
+    .bind(job_id)
+    .bind(id)
+    .execute(&database)
+    .await
+    {
+        tracing::error!(%job_id, "failed to mark job completed: {err}");
+        return;
+    }
+
+    tracing::trace!(%operation_name, %job_id, %id, "video generation complete");
 }
