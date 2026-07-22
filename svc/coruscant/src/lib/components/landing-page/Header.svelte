@@ -82,20 +82,13 @@ $effect(() => {
       <ThemeButton />
 
       {#if isAuthenticated}
-        <div class="hidden items-center gap-1 sm:flex">
-          <a
-            href="/ai/chats"
-            aria-label="Go to dashboard"
-            class="flex items-center rounded-full outline-none ring-offset-background transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <UserAvatar size="default" />
-          </a>
+        <div class="hidden items-center sm:flex">
           <DropdownMenu align="end" sideOffset={8}>
             <DropdownMenuTrigger
               aria-label="Account menu"
-              class="flex size-8 items-center justify-center rounded-full text-muted-foreground outline-none ring-offset-background transition hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              class="flex items-center rounded-full outline-none ring-offset-background transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <Icon icon="fa6-solid:chevron-down" class="size-3.5" />
+              <UserAvatar size="default" />
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-60">
               <DropdownMenuLabel class="p-0 font-normal">
