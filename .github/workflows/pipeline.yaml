@@ -49,16 +49,16 @@ jobs:
           echo "| kamino | ${{ needs.prepare.outputs.kamino }} |" >> $GITHUB_STEP_SUMMARY
           echo "| artoo | ${{ needs.prepare.outputs.artoo }} |" >> $GITHUB_STEP_SUMMARY
 
-  deploy-coruscant:
-    name: "Deploy coruscant"
-    needs: [prepare, env]
-    if: needs.prepare.outputs.coruscant == 'true' || inputs.coruscant == true
-    uses: ./.github/workflows/deploy-container.yaml
-    with:
-      service: coruscant
-      container-app: lerpz-website-${{ needs.env.outputs.name }}
-      environment: ${{ needs.env.outputs.name }}
-    secrets: inherit
+  # deploy-coruscant:
+  #   name: "Deploy coruscant"
+  #   needs: [prepare, env]
+  #   if: needs.prepare.outputs.coruscant == 'true' || inputs.coruscant == true
+  #   uses: ./.github/workflows/deploy-container.yaml
+  #   with:
+  #     service: coruscant
+  #     container-app: lerpz-website-${{ needs.env.outputs.name }}
+  #     environment: ${{ needs.env.outputs.name }}
+  #   secrets: inherit
 
   # deploy-kamino:
   #   name: "Deploy kamino"
