@@ -25,6 +25,7 @@ import type { ConversationMessage } from "$lib/api/models/index.js";
 import ModelAvatar from "$lib/components/avatar/ModelAvatar.svelte";
 import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
+import { showError } from "$lib/components/error-dialog";
 import CopyButton from "./CopyButton.svelte";
 import DeleteButton from "./DeleteButton.svelte";
 import EditButton from "./EditButton.svelte";
@@ -154,7 +155,7 @@ async function confirmDelete() {
         // Close the confirmation dialog first so the error dialog isn't stacked
         // on top of it.
         pendingDeleteId = null;
-        ai.reportChatError(err);
+        showError(err);
     } finally {
         isDeleting = false;
     }

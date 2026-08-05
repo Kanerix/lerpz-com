@@ -12,9 +12,10 @@ import { Skeleton } from "@lerpz/ui/components/skeleton";
 import {
     createInfiniteQuery,
 } from "@tanstack/svelte-query";
-import { toast } from "svelte-sonner";
 import type { VideoItem, VideoListResponse } from "$lib/api/models/index.js";
 import { getListVideosUrl, listVideos } from "$lib/api/videos/videos.js";
+import { showError } from "$lib/components/error-dialog";
+import { ErrorState } from "$lib/components/error-state";
 import { downloadFile } from "$lib/utils/download.js";
 import { formatDuration } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
@@ -71,10 +72,7 @@ async function handleDownload(video: VideoItem) {
     try {
         await downloadFile(video.url, filename);
     } catch (err) {
-        toast.error("Couldn't download video", {
-            description:
-                err instanceof Error ? err.message : "Please try again.",
-        });
+        showError(err);
     }
 }
 
@@ -128,11 +126,11 @@ const skeletonHeights = [180, 384, 180, 384, 240, 180, 384, 180];
       {/each}
     </div>
   {:else if query.isError}
-    <p class="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      {query.error instanceof Error
-        ? query.error.message
-        : "Failed to load videos."}
-    </p>
+    <ErrorState
+      title="Couldn't load videos"
+      onRetry={() => query.refetch()}
+      retrying={query.isFetching}
+    />
   {:else if videos.length === 0}
     <div class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-20 text-center">
       <span

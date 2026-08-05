@@ -17,8 +17,6 @@ export type AiContextValue = {
     stopChat: () => void;
     resetChat: () => void;
     retryChat: () => void;
-    /** Surface an arbitrary thrown value through the shared error dialog. */
-    reportChatError: (error: unknown) => void;
     enterConversation: (id: string, messages?: ConversationMessage[]) => void;
     removeChatMessagesFrom: (messageId: string) => void;
     sendChat: (prompt: string, options?: SendChatOptions) => void;

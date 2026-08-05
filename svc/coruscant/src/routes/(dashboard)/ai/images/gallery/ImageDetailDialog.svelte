@@ -13,13 +13,13 @@ import {
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
 import { createQuery } from "@tanstack/svelte-query";
-import { toast } from "svelte-sonner";
 import {
     analyzeImage,
     getListImagesUrl,
     listImages,
 } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
+import { showError } from "$lib/components/error-dialog";
 import { formatDate } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 
@@ -131,10 +131,7 @@ const detailRows = $derived(
         result = res.data;
         onAnalyzed?.(target.id, res.data.title, res.data.tags);
     } catch (err) {
-        toast.error("Couldn't analyse image", {
-            description:
-                err instanceof Error ? err.message : "Please try again.",
-        });
+        showError(err);
     } finally {
         isAnalyzing = false;
     }

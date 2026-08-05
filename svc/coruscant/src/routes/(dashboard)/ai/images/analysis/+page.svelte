@@ -27,8 +27,8 @@ import type {
     ImageItem,
     ImageListResponse,
 } from "$lib/api/models/index.js";
-import { ErrorDialog } from "$lib/components/error-dialog";
-import { toProblemError } from "$lib/components/error-dialog/problem.js";
+import { showError } from "$lib/components/error-dialog";
+import { ErrorState } from "$lib/components/error-state";
 
 const PAGE_SIZE = 24;
 // Uploads are inlined as base64 in the request body, so keep them reasonable.
@@ -85,11 +85,6 @@ let isDragging = $state(false);
 
 let isAnalyzing = $state(false);
 let result = $state<ImageAnalysisResponse | null>(null);
-// The raw thrown value (a `ProblemSchema`, `Error`, or string) kept so the
-// error dialog can render it richly.
-let errorValue = $state<unknown>(null);
-let errorDialogOpen = $state(false);
-
 // Fall back to any title/tags already persisted on the image so a previously
 // analysed image shows its metadata before it's re-run. Uploads have no stored
 // metadata, so they only ever show a freshly computed `result`.
@@ -127,8 +122,7 @@ function selectImage(image: ImageItem) {
 }
 
 function reportError(message: string) {
-    errorValue = toProblemError(new Error(message));
-    errorDialogOpen = true;
+    showError(new Error(message));
 }
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -156,8 +150,7 @@ async function acceptFile(file: File | undefined | null) {
         uploadName = file.name;
         result = null;
     } catch (err) {
-        errorValue = toProblemError(err);
-        errorDialogOpen = true;
+        showError(err);
     }
 }
 
@@ -224,8 +217,7 @@ async function analyze() {
             };
         });
     } catch (err) {
-        errorValue = toProblemError(err);
-        errorDialogOpen = true;
+        showError(err);
     } finally {
         isAnalyzing = false;
     }
@@ -332,11 +324,11 @@ const skeletonCount = 9;
             {/each}
           </div>
         {:else if query.isError}
-          <p class="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {query.error instanceof Error
-              ? query.error.message
-              : "Failed to load images."}
-          </p>
+          <ErrorState
+            title="Couldn't load images"
+            onRetry={() => query.refetch()}
+            retrying={query.isFetching}
+          />
         {:else if images.length === 0}
           <div class="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-4 py-16 text-center">
             <Icon
@@ -491,5 +483,3 @@ const skeletonCount = 9;
   </div>
 </div>
 </ScrollArea>
-
-<ErrorDialog bind:open={errorDialogOpen} error={errorValue} />

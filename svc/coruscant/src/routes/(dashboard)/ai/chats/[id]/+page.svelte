@@ -5,6 +5,7 @@ import { getAiContext } from "$lib/ai/context.svelte.js";
 import { getChat } from "$lib/api/chats/chats.js";
 import ChatView from "$lib/components/chatbox/ChatView.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
+import { ErrorState } from "$lib/components/error-state";
 import type { PageProps } from "./$types.js";
 
 let { params }: PageProps = $props();
@@ -55,9 +56,12 @@ const messages = $derived(
     </div>
   </div>
 {:else if !isLive && query.data?.status !== 200}
-  <p class="text-muted-foreground px-2 py-4 text-center text-xs">
-    Error: {query.data?.status}
-  </p>
+  <ErrorState
+    class="mx-auto max-w-200"
+    title="Couldn't load this chat"
+    onRetry={() => query.refetch()}
+    retrying={query.isFetching}
+  />
 {:else}
   <ChatView {messages} isStreaming={isLive && ai.isChatStreaming} error={isLive ? ai.chatError : null} onRetry={ai.retryChat} />
 {/if}

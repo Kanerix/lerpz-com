@@ -21,6 +21,8 @@ import {
     listImages,
 } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
+import { showError } from "$lib/components/error-dialog";
+import { ErrorState } from "$lib/components/error-state";
 import { downloadImage } from "$lib/utils/download.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 import ImageDetailDialog from "./ImageDetailDialog.svelte";
@@ -99,10 +101,7 @@ async function handleDelete(image: ImageItem) {
         });
         toast.success("Image deleted");
     } catch (err) {
-        toast.error("Couldn't delete image", {
-            description:
-                err instanceof Error ? err.message : "Please try again.",
-        });
+        showError(err);
     } finally {
         pendingIds = pendingIds.filter((id) => id !== image.id);
     }
@@ -136,10 +135,7 @@ async function handleDownload(image: ImageItem) {
     try {
         await downloadImage(image.url, filename);
     } catch (err) {
-        toast.error("Couldn't download image", {
-            description:
-                err instanceof Error ? err.message : "Please try again.",
-        });
+        showError(err);
     }
 }
 
@@ -179,11 +175,11 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
       {/each}
     </div>
   {:else if query.isError}
-    <p class="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      {query.error instanceof Error
-        ? query.error.message
-        : "Failed to load images."}
-    </p>
+    <ErrorState
+      title="Couldn't load images"
+      onRetry={() => query.refetch()}
+      retrying={query.isFetching}
+    />
   {:else if images.length === 0}
     <div class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-20 text-center">
       <span

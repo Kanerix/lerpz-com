@@ -34,6 +34,9 @@ const query = createQuery(() => ({
     queryKey: [getHealthCheckUrl()],
     queryFn: ({ signal }: { signal: AbortSignal }) => fetchHealth(signal),
     refetchInterval: 30_000,
+    // This page *is* the error surface — it reports outages inline and polls,
+    // so it opts out of the global error dialog.
+    meta: { skipGlobalErrorDialog: true },
 }));
 
 const statusMeta: Record<

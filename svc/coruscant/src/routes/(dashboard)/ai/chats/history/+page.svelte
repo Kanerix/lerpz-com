@@ -7,6 +7,7 @@ import { createQuery } from "@tanstack/svelte-query";
 import { getListChatsUrl, listChats } from "$lib/api/chats/chats.js";
 import type { Conversation } from "$lib/api/models/index.js";
 import ChatHistoryTable from "$lib/components/chats/ChatHistoryTable.svelte";
+import { ErrorState } from "$lib/components/error-state";
 
 const query = createQuery(() => ({
     queryKey: [getListChatsUrl()],
@@ -66,9 +67,11 @@ const archivedChats = $derived(
       {/each}
     </div>
   {:else if query.data?.status !== 200}
-    <p class="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      Failed to load chats (error {query.data?.status}).
-    </p>
+    <ErrorState
+      title="Couldn't load chats"
+      onRetry={() => query.refetch()}
+      retrying={query.isFetching}
+    />
   {:else}
     <section class="flex flex-col gap-3">
       <div class="flex items-center gap-2">

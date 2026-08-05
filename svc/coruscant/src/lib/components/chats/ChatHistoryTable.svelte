@@ -9,10 +9,10 @@ import {
     type Header,
     type SortingState,
 } from "@tanstack/table-core";
-import { toast } from "svelte-sonner";
 import { updateChat } from "$lib/api/chats/archive.js";
 import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import type { Conversation } from "$lib/api/models/index.js";
+import { showError } from "$lib/components/error-dialog";
 import { createSvelteTable } from "$lib/utils/table.svelte.js";
 
 let {
@@ -35,13 +35,7 @@ async function toggleArchive(conv: Conversation) {
             queryKey: [getListChatsUrl()],
         });
     } catch (err) {
-        toast.error(
-            nextArchived ? "Couldn't archive chat" : "Couldn't restore chat",
-            {
-                description:
-                    err instanceof Error ? err.message : "Please try again.",
-            },
-        );
+        showError(err);
     } finally {
         pendingIds = pendingIds.filter((id) => id !== conv.id);
     }
