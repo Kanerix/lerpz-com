@@ -117,9 +117,17 @@ setAiContext({
     get videoError() {
         return video.error;
     },
+    get isVideoBackgrounded() {
+        return video.isBackgrounded;
+    },
+    get videoStartedAt() {
+        return video.startedAt;
+    },
     stopVideo: video.stop,
     resetVideo: video.reset,
     startVideo,
+    backgroundVideo: video.background,
+    foregroundVideo: video.foreground,
     get models() {
         return modelsHook.models;
     },

@@ -1,13 +1,13 @@
 <script lang="ts">
+import { onDestroy } from "svelte";
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import Clapper from "$lib/components/clapper/Clapper.svelte";
-import type { ClapperSubmitArgs } from "$lib/components/clapper/clapper-context.svelte.js";
 import { clapperStore } from "$lib/components/clapper/clapper.store.svelte.js";
+import type { ClapperSubmitArgs } from "$lib/components/clapper/clapper-context.svelte.js";
 import VideoStage from "$lib/components/video-stage/VideoStage.svelte";
 
 const ai = getAiContext();
 
-// Remember the last submission so a failed render can be retried verbatim.
 let lastArgs = $state<ClapperSubmitArgs | null>(null);
 
 function generate(args: ClapperSubmitArgs) {
@@ -18,23 +18,29 @@ function generate(args: ClapperSubmitArgs) {
         duration: args.duration,
     });
 }
+
+onDestroy(() => ai.backgroundVideo());
 </script>
 
-<div class="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 py-4">
-  <!-- Results -->
-  <div class="flex min-h-0 flex-1 items-center justify-center overflow-y-auto">
+<div class="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col">
+  <div class="flex min-h-0 w-full flex-1 px-4 pt-4">
     <VideoStage
       video={ai.generatedVideo}
       isLoading={ai.isVideoLoading}
+      isBackgrounded={ai.isVideoBackgrounded}
+      startedAt={ai.videoStartedAt}
       error={ai.videoError}
       aspectRatio={clapperStore.aspectRatio}
       onRetry={lastArgs ? () => generate(lastArgs!) : undefined}
       onDismiss={ai.resetVideo}
+      onBackground={ai.backgroundVideo}
+      onForeground={ai.foregroundVideo}
     />
   </div>
 
   <!-- Prompt -->
   <Clapper
+    class="shrink-0"
     onSubmit={async (args) => generate(args)}
     onEnhance={ai.enhanceVideo}
     isGenerating={ai.isVideoLoading}

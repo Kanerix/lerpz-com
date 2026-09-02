@@ -33,8 +33,9 @@ export function createVideo(options: UseVideoOptions = {}) {
     let isDone = $state(false);
     let error = $state<string | null>(null);
 
-    // Bumped on every start/stop/reset so an in-flight poll loop from a previous
-    // run can detect it has been superseded and bail out.
+    let isBackgrounded = $state(false);
+    let startedAt = $state<number | null>(null);
+
     let runId = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -59,6 +60,7 @@ export function createVideo(options: UseVideoOptions = {}) {
         error = message;
         isLoading = false;
         isDone = true;
+        isBackgrounded = false;
         onError?.(message);
     }
 
@@ -66,6 +68,7 @@ export function createVideo(options: UseVideoOptions = {}) {
         video = url;
         isLoading = false;
         isDone = true;
+        isBackgrounded = false;
         onDone?.(url);
     }
 
@@ -119,6 +122,8 @@ export function createVideo(options: UseVideoOptions = {}) {
         isLoading = true;
         isDone = false;
         error = null;
+        isBackgrounded = false;
+        startedAt = Date.now();
 
         const body: VideoRequest = {
             prompt,
@@ -150,6 +155,7 @@ export function createVideo(options: UseVideoOptions = {}) {
         clearTimer();
         isLoading = false;
         isDone = true;
+        isBackgrounded = false;
     }
 
     function reset() {
@@ -159,6 +165,16 @@ export function createVideo(options: UseVideoOptions = {}) {
         isLoading = false;
         isDone = false;
         error = null;
+        isBackgrounded = false;
+        startedAt = null;
+    }
+
+    function background() {
+        if (isLoading) isBackgrounded = true;
+    }
+
+    function foreground() {
+        isBackgrounded = false;
     }
 
     return {
@@ -174,8 +190,16 @@ export function createVideo(options: UseVideoOptions = {}) {
         get error() {
             return error;
         },
+        get isBackgrounded() {
+            return isBackgrounded;
+        },
+        get startedAt() {
+            return startedAt;
+        },
         start,
         stop,
         reset,
+        background,
+        foreground,
     };
 }

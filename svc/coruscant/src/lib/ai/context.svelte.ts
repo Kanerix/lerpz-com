@@ -32,9 +32,13 @@ export type AiContextValue = {
     readonly isVideoLoading: boolean;
     readonly isVideoDone: boolean;
     readonly videoError: string | null;
+    readonly isVideoBackgrounded: boolean;
+    readonly videoStartedAt: number | null;
     stopVideo: () => void;
     resetVideo: () => void;
     startVideo: (prompt: string, options?: StartVideoOptions) => void;
+    backgroundVideo: () => void;
+    foregroundVideo: () => void;
     readonly models: Model[];
     readonly isModelsLoading: boolean;
     loadModels: (modality?: string) => Promise<void>;
