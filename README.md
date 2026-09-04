@@ -1,9 +1,40 @@
-# Lerpz
+<img width="100%" src="./banner.png" alt="Lerpz">
+
+<p align="center">
+    <a href="https://github.com/kanerix/lerpz-com/actions"><img src="https://img.shields.io/github/actions/workflow/status/kanerix/lerpz-com/pipeline.yaml?branch=main&style=flat-square&label=pipeline"></a>
+    &nbsp;
+    <a href="https://github.com/kanerix/lerpz-com"><img src="https://img.shields.io/badge/built_with-Rust-dea584.svg?style=flat-square"></a>
+    &nbsp;
+    <a href="https://github.com/kanerix/lerpz-com"><img src="https://img.shields.io/badge/and-SvelteKit-ff3e00.svg?style=flat-square"></a>
+    &nbsp;
+    <a href="https://lerpz.com"><img src="https://img.shields.io/badge/site-lerpz.com-3388c8.svg?style=flat-square"></a>
+</p>
+
+<br>
+
+## What is Lerpz?
 
 A monorepo containing shared libraries, services, and packages for the Lerpz
 platform — an internal enterprise AI portal that provides chat interfaces, user
 management, and organizational tools, all backed by Microsoft Entra ID
 authentication.
+
+Everything lives in one repository: two SvelteKit frontends, three Rust
+services, the shared crates and packages they depend on, the Kubernetes and
+Terraform definitions they deploy to, and the migrations that back them.
+
+## Contents
+
+- [Services](#services)
+- [Architecture](#architecture)
+- [Repository layout](#repository-layout)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Running the stack](#running-the-stack)
+- [Database](#database)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
 
 ## Services
 
@@ -26,11 +57,69 @@ in-network those containers keep their vendor defaults (`postgres:5432`,
 `minio:9000`). See [docs/NAMING.md](docs/NAMING.md) for the naming rules and the
 conventions for adding a new service.
 
-## Prerequisites
+## Architecture
+
+Service dependencies, as declared in [`docker-compose.yml`](docker-compose.yml):
+
+```mermaid
+flowchart TD
+    Browser --> www
+    Browser --> app
+    app --> api
+    api --> postgres[(postgres)]
+    api --> dragonfly[(dragonfly)]
+    artoo --> postgres
+    artoo --> dragonfly
+    artoo --> qdrant[(qdrant)]
+    forge --> kubernetes[Kubernetes API]
+```
+
+`www` is fully static and depends on nothing. `forge` talks to a cluster rather
+than to the local infrastructure, which is why it sits behind its own compose
+profile.
+
+## Repository layout
+
+```
+svc/          Deployable services (www, app, api, artoo, forge)
+crates/       Shared Rust crates
+packages/     Shared TypeScript packages
+migrations/   sqlx migrations
+k8s/          Kubernetes manifests and a kind cluster
+terraform/    Infrastructure definitions
+benchmarks/   Criterion benchmarks
+docs/         Conventions and design notes
+```
+
+Shared Rust crates: `lerpz-ai`, `lerpz-axum`, `lerpz-jwt`, `lerpz-macros`,
+`lerpz-metadata`, `lerpz-pwd`, `lerpz-utils`.
+
+Shared TypeScript packages: `@lerpz/ui`, `@lerpz/biome-config`,
+`@lerpz/typescript-config`.
+
+## Getting started
+
+### Prerequisites
 
 - [Rust](https://rustup.rs/) (edition 2024)
 - [Bun](https://bun.sh/) >= 1.4
 - [Docker](https://www.docker.com/) & Docker Compose
+- [just](https://github.com/casey/just) (optional, but every command below assumes it)
+
+### Quick start
+
+```sh
+bun install
+just dev
+```
+
+`just dev` starts the infrastructure containers, waits for them to become
+healthy, then runs `api`, `artoo`, `app` and `www` on the host. One Ctrl-C
+stops everything.
+
+Run `just` on its own to list every recipe.
+
+## Configuration
 
 ### 1. Configure Microsoft Entra ID
 
@@ -44,7 +133,7 @@ http://localhost:3001/api/auth/callback/microsoft-entra-id
 https://app.lerpz.local/api/auth/callback/microsoft-entra-id
 ```
 
-#### 1.1. Generate TLS certificates (for traefik)
+### 2. Generate TLS certificates (for traefik)
 
 Use mkcert to create local certificates:
 
@@ -53,7 +142,7 @@ mkcert -cert-file certs/cert.pem -key-file certs/key.pem \
   lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
 ```
 
-#### 1.2. Update your hosts file (for traefik)
+### 3. Update your hosts file (for traefik)
 
 Add these entries to `/etc/hosts`:
 
@@ -61,33 +150,44 @@ Add these entries to `/etc/hosts`:
 127.0.0.1 lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
 ```
 
-### 2. Start the containers
+## Running the stack
 
-#### Default mode (local development)
+### Default mode (local development)
 
-Start only the infrastructure services. If you followed the Traefik
-steps, requests will be proxied to apps running on your local machine
+Start only the infrastructure services. If you followed the Traefik steps,
+requests will be proxied to apps running on your local machine
 (`localhost:3001` for `app`, `localhost:4000` for `api`):
 
 ```sh
-docker compose up
+just infra
 ```
 
-#### Full mode (everything containerized)
-
-Start all services using Docker:
+Individual services can then be started on their own:
 
 ```sh
-docker compose --profile full up --build
+just www      # http://localhost:3000
+just app      # http://localhost:3001
+just api      # http://localhost:4000  (docs at /scalar)
+just artoo    # http://localhost:4001  (docs at /scalar)
 ```
 
-#### Forge
+### Full mode (everything containerized)
+
+Build and start every service in Docker:
+
+```sh
+just up
+just down     # stop and remove, keeping volumes
+```
+
+### Forge
 
 `forge` provisions agent infrastructure through the Kubernetes API, so it has no
 self-contained local mode and sits behind its own profile:
 
 ```sh
-docker compose --profile k8s up --build forge
+just forge                              # on the host
+docker compose --profile k8s up forge   # in a container
 ```
 
 It mounts `~/.kube` read-only and exits on startup if no cluster answers. Because
@@ -101,8 +201,42 @@ The project uses PostgreSQL with migrations managed by
 [sqlx](https://github.com/launchbadge/sqlx). The schema includes tables for
 conversations and messages supporting the AI chat feature.
 
-Run migrations:
-
 ```sh
-cargo sqlx migrate run
+just migrate            # apply pending migrations
+just migration NAME     # create a new timestamped migration
+just prepare            # regenerate the offline .sqlx cache
+just psql               # open a shell against the running container
 ```
+
+Compile-time query checks run offline by default, against the cached metadata in
+`.sqlx`. Regenerate it with `just prepare` whenever a query changes.
+
+## Development
+
+| Command | Does |
+|---|---|
+| `just check` | Clippy, svelte-check and biome |
+| `just fmt` | Format Rust and TypeScript in place |
+| `just test` | Cargo test suite |
+| `just bench` | Criterion benchmarks |
+| `just build` | Release-build every service |
+| `just openapi` | Regenerate the app's API client from `api`'s OpenAPI spec |
+| `just logs` | Tail container logs |
+| `just k8s` | Delegate to [k8s/justfile](k8s/justfile) |
+
+## Deployment
+
+| Workflow | Deploys |
+|---|---|
+| [`pipeline.yaml`](.github/workflows/pipeline.yaml) | Detects changed services and fans out to the others |
+| [`deploy-container.yaml`](.github/workflows/deploy-container.yaml) | `app`, `api`, `artoo`, `forge` as containers |
+| [`deploy-gh-page.yaml`](.github/workflows/deploy-gh-page.yaml) | `www` to GitHub Pages |
+
+Only changed services are deployed, and `www` publishes from `main` only.
+
+## Documentation
+
+- [docs/NAMING.md](docs/NAMING.md) — service naming and port conventions
+- [docs/INFRA.md](docs/INFRA.md) — infrastructure
+- [docs/DATABASE.md](docs/DATABASE.md) — database design
+- [docs/GUID.md](docs/GUID.md) — identifiers
