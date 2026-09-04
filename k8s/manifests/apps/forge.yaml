@@ -1,0 +1,89 @@
+# Forge provisions agent infrastructure through the Kubernetes API, so unlike
+# the other services it needs an identity in the cluster and explicit RBAC.
+#
+# The permissions below are deliberately a namespaced Role rather than a
+# ClusterRole: forge can only touch the namespace it runs in, and only the two
+# resource types it actually manages.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: forge
+  namespace: lerpz
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-runtime
+  namespace: lerpz
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: forge
+  namespace: lerpz
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: forge
+  namespace: lerpz
+subjects:
+  - kind: ServiceAccount
+    name: forge
+    namespace: lerpz
+roleRef:
+  kind: Role
+  name: forge
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge
+  namespace: lerpz
+spec:
+  selector:
+    app: forge
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge
+  namespace: lerpz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forge
+  template:
+    metadata:
+      labels:
+        app: forge
+    spec:
+      serviceAccountName: forge
+      containers:
+        - name: forge
+          image: lerpz/forge:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: forge-env
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10

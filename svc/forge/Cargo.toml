@@ -1,0 +1,38 @@
+[package]
+name = "forge"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+authors.workspace = true
+
+[dependencies]
+# Internal
+lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
+lerpz-utils = { workspace = true }
+# Kubernetes
+k8s-openapi = { workspace = true, features = ["latest"] }
+kube = { workspace = true, features = ["client", "rustls-tls"] }
+# Axum, Tokio and Tower
+axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
+tokio = { workspace = true, features = ["full"] }
+tower-http = { workspace = true, features = ["cors", "trace"] }
+utoipa = { workspace = true, features = ["macros", "chrono"] }
+utoipa-axum = { workspace = true }
+scalar_api_reference = { workspace = true, features = ["axum"] }
+serde_json = { workspace = true }
+# Tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+# Serde
+serde = { workspace = true, features = ["derive"] }
+# Utilities
+chrono = { workspace = true, features = ["serde"] }
+dotenvy = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+validator = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
