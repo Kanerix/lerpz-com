@@ -130,9 +130,3 @@ and console stay adjacent.
    be called `ingress`, `operator`, `controller`, or `scheduler`.
 7. **Reserve product names for things users perceive as an entity.** `artoo`
    qualifies; almost nothing else will.
-
-## Reserved
-
-Names claimed for planned services, so they are not spent on something else:
-
-- `scipio` — billing, quotas, and usage limits.
