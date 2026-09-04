@@ -7,24 +7,29 @@ authentication.
 
 ## Services
 
-| Name | Role | Stack |
-|---|---|---|
-| `coruscant` | Frontend | Next.js |
-| `kamino` | Backend API | Rust / Axum |
-| `artoo` | AI Agent | Rust |
-| `qdrant` | Vector database | Qdrant |
-| `postgres` | Primary database | PostgreSQL |
-| `dragonfly` | Cache | Dragonfly (Redis-compatible) |
-| `minio` | Object storage | MinIO |
+| Name | Role | Stack | Port |
+|---|---|---|---|
+| `www` | Company / landing site | SvelteKit (static) | 3000 |
+| `app` | Product UI | SvelteKit | 3001 |
+| `api` | Backend API | Rust / Axum | 4000 |
+| `artoo` | AI agent | Rust | 4001 |
+| `forge` | Agent infrastructure provisioner | Rust / Axum / kube | 5000 |
+| `qdrant` | Vector database | Qdrant | 6333 / 6334 |
+| `postgres` | Primary database | PostgreSQL | 6432 |
+| `dragonfly` | Cache | Dragonfly (Redis-compatible) | 6379 |
+| `minio` | Object storage | MinIO | 6000 / 6001 |
 
-Application service names follow a Star Wars Republic era theme. See
-[docs/NAMING.md](docs/NAMING.md) for the full rationale behind each name.
+Ports 3000–3999 are web pages, 4000–4999 are publicly reachable APIs, 5000–5999
+are internal services, and 6000–6999 is third-party infrastructure. The
+infrastructure ports above are what you connect to **from your machine**;
+in-network those containers keep their vendor defaults (`postgres:5432`,
+`minio:9000`). See [docs/NAMING.md](docs/NAMING.md) for the naming rules and the
+conventions for adding a new service.
 
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (edition 2024)
-- [Node.js](https://nodejs.org/) >= 22
-- [pnpm](https://pnpm.io/) 10.x
+- [Bun](https://bun.sh/) >= 1.4
 - [Docker](https://www.docker.com/) & Docker Compose
 
 ### 1. Configure Microsoft Entra ID
@@ -34,9 +39,9 @@ Application service names follow a Star Wars Republic era theme. See
 - Add the following redirect URI:
 
 ```bash
-http://localhost:3000/api/auth/callback/microsoft-entra-id
+http://localhost:3001/api/auth/callback/microsoft-entra-id
 # or
-https://api.lerpz.local/api/auth/callback/microsoft-entra-id
+https://app.lerpz.local/api/auth/callback/microsoft-entra-id
 ```
 
 #### 1.1. Generate TLS certificates (for traefik)
@@ -44,7 +49,8 @@ https://api.lerpz.local/api/auth/callback/microsoft-entra-id
 Use mkcert to create local certificates:
 
 ```sh
-mkcert -cert-file certs/cert.pem -key-file certs/key.pem lerpz.local api.lerpz.local
+mkcert -cert-file certs/cert.pem -key-file certs/key.pem \
+  lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
 ```
 
 #### 1.2. Update your hosts file (for traefik)
@@ -52,7 +58,7 @@ mkcert -cert-file certs/cert.pem -key-file certs/key.pem lerpz.local api.lerpz.l
 Add these entries to `/etc/hosts`:
 
 ```
-127.0.0.1 lerpz.local api.lerpz.local agent.lerpz.local
+127.0.0.1 lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
 ```
 
 ### 2. Start the containers
@@ -61,7 +67,7 @@ Add these entries to `/etc/hosts`:
 
 Start only the infrastructure services. If you followed the Traefik
 steps, requests will be proxied to apps running on your local machine
-(`localhost:3000` and `localhost:3001`):
+(`localhost:3001` for `app`, `localhost:4000` for `api`):
 
 ```sh
 docker compose up
@@ -74,6 +80,20 @@ Start all services using Docker:
 ```sh
 docker compose --profile full up --build
 ```
+
+#### Forge
+
+`forge` provisions agent infrastructure through the Kubernetes API, so it has no
+self-contained local mode and sits behind its own profile:
+
+```sh
+docker compose --profile k8s up --build forge
+```
+
+It mounts `~/.kube` read-only and exits on startup if no cluster answers. Because
+a kind/minikube kubeconfig points at `127.0.0.1` — which inside the container is
+the container itself — running `forge` in the kind cluster under [`k8s/`](k8s)
+is usually the better path. See [k8s/README.md](k8s/README.md).
 
 ## Database
 

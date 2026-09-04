@@ -14,7 +14,7 @@ k8s/
 └── manifests/
     ├── namespace.yaml
     ├── infra/              # postgres, dragonfly, qdrant, minio (+ init job)
-    ├── apps/               # coruscant, kamino, artoo
+    ├── apps/               # www, app, api, artoo, forge
     └── ingress/            # Traefik IngressRoutes per host
 ```
 
@@ -40,18 +40,25 @@ Two things must be adjusted in your app env files before deploying:
    | `QDRANT_URL_GRPC`  | `http://qdrant:6334`           |
    | `AWS_S3_ENDPOINT`  | `http://minio:9000`            |
 
-2. **Bind address.** `ADDR` must bind `0.0.0.0` (e.g. `0.0.0.0:3001`), not
+2. **Bind address.** `ADDR` must bind `0.0.0.0` (e.g. `0.0.0.0:4000`), not
    `127.0.0.1`, so the pod is reachable from the Service.
 
+3. **Forge's kubeconfig.** Remove `KUBECONFIG` from `svc/forge/.env.docker`
+   before creating the secret. In-cluster, `forge` authenticates with the
+   ServiceAccount token mounted into its pod; `apps/forge.yaml` declares that
+   ServiceAccount along with the namespaced Role that lets it manage
+   `persistentvolumeclaims` and `deployments`.
+
 Keep a `svc/<name>/.env.docker` per service with these values; the justfile
-turns them into Kubernetes Secrets.
+turns them into Kubernetes Secrets. `www` has none — it is fully static.
 
 ## Bring-up
 
 ```sh
 # 0. From the repo root, generate certs + hosts entries (same as the main README)
-mkcert -cert-file certs/cert.pem -key-file certs/key.pem lerpz.local api.lerpz.local
-# /etc/hosts:  127.0.0.1 lerpz.local api.lerpz.local agent.lerpz.local
+mkcert -cert-file certs/cert.pem -key-file certs/key.pem \
+  lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
+# /etc/hosts:  127.0.0.1 lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
 
 cd k8s
 
@@ -79,8 +86,12 @@ just status
 
 Or run the whole chain at once with `just all` (after creating the env files).
 
-Then browse to <https://lerpz.local>, <https://api.lerpz.local>, and
-<https://agent.lerpz.local>.
+Then browse to <https://lerpz.local> (company site), <https://app.lerpz.local>,
+<https://api.lerpz.local>, and <https://agent.lerpz.local>.
+
+`forge` has no IngressRoute on purpose — it holds RBAC over the namespace and is
+only called in-cluster. Reach it for debugging with
+`kubectl -n lerpz port-forward svc/forge 5000:5000`.
 
 Tear everything down with `just down`.
 
