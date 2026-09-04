@@ -8,28 +8,27 @@ import { site } from "$lib/config.js";
   <p class="text-sm font-medium text-muted-foreground uppercase tracking-widest">Behind Lerpz</p>
 
   <h2 class="max-w-2xl text-2xl font-semibold tracking-tight md:text-3xl">
-    Lerpz AI is one of my projects.
+    There's no team. It's just me.
   </h2>
 
   <p class="max-w-2xl leading-relaxed text-muted-foreground">
-    The platform grew out of a habit of building things properly and seeing them
-    through. The portfolio collects the rest of that work — other projects,
-    experiments, and the engineering behind them.
+    I wrote all of this. Every service, the infrastructure it runs on, and this
+    site. When something breaks at two in the morning, I'm the one fixing it.
+  </p>
+
+  <p class="max-w-2xl leading-relaxed text-muted-foreground">
+    If you want the official version, my CV has the jobs, the education and
+    where I've worked.
   </p>
 
   <div class="flex flex-wrap items-center gap-3 pt-1">
     <Button href={site.portfolioUrl} target="_blank" rel="noopener noreferrer">
-      View the portfolio
+      View my CV
       <Icon icon="fa6-solid:arrow-up-right-from-square" class="size-3.5" />
     </Button>
-    <Button
-      variant="outline"
-      href={site.githubUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+    <Button variant="outline" href={site.githubUrl} target="_blank" rel="noopener noreferrer">
       <Icon icon="fa6-brands:github" class="size-4" />
-      GitHub
+      See the code
     </Button>
   </div>
 </section>

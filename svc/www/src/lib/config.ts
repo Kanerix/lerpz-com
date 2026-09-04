@@ -1,9 +1,9 @@
 export const site = {
     name: "Lerpz AI",
     description:
-        "Lerpz AI is the platform for building AI-powered experiences: chat with \
-        streaming responses, image and video generation, agents with memory, and \
-        model management for your organisation.",
+        "Chat, image and video generation, and agents that remember what \
+        they're doing. One AI platform for your organisation, built and run by \
+        one person.",
     appUrl: "https://app.lerpz.com",
     contactEmail: "kas@lerpz.com",
     portfolioUrl: "https://portfolio.lerpz.com",

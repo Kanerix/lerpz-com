@@ -11,8 +11,8 @@ import { site } from "$lib/config.js";
       Have a look for yourself.
     </h2>
     <p class="text-lg leading-relaxed text-muted-foreground">
-      Sign in with your work account to start using the platform, or send a
-      message if you'd like to talk through how it would fit your organisation.
+      Sign in with your work account and try it. Or message me first if you'd
+      rather ask questions.
     </p>
   </div>
 

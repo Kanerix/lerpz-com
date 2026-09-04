@@ -6,27 +6,27 @@ import { site } from "$lib/config.js";
 const services = [
     {
         name: "app",
-        role: "The product interface everyone signs into.",
+        role: "What you actually log into.",
         stack: "SvelteKit",
     },
     {
         name: "api",
-        role: "Chat, generation, models, and everything the app asks for.",
+        role: "Does the work the app asks for.",
         stack: "Rust · Axum",
     },
     {
         name: "artoo",
-        role: "The agent runtime — reasons over a task and acts on it.",
+        role: "Runs the agents and lets them act.",
         stack: "Rust",
     },
     {
         name: "forge",
-        role: "Provisions the memory and compute an agent needs to run.",
+        role: "Gives each agent its memory and compute.",
         stack: "Rust · Kubernetes",
     },
     {
         name: "www",
-        role: "This site. Static files, no server, no tracking.",
+        role: "This site. Just files, no server.",
         stack: "SvelteKit",
     },
 ];
@@ -36,9 +36,8 @@ const services = [
   <div class="flex max-w-2xl flex-col gap-2">
     <h2 class="text-2xl font-semibold tracking-tight md:text-3xl">How it's built</h2>
     <p class="leading-relaxed text-muted-foreground">
-      Lerpz runs as a handful of small, single-purpose services. Each one does a
-      single job well, which keeps the platform easy to reason about and easy to
-      change.
+      Five services, each doing one job. It's easier to fix that way, and easier
+      to explain.
     </p>
   </div>
 
@@ -63,7 +62,7 @@ const services = [
     target="_blank"
     rel="noopener noreferrer"
   >
-    Browse the source
+    Read the code
     <Icon icon="fa6-brands:github" class="size-4" />
   </Button>
 </section>

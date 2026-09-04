@@ -9,7 +9,7 @@ const channels = [
     {
         icon: "fa6-solid:envelope",
         title: "Email me",
-        description: "The fastest way to reach me for questions or support.",
+        description: "Quickest way to get hold of me.",
         actionLabel: site.contactEmail,
         href: mailto,
     },
@@ -17,7 +17,7 @@ const channels = [
         icon: "fa6-brands:github",
         title: "GitHub",
         description:
-            "Browse my projects, report issues, or follow along with development.",
+            "The code's all public. Open an issue if something's broken.",
         actionLabel: "github.com/lerpz",
         href: site.githubUrl,
         external: true,
@@ -25,8 +25,7 @@ const channels = [
     {
         icon: "fa6-solid:briefcase",
         title: "Portfolio",
-        description:
-            "See the wider body of work behind Lerpz, beyond the AI platform itself.",
+        description: "My CV. Jobs, education, and where I've worked.",
         actionLabel: "portfolio.lerpz.com",
         href: site.portfolioUrl,
         external: true,
@@ -45,8 +44,8 @@ const channels = [
     Let's talk.
   </h1>
   <p class="max-w-2xl text-lg leading-relaxed text-muted-foreground">
-    Have a question, a request, or feedback about Lerpz AI? Reach out and I'll get back to
-    you as soon as I can.
+    Got a question about Lerpz AI, or want to tell me something's broken? Send it
+    over and I'll reply when I can.
   </p>
 </section>
 
@@ -75,11 +74,11 @@ const channels = [
   <div class="flex flex-col gap-1">
     <h2 class="text-xl font-semibold tracking-tight">Prefer email?</h2>
     <p class="text-muted-foreground">
-      Drop me a line at
+      Send it to
       <a href={mailto} class="text-primary transition-opacity hover:opacity-80">
         {site.contactEmail}
       </a>
-      and I'll take it from there.
+      and I'll pick it up from there.
     </p>
   </div>
   <Button class="w-fit shrink-0" href={mailto}>

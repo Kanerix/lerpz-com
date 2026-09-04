@@ -6,25 +6,25 @@ const capabilities = [
         icon: "fa6-regular:comment",
         title: "Conversations",
         description:
-            "Streaming chat over the models your organisation has approved, with history that stays searchable.",
+            "Chat that streams as it writes. Your history sticks around and stays searchable.",
     },
     {
         icon: "fa6-regular:image",
         title: "Generation",
         description:
-            "Images and short video from a prompt, collected in galleries instead of scattered across downloads.",
+            "Images and short video from a prompt. They land in a gallery, not your downloads folder.",
     },
     {
         icon: "fa6-solid:robot",
         title: "Agents that remember",
         description:
-            "Long-running agents with persistent memory, so a task picks up exactly where it was left.",
+            "Agents keep their memory between runs, so they pick up where they stopped.",
     },
     {
         icon: "fa6-solid:sliders",
         title: "Central control",
         description:
-            "Model access, limits, and settings managed once — not renegotiated in every team's codebase.",
+            "Decide once who gets which models. No arguing about it in every repo.",
     },
 ];
 </script>
@@ -33,7 +33,7 @@ const capabilities = [
   <div class="flex max-w-2xl flex-col gap-2">
     <h2 class="text-2xl font-semibold tracking-tight md:text-3xl">What the platform does</h2>
     <p class="leading-relaxed text-muted-foreground">
-      Four capabilities, maintained centrally, available to every team from day one.
+      It's four tools, really. They share one login and one set of models.
     </p>
   </div>
 

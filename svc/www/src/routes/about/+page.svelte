@@ -8,17 +8,17 @@ const principles = [
     {
         title: "Own the whole stack",
         description:
-            "Interface, API, agents, and the infrastructure underneath are all mine. Nothing important sits in a black box I cannot open.",
+            "I wrote the interface, the API, the agents and the infrastructure. If something breaks, I can open it up and look.",
     },
     {
         title: "Small services, clear jobs",
         description:
-            "Every service does one thing. It keeps the system understandable, and it means a change in one place rarely breaks another.",
+            "Each service does one job. It means I can change one thing without holding my breath.",
     },
     {
         title: "Ship it, then sharpen it",
         description:
-            "Working software beats a perfect plan. I get things in front of people early and keep refining once I know how they are used.",
+            "I'd rather put something usable in front of people early than plan it to death. It gets better once I see how it's actually used.",
     },
 ];
 </script>
@@ -27,20 +27,20 @@ const principles = [
   <title>About — {site.name}</title>
   <meta
     name="description"
-    content="How Lerpz AI came about, how the platform is built, and the principles behind it."
+    content="Why Lerpz AI exists, how it's put together, and who builds it."
   />
 </svelte:head>
 
 <section class="flex flex-col gap-4 py-8 md:py-12">
   <p class="text-sm font-medium text-muted-foreground uppercase tracking-widest">About</p>
   <h1 class="max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">
-    Built because the alternative was a dozen subscriptions.
+    I got tired of paying for five different AI tools.
   </h1>
   <p class="max-w-2xl text-lg leading-relaxed text-muted-foreground">
-    Most organisations end up with AI scattered everywhere — a chat tool here, an
-    image generator there, each with its own login, its own bill, and its own
-    idea of who is allowed to use it. Lerpz AI exists to replace that with one
-    platform that is actually maintained.
+    Most places end up with AI scattered all over. A chat tool here, an image
+    generator there, separate logins and separate bills, and nobody quite sure
+    who's allowed to use what. Lerpz AI is my attempt at replacing that with one
+    thing that actually gets maintained.
   </p>
 </section>
 
@@ -48,7 +48,7 @@ const principles = [
   <div class="flex max-w-2xl flex-col gap-2">
     <h2 class="text-2xl font-semibold tracking-tight md:text-3xl">How I work</h2>
     <p class="leading-relaxed text-muted-foreground">
-      Three things that shape most of the decisions here.
+      Three things I keep coming back to.
     </p>
   </div>
 
@@ -70,15 +70,14 @@ const principles = [
 </section>
 
 <section class="flex flex-col gap-5 rounded-xl border bg-card/40 p-6 md:p-8">
-  <h2 class="text-2xl font-semibold tracking-tight">Want to see more?</h2>
+  <h2 class="text-2xl font-semibold tracking-tight">Want to know who's behind it?</h2>
   <p class="max-w-2xl leading-relaxed text-muted-foreground">
-    The portfolio has the wider body of work behind Lerpz, and the source for
-    this platform is public. If you would rather just ask a question, that works
-    too.
+    My CV has the official version: jobs, education, where I've worked. The code
+    is public too, if you'd rather just read that. Or you can ask me something.
   </p>
   <div class="flex flex-wrap items-center gap-3">
     <Button href={site.portfolioUrl} target="_blank" rel="noopener noreferrer">
-      View the portfolio
+      View my CV
       <Icon icon="fa6-solid:arrow-up-right-from-square" class="size-3.5" />
     </Button>
     <Button variant="outline" href={resolve("/contact")}>

@@ -29,8 +29,8 @@ const footerLinks = {
           <span class="text-sm tracking-tight">{site.name}</span>
         </a>
         <p class="text-sm leading-relaxed text-muted-foreground">
-          The platform for building AI-powered experiences, maintained in one
-          place so every team works from the same tooling.
+          AI tools for your organisation, all in one place. Built and run by one
+          person.
         </p>
         <a
           href={site.githubUrl}

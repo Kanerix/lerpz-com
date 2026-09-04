@@ -19,14 +19,14 @@ const stack = [
     <p class="text-sm font-medium text-muted-foreground uppercase tracking-widest">Lerpz</p>
 
     <h1 class="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-      I build the AI platform,<br class="hidden sm:block" />
-      <span class="text-primary">so your teams don't have to.</span>
+      One AI platform,<br class="hidden sm:block" />
+      <span class="text-primary">run by one person.</span>
     </h1>
 
     <p class="max-w-xl text-lg leading-relaxed text-muted-foreground">
-      Lerpz AI is a small set of services that give an organisation one place for
-      chat, generation, and agents — designed, built, and operated end to end by
-      one person, rather than assembled from a dozen subscriptions.
+      Chat, image and video generation, and agents that remember what they're
+      doing. All behind one login, instead of five subscriptions that don't talk
+      to each other.
     </p>
 
     <div class="flex flex-wrap items-center gap-3 pt-2">
