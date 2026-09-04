@@ -11,7 +11,9 @@ resources:
   - infra/dragonfly.yaml
   - infra/qdrant.yaml
   - infra/minio.yaml
-  - apps/coruscant.yaml
-  - apps/kamino.yaml
+  - apps/www.yaml
+  - apps/app.yaml
+  - apps/api.yaml
   - apps/artoo.yaml
+  - apps/forge.yaml
   - ingress/ingressroutes.yaml

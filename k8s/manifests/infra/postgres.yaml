@@ -5,7 +5,7 @@ metadata:
   namespace: lerpz
 data:
   # Mirrors scripts/init-databases.sh from the compose setup. Add extra database
-  # names to EXTRA_DATABASES if kamino/artoo ever need separate databases.
+  # names to EXTRA_DATABASES if api/artoo ever need separate databases.
   init-databases.sh: |
     #!/bin/bash
     set -euo pipefail

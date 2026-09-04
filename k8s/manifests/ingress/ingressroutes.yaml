@@ -4,19 +4,23 @@
 # TLS uses the `lerpz-tls` secret. Create it from your mkcert certs with:
 #   kubectl -n lerpz create secret tls lerpz-tls \
 #     --cert=certs/cert.pem --key=certs/key.pem
+#
+# `forge` is deliberately absent: it provisions cluster infrastructure and is
+# only ever called in-cluster by `api` and `artoo`, so it stays on its
+# ClusterIP Service with no route in from outside.
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: coruscant
+  name: www
   namespace: lerpz
 spec:
   entryPoints: [web, websecure]
   routes:
-    - match: Host(`lerpz.local`)
+    - match: Host(`lerpz.local`) || Host(`www.lerpz.local`)
       kind: Rule
       services:
-        - name: coruscant
+        - name: www
           port: 3000
   tls:
     secretName: lerpz-tls
@@ -24,7 +28,23 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: kamino
+  name: app
+  namespace: lerpz
+spec:
+  entryPoints: [web, websecure]
+  routes:
+    - match: Host(`app.lerpz.local`)
+      kind: Rule
+      services:
+        - name: app
+          port: 3001
+  tls:
+    secretName: lerpz-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: api
   namespace: lerpz
 spec:
   entryPoints: [web, websecure]
@@ -32,8 +52,8 @@ spec:
     - match: Host(`api.lerpz.local`)
       kind: Rule
       services:
-        - name: kamino
-          port: 3001
+        - name: api
+          port: 4000
   tls:
     secretName: lerpz-tls
 ---
@@ -49,6 +69,6 @@ spec:
       kind: Rule
       services:
         - name: artoo
-          port: 3002
+          port: 4001
   tls:
     secretName: lerpz-tls
