@@ -43,7 +43,7 @@ Terraform definitions they deploy to, and the migrations that back them.
 | `www` | Company / landing site | SvelteKit (static) | 3000 |
 | `app` | Product UI | SvelteKit | 3001 |
 | `api` | Backend API | Rust / Axum | 4000 |
-| `artoo` | Chat agent for the product UI | Rust | 4001 |
+| `artoo` | In-app assistant | Rust | 4001 |
 | `forge` | Agent infrastructure provisioner | Rust / Axum / kube | 5000 |
 | `qdrant` | Vector database | Qdrant | 6333 / 6334 |
 | `postgres` | Primary database | PostgreSQL | 6432 |
@@ -59,25 +59,39 @@ conventions for adding a new service.
 
 ## Architecture
 
-Service dependencies, as declared in [`docker-compose.yml`](docker-compose.yml):
+How requests flow through the platform:
 
 ```mermaid
 flowchart TD
     Browser --> www
     Browser --> app
+    Browser -->|OAuth2 / OIDC| entra[Entra ID]
+
     app --> api
-    app --> artoo
+    app -.->|not wired yet| artoo
+
     api --> postgres[(postgres)]
     api --> dragonfly[(dragonfly)]
+    api --> minio[(minio)]
+    api --> portkey[Portkey]
+
     artoo --> postgres
-    artoo --> dragonfly
     artoo --> qdrant[(qdrant)]
+    artoo --> portkey
+    artoo --> graph[Microsoft Graph]
+
     forge --> kubernetes[Kubernetes API]
 ```
 
-`www` is fully static and depends on nothing. `forge` talks to a cluster rather
-than to the local infrastructure, which is why it sits behind its own compose
-profile.
+`artoo` is the app's main agent: it answers questions and helps users find
+their way around the product's features. The product UI does not call it yet.
+
+`api`, `artoo` and `forge` each validate Entra ID tokens on their own and never
+call one another — the browser holds the token and talks to each directly.
+Model traffic goes through [Portkey](https://portkey.ai) rather than to a
+provider directly. `www` is fully static and depends on nothing. `forge` talks
+to a cluster rather than to the local infrastructure, which is why it sits
+behind its own compose profile.
 
 ## Repository layout
 
@@ -233,7 +247,9 @@ Compile-time query checks run offline by default, against the cached metadata in
 | [`deploy-container.yaml`](.github/workflows/deploy-container.yaml) | `app`, `api`, `artoo`, `forge` as containers |
 | [`deploy-gh-page.yaml`](.github/workflows/deploy-gh-page.yaml) | `www` to GitHub Pages |
 
-Only changed services are deployed, and `www` publishes from `main` only.
+Only changed services are deployed, and `www` publishes from `main` only. The
+container deploy jobs are currently commented out in `pipeline.yaml`, so `www`
+is the only service the pipeline actually ships.
 
 ## Documentation
 

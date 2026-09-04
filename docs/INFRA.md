@@ -12,6 +12,12 @@ This document describes the infrastructure used by the Lerpz platform.
 | `artoo` | Azure Container Apps | `agent.lerpz.com` |
 | `forge` | Kubernetes | internal |
 
+> [!IMPORTANT]
+> Only `www` is deployed today. The `deploy-app`, `deploy-api`, `deploy-artoo`
+> and `deploy-forge` jobs in [`pipeline.yaml`](../.github/workflows/pipeline.yaml)
+> are commented out, so the rest of this document describes the intended shape
+> rather than what is running.
+
 `www` is fully static, so it is built by
 [`deploy-gh-page.yaml`](../.github/workflows/deploy-gh-page.yaml) and published
 to GitHub Pages rather than to a container. Everything else is built into an
@@ -38,27 +44,44 @@ graph TD
         Postgres[(PostgreSQL)]
         Dragonfly[(Dragonfly)]
         Qdrant[(Qdrant)]
+        Storage[(S3-compatible storage)]
+    end
+
+    subgraph k8s[Kubernetes]
+        forge[forge]
     end
 
     EntraID[Entra ID]
     Graph[Microsoft Graph]
+    Portkey[Portkey]
 
     User --> www
     User --> app
+    User -->|OAuth2 / OIDC| EntraID
     app --> api
-    app --> artoo
-    app -->|OAuth2 / OIDC| EntraID
+    app -.->|not wired yet| artoo
     api --> Postgres
     api --> Dragonfly
+    api --> Storage
+    api --> Portkey
     artoo --> Postgres
-    artoo --> Dragonfly
     artoo --> Qdrant
+    artoo --> Portkey
     artoo --> Graph
+    forge --> KubeAPI[Kubernetes API]
 ```
 
-`artoo` is the product UI's chat agent. It answers from a knowledge base in
-Qdrant rather than from the model alone, and looks the signed-in user up
-through Microsoft Graph.
+The three Rust services are independent. Each validates Entra ID tokens through
+`lerpz-axum`'s Azure middleware, and none of them call each other; the browser
+holds the token and addresses them directly.
+
+`artoo` is the app's main agent. It answers questions and helps users navigate
+the product's features, grounding answers in a Qdrant collection rather than in
+the model alone, and looking the signed-in user up through Microsoft Graph. The
+product UI does not call it yet. All model traffic — chat, embeddings, image
+and video generation — is routed through [Portkey](https://portkey.ai) as a
+gateway rather than to a provider directly; `api` additionally holds Vertex AI
+configuration.
 
 ## Azure resources
 
@@ -122,8 +145,9 @@ answers. See [k8s/README.md](../k8s/README.md).
 
 ## Planned: user media delivery
 
-Not yet provisioned. Object storage is MinIO locally; the CDN and blob storage
-below have no Terraform resources yet.
+`api` requires an S3 endpoint and will not start without one, but no storage
+account, container or CDN is provisioned by Terraform yet — only the remote
+state account. Locally that endpoint is MinIO.
 
 ```mermaid
 sequenceDiagram
