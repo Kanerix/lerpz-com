@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1023.97 1024">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient);
+      }
+
+      .cls-2 {
+        fill: url(#Dark_Gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="534.1" y1="1037.4" x2="229.82" y2="28.31" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3388c8"/>
+      <stop offset="1" stop-color="#4ec7e8"/>
+    </linearGradient>
+    <linearGradient id="Dark_Gradient" data-name="Dark Gradient" x1="538.26" y1="778.73" x2="1037.13" y2="929.16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#133b62"/>
+      <stop offset=".25" stop-color="#1d4d83"/>
+      <stop offset="1" stop-color="#1d68b3"/>
+    </linearGradient>
+  </defs>
+  <g id="Canvas">
+    <path id="Vertical" class="cls-1" d="M578.55,1024H60.04c-40.23,0-69.06-38.8-57.45-77.32L275.2,42.39c7.73-25.18,30.99-42.39,57.36-42.39h358.74c40.12,0,68.93,38.6,57.53,77.06l-170.28,568.07"/>
+    <path id="Horizontal" class="cls-2" d="M963.92,1024h-418.32c-40.18,0-69.01-38.72-57.47-77.22l91.96-306.78h304.25c26.46,0,49.81,17.34,57.44,42.68l79.59,264c11.61,38.52-17.22,77.32-57.45,77.32Z"/>
+  </g>
+</svg>

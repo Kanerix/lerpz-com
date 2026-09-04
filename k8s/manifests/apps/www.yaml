@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: www
+  namespace: lerpz
+spec:
+  selector:
+    app: www
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: www
+  namespace: lerpz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: www
+  template:
+    metadata:
+      labels:
+        app: www
+    spec:
+      containers:
+        - name: www
+          image: lerpz/www:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 3
+            periodSeconds: 10

@@ -1,0 +1,30 @@
+@import "@lerpz/ui/globals.css";
+
+/*
+ * Always reserve space for the vertical scrollbar so the centred page content
+ * keeps the same width and horizontal position whether or not a route is tall
+ * enough to scroll. Without this, navigating between a scrolling page (e.g. the
+ * landing page) and a shorter one (e.g. /contact) shifts the layout by the
+ * scrollbar width and reads as an inconsistent max-width.
+ */
+html {
+    scrollbar-gutter: stable;
+}
+
+/*
+ * Respect the user's "reduce motion" OS/browser setting for CSS-driven
+ * transitions and animations. We keep animations technically "running" but make
+ * them effectively instant so essential state changes still occur.
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        /* biome-ignore-start lint/complexity/noImportantStyles: accessibility override must win over component-level animations/transitions */
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+        /* biome-ignore-end lint/complexity/noImportantStyles: accessibility override must win over component-level animations/transitions */
+    }
+}

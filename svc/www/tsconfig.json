@@ -1,0 +1,22 @@
+{
+    "extends": [
+        "./.svelte-kit/tsconfig.json",
+        "@lerpz/typescript-config/base.json"
+    ],
+    "compilerOptions": {
+        "moduleResolution": "bundler",
+        "module": "ESNext",
+        "verbatimModuleSyntax": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.svelte",
+        ".svelte-kit/ambient.d.ts",
+        ".svelte-kit/env.d.ts",
+        ".svelte-kit/non-ambient.d.ts",
+        ".svelte-kit/types/**/*.ts",
+        "svelte.config.js",
+        "vite.config.ts"
+    ],
+    "exclude": ["node_modules"]
+}
