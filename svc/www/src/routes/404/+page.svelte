@@ -11,7 +11,7 @@ import ErrorState from "$lib/components/ErrorState.svelte";
 -->
 
 <svelte:head>
-  <title>Page not found — Lerpz AI</title>
+  <title>Lerpz – Page not found</title>
   <meta name="robots" content="noindex" />
 </svelte:head>
 

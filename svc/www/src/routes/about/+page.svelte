@@ -24,7 +24,7 @@ const principles = [
 </script>
 
 <svelte:head>
-  <title>About — {site.name}</title>
+  <title>Lerpz – About</title>
   <meta
     name="description"
     content="Why Lerpz AI exists, how it's put together, and who builds it."
