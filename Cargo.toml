@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "benchmarks", "svc/artoo", "svc/kamino"]
+members = ["crates/*", "benchmarks", "svc/api", "svc/artoo", "svc/forge"]
 
 [workspace.package]
 version = "0.1.0"
@@ -24,6 +24,9 @@ bb8 = "0.9"
 bb8-redis = "0.24"
 mongodb = "2.8"
 qdrant-client = "1.17"
+# Kubernetes
+k8s-openapi = "0.28"
+kube = "4.2"
 redis = "0.32"
 sqlx = "0.8"
 # Axum, Tokio and Tower

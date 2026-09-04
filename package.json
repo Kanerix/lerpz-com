@@ -3,17 +3,19 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "dev": "bun --filter @lerpz/coruscant dev",
-        "build": "bun --filter @lerpz/coruscant build",
-        "start": "bun --filter @lerpz/coruscant start",
-        "check": "bun --filter @lerpz/coruscant check",
-        "lint": "bun --filter @lerpz/coruscant lint",
-        "format": "bun --filter @lerpz/coruscant format",
-        "generate:api": "bun --filter @lerpz/coruscant generate:api"
+        "dev": "bun --filter @lerpz/app dev",
+        "dev:www": "bun --filter @lerpz/www dev",
+        "build": "bun --filter './svc/*' build",
+        "start": "bun --filter @lerpz/app start",
+        "check": "bun --filter '*' check",
+        "lint": "bun --filter '*' lint",
+        "format": "bun --filter '*' format",
+        "generate:api": "bun --filter @lerpz/app generate:api"
     },
     "workspaces": [
         "packages/*",
-        "svc/coruscant"
+        "svc/app",
+        "svc/www"
     ],
     "engines": {
         "bun": ">=1.4.0"
