@@ -22,8 +22,6 @@ RUN --mount=type=cache,id=vite,target=/app/svc/www/.vite-cache \
     cd svc/www && bun run build
 
 
-# The build output is a directory of static files, so there is no runtime to
-# install — nginx just serves what the builder produced.
 FROM nginxinc/nginx-unprivileged:1-alpine AS runner
 
 COPY svc/www/nginx.conf /etc/nginx/conf.d/default.conf

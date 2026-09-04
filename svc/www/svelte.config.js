@@ -5,8 +5,6 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 const config = {
     preprocess: vitePreprocess(),
     kit: {
-        // The company site is fully prerendered — every route ends up as a
-        // plain HTML file, so it can be hosted by any static file server.
         adapter: adapter({
             pages: "build",
             assets: "build",
