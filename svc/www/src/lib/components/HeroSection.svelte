@@ -19,14 +19,13 @@ const stack = [
     <p class="text-sm font-medium text-muted-foreground uppercase tracking-widest">Lerpz</p>
 
     <h1 class="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-      One AI platform,<br class="hidden sm:block" />
-      <span class="text-primary">run by one person.</span>
+      Chat, images, video and agents.<br class="hidden sm:block" />
+      <span class="text-primary">One platform, one login.</span>
     </h1>
 
     <p class="max-w-xl text-lg leading-relaxed text-muted-foreground">
-      Chat, image and video generation, and agents that remember what they're
-      doing. All behind one login, instead of five subscriptions that don't talk
-      to each other.
+      Agents that remember what they're doing, and a history you can actually
+      search. No more juggling five subscriptions that don't talk to each other.
     </p>
 
     <div class="flex flex-wrap items-center gap-3 pt-2">
