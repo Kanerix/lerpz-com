@@ -12,7 +12,7 @@ services:
       - POSTGRES_PASSWORD=Password123
       - POSTGRES_DB=primary
     ports:
-      - "5432:5432"
+      - "6432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
@@ -86,8 +86,8 @@ services:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=Password123
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "6000:9000"
+      - "6001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -115,42 +115,19 @@ services:
     networks:
       - lerpz-network
 
-  coruscant:
-    container_name: coruscant
+  app:
+    container_name: app
     restart: on-failure
     init: true
     profiles: ["full"]
     build:
       context: .
-      dockerfile: svc/coruscant/Dockerfile
-    expose:
-      - "3000"
-    hostname: lerpz-coruscant
-    domainname: coruscant.lerpz.local
-    env_file: svc/coruscant/.env.docker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      lerpz-network:
-        aliases:
-          - coruscant.lerpz.local
-
-  kamino:
-    container_name: kamino
-    restart: on-failure
-    init: true
-    profiles: ["full"]
-    build:
-      context: .
-      dockerfile: svc/kamino/Dockerfile
+      dockerfile: svc/app/Dockerfile
     expose:
       - "3001"
-    hostname: lerpz-kamino
-    domainname: kamino.lerpz.local
-    env_file: svc/kamino/.env.docker
+    hostname: lerpz-app
+    domainname: app.lerpz.local
+    env_file: svc/app/.env.docker
     depends_on:
       postgres:
         condition: service_healthy
@@ -159,7 +136,48 @@ services:
     networks:
       lerpz-network:
         aliases:
-          - kamino.lerpz.local
+          - app.lerpz.local
+
+  www:
+    container_name: www
+    restart: on-failure
+    init: true
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: svc/www/Dockerfile
+    expose:
+      - "3000"
+    hostname: lerpz-www
+    domainname: www.lerpz.local
+    networks:
+      lerpz-network:
+        aliases:
+          - www.lerpz.local
+          - lerpz.local
+
+  api:
+    container_name: api
+    restart: on-failure
+    init: true
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: svc/api/Dockerfile
+    expose:
+      - "4000"
+    hostname: lerpz-api
+    domainname: api.lerpz.local
+    env_file: svc/api/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      lerpz-network:
+        aliases:
+          - api.lerpz.local
 
   artoo:
     container_name: artoo
@@ -170,7 +188,7 @@ services:
       context: .
       dockerfile: svc/artoo/Dockerfile
     expose:
-      - "3002"
+      - "4001"
     hostname: lerpz-artoo
     domainname: artoo.lerpz.local
     env_file: svc/artoo/.env.docker
@@ -185,6 +203,34 @@ services:
       lerpz-network:
         aliases:
           - artoo.lerpz.local
+
+  # Forge provisions agent infrastructure *in a Kubernetes cluster*, so unlike
+  # the other services it has no self-contained local mode. It reads the
+  # kubeconfig mounted below and will exit on startup if no cluster answers.
+  #
+  # Note that a kind/minikube kubeconfig points at 127.0.0.1, which resolves to
+  # the container itself. Point `KUBECONFIG`'s server at
+  # `https://host.docker.internal:<port>` (and add it to the cert SANs), or run
+  # forge against the kind cluster in k8s/ instead — see k8s/README.md.
+  forge:
+    container_name: forge
+    restart: on-failure
+    init: true
+    profiles: ["k8s"]
+    build:
+      context: .
+      dockerfile: svc/forge/Dockerfile
+    expose:
+      - "5000"
+    hostname: lerpz-forge
+    domainname: forge.lerpz.local
+    env_file: svc/forge/.env.docker
+    volumes:
+      - ${HOME}/.kube:/home/lerpz/.kube:ro
+    networks:
+      lerpz-network:
+        aliases:
+          - forge.lerpz.local
 
 volumes:
   postgres_data:
