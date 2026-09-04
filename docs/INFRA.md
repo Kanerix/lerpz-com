@@ -41,17 +41,24 @@ graph TD
     end
 
     EntraID[Entra ID]
+    Graph[Microsoft Graph]
 
     User --> www
     User --> app
     app --> api
+    app --> artoo
     app -->|OAuth2 / OIDC| EntraID
     api --> Postgres
     api --> Dragonfly
     artoo --> Postgres
     artoo --> Dragonfly
     artoo --> Qdrant
+    artoo --> Graph
 ```
+
+`artoo` is the product UI's chat agent. It answers from a knowledge base in
+Qdrant rather than from the model alone, and looks the signed-in user up
+through Microsoft Graph.
 
 ## Azure resources
 

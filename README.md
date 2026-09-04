@@ -43,7 +43,7 @@ Terraform definitions they deploy to, and the migrations that back them.
 | `www` | Company / landing site | SvelteKit (static) | 3000 |
 | `app` | Product UI | SvelteKit | 3001 |
 | `api` | Backend API | Rust / Axum | 4000 |
-| `artoo` | AI agent | Rust | 4001 |
+| `artoo` | Chat agent for the product UI | Rust | 4001 |
 | `forge` | Agent infrastructure provisioner | Rust / Axum / kube | 5000 |
 | `qdrant` | Vector database | Qdrant | 6333 / 6334 |
 | `postgres` | Primary database | PostgreSQL | 6432 |
@@ -66,6 +66,7 @@ flowchart TD
     Browser --> www
     Browser --> app
     app --> api
+    app --> artoo
     api --> postgres[(postgres)]
     api --> dragonfly[(dragonfly)]
     artoo --> postgres
