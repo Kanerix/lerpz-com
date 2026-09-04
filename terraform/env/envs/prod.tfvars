@@ -1,6 +1,6 @@
 environment = "prod"
 # container_image = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
-container_port = 3000
+container_port = 3001
 
 public_api_url               = "https://api.lerpz.com"
 public_entra_id_tenant_id    = "60831afb-75f3-4404-bfbc-a2d591c3b03d"

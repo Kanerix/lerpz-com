@@ -52,7 +52,7 @@ variable "container_image" {
 variable "container_port" {
   description = <<-EOT
     Port the container listens on. Defaults to 80 to match the placeholder
-    image. Override to 3000 (or whatever your app uses) in each env tfvars.
+    image. Override to 3001 (or whatever your app uses) in each env tfvars.
   EOT
   type    = number
   default = 80
