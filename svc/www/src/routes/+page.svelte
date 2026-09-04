@@ -8,6 +8,7 @@ import { site } from "$lib/config.js";
 </script>
 
 <svelte:head>
+  <title>Lerpz</title>
   <meta name="description" content={site.description} />
 </svelte:head>
 
