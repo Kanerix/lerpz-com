@@ -12,7 +12,7 @@ import {
 import { toast } from "svelte-sonner";
 
 // DRAFT: this page scaffolds the "deploy a new agent" flow. Submitting should
-// call `createAgent` from `$lib/api/agents/agents.ts` once the kamino OpenAPI
+// call `createAgent` from `$lib/api/agents/agents.ts` once the api OpenAPI
 // spec exposes the request body (name, model, memory volume, resources). For
 // now it validates locally and shows a toast so the layout can be reviewed.
 

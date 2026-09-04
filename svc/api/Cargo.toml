@@ -1,5 +1,5 @@
 [package]
-name = "kamino"
+name = "api"
 version.workspace = true
 edition.workspace = true
 homepage.workspace = true

@@ -1,7 +1,7 @@
 import { defineConfig } from "orval";
 
 export default defineConfig({
-    kamino: {
+    api: {
         output: {
             mode: "tags-split",
             target: "./src/lib/api",
@@ -21,7 +21,7 @@ export default defineConfig({
             },
         },
         input: {
-            target: "http://localhost:3001/api/openapi.json",
+            target: "http://localhost:4000/api/openapi.json",
         },
     },
 });

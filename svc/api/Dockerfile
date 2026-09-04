@@ -16,7 +16,8 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY benchmarks ./benchmarks
 COPY svc/artoo ./svc/artoo
-COPY svc/kamino ./svc/kamino
+COPY svc/api ./svc/api
+COPY svc/forge ./svc/forge
 COPY .sqlx ./.sqlx
 
 
@@ -32,7 +33,7 @@ WORKDIR /build
 
 COPY --from=planner /chef/recipe.json ./recipe.json
 RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    --mount=type=cache,id=kamino-target,target=/build/target \
+    --mount=type=cache,id=api-target,target=/build/target \
     cargo chef cook --release --recipe-path recipe.json
 
 COPY --from=source /src ./
@@ -40,9 +41,9 @@ COPY --from=source /src ./
 ENV SQLX_OFFLINE=true
 
 RUN --mount=type=cache,id=cargo,target=/root/.cargo/registry \
-    --mount=type=cache,id=kamino-target,target=/build/target \
-    cargo build --release --bin kamino && \
-    cp /build/target/release/kamino /build/server
+    --mount=type=cache,id=api-target,target=/build/target \
+    cargo build --release --bin api && \
+    cp /build/target/release/api /build/server
 
 
 FROM debian:bookworm-slim AS runtime
@@ -58,6 +59,6 @@ COPY --chown=lerpz:app --from=builder /build/server ./
 
 USER lerpz
 
-EXPOSE 3001
+EXPOSE 4000
 
 ENTRYPOINT ["/app/server"]
