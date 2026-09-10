@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Badge } from "@lerpz/ui/components/badge";
 import { Button } from "@lerpz/ui/components/button";
 import { useQueryClient } from "@tanstack/svelte-query";
 import {
@@ -9,10 +10,10 @@ import {
     type Header,
     type SortingState,
 } from "@tanstack/table-core";
-import { updateChat } from "$lib/api/chats/archive.js";
 import { getListChatsUrl } from "$lib/api/chats/chats.js";
 import type { Conversation } from "$lib/api/models/index.js";
-import { showError } from "$lib/components/error-dialog";
+import { showError } from "$lib/components/error-dialog/index.js";
+import { updateChat } from "$lib/http/chat-archive.js";
 import { createSvelteTable } from "$lib/utils/table.svelte.js";
 
 let {
@@ -150,9 +151,9 @@ function formatDate(value: string | null | undefined): string {
             </a>
           </td>
           <td class="px-3 py-2.5 text-muted-foreground">
-            <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs">
+            <Badge variant="secondary">
               {row.original.model}
-            </span>
+            </Badge>
           </td>
           <td class="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
             {formatDate(row.original.updated_at ?? row.original.created_at)}
