@@ -52,9 +52,21 @@ When a macro error is opaque, expand it with `cargo expand -p api api::failure`.
 The generated code behind `query_as!`, `routes!`, `generate_config!` and the
 utoipa and axum attributes usually shows the cause faster than the error does.
 
-Run everything through `devenv shell -- <cmd>`. A bare `cargo` picks up whatever
-the host has on `PATH`, which is not necessarily the toolchain pinned in
-`rust-toolchain.toml`.
+Run everything through `devenv shell -- <cmd>`. Outside it the tools resolve to
+whatever the host happens to have, which is not what the shell pins: `kubectl`
+comes from Homebrew, `sqlx` from `~/.cargo/bin`, `cargo` from the host rustup,
+and `ast-grep` is not there at all.
+
+The wrapper costs about 0.4s per call, so batch a sequence into one invocation
+rather than paying it each time:
+
+```sh
+devenv shell -- sh -c "just fmt && just check-rust"
+```
+
+The repository has an `.envrc`. An interactive shell with direnv hooked picks the
+environment up on `cd` and needs no wrapper, but that does not apply to the
+non-interactive shell you run commands in.
 
 `just fmt` covers Rust and TypeScript, not Nix. After editing `devenv.nix`, run
 `nixfmt --check devenv.nix`, which reports without writing to the file.
