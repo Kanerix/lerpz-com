@@ -50,8 +50,8 @@ in
   env.SQLX_OFFLINE = "true";
 
   enterShell = ''
-    echo "rust $(rustc --version | cut -d' ' -f2) · bun $(bun --version)"
-    echo "run 'just' to list recipes"
+    echo "rust $(rustc --version | cut -d' ' -f2) · bun $(bun --version)" >&2
+    echo "run 'just' to list recipes" >&2
   '';
 
   enterTest = ''
