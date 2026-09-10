@@ -50,6 +50,6 @@ async function signIn() {
         {/if}
       </Button>
     {/if}
-    <Button variant="ghost" size="lg" href="/docs">Documentation</Button>
+    <Button variant="ghost" size="lg" href="/#tools">See what it does</Button>
   </div>
 </section>

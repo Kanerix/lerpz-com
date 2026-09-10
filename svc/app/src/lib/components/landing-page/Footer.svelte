@@ -4,13 +4,8 @@ import { publicEnv } from "$lib/env.js";
 
 const footerLinks = {
     Product: [
-        { label: "Changelog", href: "/changelog" },
         { label: "Status", href: "/status" },
-    ],
-    Resources: [
-        { label: "Documentation", href: "/docs" },
         { label: "API Reference", href: `${publicEnv.PUBLIC_API_URL}/scalar` },
-        { label: "Support", href: "/support" },
     ],
     Company: [
         { label: "About", href: "/about" },
@@ -26,7 +21,7 @@ const footerLinks = {
 
 <footer class="border-t border-border/60 bg-card/40">
   <div class="mx-auto max-w-5xl px-4 py-12">
-    <div class="grid grid-cols-2 gap-10 md:grid-cols-5">
+    <div class="grid grid-cols-2 gap-10 md:grid-cols-4">
       <div class="col-span-2 flex flex-col gap-4 md:col-span-1">
         <a href="/" class="flex items-center gap-2 font-semibold text-foreground transition-opacity hover:opacity-75">
           <img src="/lerpz.svg" alt="Lerpz Logo" class="h-5 w-5" />

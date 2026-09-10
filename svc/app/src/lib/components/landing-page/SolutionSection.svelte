@@ -50,7 +50,7 @@ const tools = [
 ];
 </script>
 
-<section class="flex flex-col gap-10 py-16 md:py-24">
+<section id="tools" class="flex scroll-mt-24 flex-col gap-10 py-16 md:py-24">
   <div class="flex flex-col gap-2">
     <h2 class="text-2xl font-semibold tracking-tight">Available tools</h2>
     <p class="text-muted-foreground">

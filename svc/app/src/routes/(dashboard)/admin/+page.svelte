@@ -23,31 +23,27 @@ $effect(() => {
     }
 });
 
-interface AdminSection {
+type AdminSection = {
     title: string;
     description: string;
     icon: string;
-    href: string;
-}
+};
 
 const sections: AdminSection[] = [
     {
         title: "Users",
         description: "Manage accounts, roles and access.",
         icon: "fa6-solid:users",
-        href: "/admin/users",
     },
     {
         title: "Content",
         description: "Review and moderate generated content.",
         icon: "fa6-regular:folder-open",
-        href: "/admin/content",
     },
     {
         title: "System",
         description: "Inspect service health and configuration.",
         icon: "fa6-solid:server",
-        href: "/admin/system",
     },
 ];
 </script>
@@ -69,24 +65,17 @@ const sections: AdminSection[] = [
     </p>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {#each sections as section (section.href)}
-        <a href={section.href} class="outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
-          <Card class="flex h-full flex-col transition-colors hover:border-primary/50 hover:bg-accent/40">
-            <CardHeader>
-              <div class="flex items-center gap-2">
-                <Icon icon={section.icon} class="size-4 text-muted-foreground" />
-                <CardTitle>{section.title}</CardTitle>
-              </div>
-              <CardDescription>{section.description}</CardDescription>
-            </CardHeader>
-            <CardContent class="mt-auto text-sm text-muted-foreground">
-              <span class="inline-flex items-center gap-1.5">
-                Open
-                <Icon icon="fa6-solid:arrow-right" class="size-3" />
-              </span>
-            </CardContent>
-          </Card>
-        </a>
+      {#each sections as section (section.title)}
+        <Card class="flex h-full flex-col">
+          <CardHeader>
+            <div class="flex items-center gap-2">
+              <Icon icon={section.icon} class="size-4 text-muted-foreground" />
+              <CardTitle>{section.title}</CardTitle>
+            </div>
+            <CardDescription>{section.description}</CardDescription>
+          </CardHeader>
+          <CardContent class="mt-auto text-sm text-muted-foreground">Not built yet.</CardContent>
+        </Card>
       {/each}
     </div>
   </div>
