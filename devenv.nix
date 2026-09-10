@@ -15,6 +15,7 @@ let
     fd
     sd
     jaq
+    ast-grep
   ];
 in
 {
@@ -33,11 +34,14 @@ in
     (with pkgs; [
       just
       sqlx-cli
+      cargo-expand
       mkcert
       kubectl
       kubernetes-helm
       kind
       terraform
+      gh
+      nixfmt
     ])
     ++ cliTools
     ++ systemPackages
