@@ -59,39 +59,18 @@ conventions for adding a new service.
 
 ## Architecture
 
-How requests flow through the platform:
-
-```mermaid
-flowchart TD
-    Browser --> www
-    Browser --> app
-    Browser -->|OAuth2 / OIDC| entra[Entra ID]
-
-    app --> api
-    app -.->|not wired yet| artoo
-
-    api --> postgres[(postgres)]
-    api --> dragonfly[(dragonfly)]
-    api --> minio[(minio)]
-    api --> portkey[Portkey]
-
-    artoo --> postgres
-    artoo --> qdrant[(qdrant)]
-    artoo --> portkey
-    artoo --> graph[Microsoft Graph]
-
-    forge --> kubernetes[Kubernetes API]
-```
-
 `artoo` is the app's main agent: it answers questions and helps users find
 their way around the product's features. The product UI does not call it yet.
 
 `api`, `artoo` and `forge` each validate Entra ID tokens on their own and never
-call one another — the browser holds the token and talks to each directly.
+call one another. The browser holds the token and talks to each directly.
 Model traffic goes through [Portkey](https://portkey.ai) rather than to a
 provider directly. `www` is fully static and depends on nothing. `forge` talks
 to a cluster rather than to the local infrastructure, which is why it sits
 behind its own compose profile.
+
+See [docs/INFRA.md](docs/INFRA.md) for the topology diagram and where each
+service runs.
 
 ## Repository layout
 
@@ -254,6 +233,6 @@ is the only service the pipeline actually ships.
 ## Documentation
 
 - [docs/NAMING.md](docs/NAMING.md) — service naming and port conventions
+- [docs/BRAND.md](docs/BRAND.md) — typeface, colour tokens and frontend traits
 - [docs/INFRA.md](docs/INFRA.md) — infrastructure
-- [docs/DATABASE.md](docs/DATABASE.md) — database design
 - [docs/GUID.md](docs/GUID.md) — identifiers

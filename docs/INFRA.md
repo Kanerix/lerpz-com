@@ -4,13 +4,13 @@ This document describes the infrastructure used by the Lerpz platform.
 
 ## Where each service runs
 
-| Service | Target | Domain |
-|---|---|---|
-| `www` | GitHub Pages | `lerpz.com` |
-| `app` | Azure Container Apps | `app.lerpz.com` |
-| `api` | Azure Container Apps | `api.lerpz.com` |
+| Service | Target               | Domain            |
+| ------- | -------------------- | ----------------- |
+| `www`   | GitHub Pages         | `lerpz.com`       |
+| `app`   | Azure Container Apps | `app.lerpz.com`   |
+| `api`   | Azure Container Apps | `api.lerpz.com`   |
 | `artoo` | Azure Container Apps | `agent.lerpz.com` |
-| `forge` | Kubernetes | internal |
+| `forge` | Kubernetes           | internal          |
 
 > [!IMPORTANT]
 > Only `www` is deployed today. The `deploy-app`, `deploy-api`, `deploy-artoo`
@@ -111,12 +111,12 @@ environment-specific values.
 
 ## Environments
 
-| | Prod | Staging |
-|---|---|---|
-| Domain | `lerpz.com` | `stag.lerpz.com` |
-| API | `api.lerpz.com` | `api.stag.lerpz.com` |
-| Resource group | `lerpz-prod-rg` | `lerpz-stag-rg` |
-| Container app | `lerpz-website-prod` | `lerpz-website-stag` |
+|                | Prod                 | Staging              |
+| -------------- | -------------------- | -------------------- |
+| Domain         | `lerpz.com`          | `stag.lerpz.com`     |
+| API            | `api.lerpz.com`      | `api.stag.lerpz.com` |
+| Resource group | `lerpz-prod-rg`      | `lerpz-stag-rg`      |
+| Container app  | `lerpz-website-prod` | `lerpz-website-stag` |
 
 Both share one ACR and one Entra ID app registration.
 
@@ -132,12 +132,12 @@ Both share one ACR and one Entra ID app registration.
 cluster with Traefik as the ingress controller — the Kubernetes equivalent of
 the root `docker-compose.yml`.
 
-| Host | Service |
-|---|---|
-| `lerpz.local`, `www.lerpz.local` | `www` |
-| `app.lerpz.local` | `app` |
-| `api.lerpz.local` | `api` |
-| `agent.lerpz.local` | `artoo` |
+| Host                             | Service |
+| -------------------------------- | ------- |
+| `lerpz.local`, `www.lerpz.local` | `www`   |
+| `app.lerpz.local`                | `app`   |
+| `api.lerpz.local`                | `api`   |
+| `agent.lerpz.local`              | `artoo` |
 
 This is also the practical way to run `forge`, which provisions agent
 infrastructure through the Kubernetes API and exits on startup if no cluster

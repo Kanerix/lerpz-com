@@ -18,15 +18,15 @@ conventional technology name.
 
 ## Services
 
-| Name | Role | Stack | Port | Host |
-|---|---|---|---|---|
-| `www` | Company / landing site | SvelteKit (static) | 3000 | `lerpz.com` |
-| `app` | Product UI | SvelteKit | 3001 | `app.lerpz.com` |
-| `api` | Core backend API | Rust / Axum | 4000 | `api.lerpz.com` |
-| `artoo` | AI agent | Rust | 4001 | `agent.lerpz.com` |
-| `forge` | Agent infrastructure provisioner | Rust / Axum / kube | 5000 | internal |
+| Name    | Role                             | Stack              | Port | Host              |
+| ------- | -------------------------------- | ------------------ | ---- | ----------------- |
+| `www`   | Company / landing site           | SvelteKit (static) | 3000 | `lerpz.com`       |
+| `app`   | Product UI                       | SvelteKit          | 3001 | `app.lerpz.com`   |
+| `api`   | Core backend API                 | Rust / Axum        | 4000 | `api.lerpz.com`   |
+| `artoo` | AI agent                         | Rust               | 4001 | `agent.lerpz.com` |
+| `forge` | Agent infrastructure provisioner | Rust / Axum / kube | 5000 | internal          |
 
-For anything public, the service name *is* the subdomain: `svc/app` →
+For anything public, the service name _is_ the subdomain: `svc/app` →
 `app.lerpz.local` → `app.lerpz.com`. There is no lookup table to keep in sync.
 
 ### `www` — Company site
@@ -64,7 +64,7 @@ directly.
 Turns a request for agent capacity into the Kubernetes objects that back it:
 persistent memory volumes (`PersistentVolumeClaim`) and the container runtimes
 that mount them (`Deployment`). Named for what it does — it forges the
-environment an agent runs in — and deliberately *not* named `orchestrator`,
+environment an agent runs in — and deliberately _not_ named `orchestrator`,
 `scheduler`, `controller`, or `operator`, all of which already mean something
 specific in a Kubernetes cluster and would poison every grep.
 
@@ -74,11 +74,11 @@ internal service.
 
 ## Port ranges
 
-| Range | Used for |
-|---|---|
-| 3000–3999 | Web pages |
-| 4000–4999 | Publicly reachable APIs |
-| 5000–5999 | Internal services |
+| Range     | Used for                   |
+| --------- | -------------------------- |
+| 3000–3999 | Web pages                  |
+| 4000–4999 | Publicly reachable APIs    |
+| 5000–5999 | Internal services          |
 | 6000–6999 | Third-party infrastructure |
 
 The range a service falls in tells you its exposure at a glance: anything on a
@@ -88,7 +88,7 @@ ingress. `api` and `artoo` are both on 4000 ports because browsers call them
 directly with a delegated user token; `forge` is on 5000 because only other
 services call it.
 
-### These ranges apply to *host* ports
+### These ranges apply to _host_ ports
 
 There are two different ports in play, and only one of them is ours to allocate:
 
@@ -104,12 +104,12 @@ So Postgres is reachable at `localhost:6432` from your machine, but services
 inside the network still address it as `postgres:5432`. The same split applies
 to MinIO: `localhost:6000` from the host, `minio:9000` in-network.
 
-| Service | Host | Container |
-|---|---|---|
-| `postgres` | 6432 | 5432 |
-| `qdrant` | 6333 / 6334 | 6333 / 6334 |
-| `dragonfly` | 6379 | 6379 |
-| `minio` | 6000 / 6001 | 9000 / 9001 |
+| Service     | Host        | Container   |
+| ----------- | ----------- | ----------- |
+| `postgres`  | 6432        | 5432        |
+| `qdrant`    | 6333 / 6334 | 6333 / 6334 |
+| `dragonfly` | 6379        | 6379        |
+| `minio`     | 6000 / 6001 | 9000 / 9001 |
 
 Qdrant and Dragonfly need no remapping — their conventional ports already sit in
 the 6000 range. Postgres keeps its recognisable `432` suffix, and MinIO's API
