@@ -19,7 +19,7 @@ import {
     listImages,
 } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
-import { showError } from "$lib/components/error-dialog";
+import { showError } from "$lib/components/error-dialog/index.js";
 import { formatDate } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 
@@ -111,14 +111,14 @@ const detailRows = $derived(
               },
               {
                   label: "Created",
-                      value: formatDate(image.created_at),
-                      badge: false,
-                  },
-              ]
-            : [],
-    );
+                  value: formatDate(image.created_at),
+                  badge: false,
+              },
+          ]
+        : [],
+);
 
-    async function analyze() {
+async function analyze() {
     if (!image || isAnalyzing) return;
     const target = image;
     isAnalyzing = true;
@@ -221,11 +221,9 @@ function handleOpenChange(details: { open: boolean }) {
                     <dt class="text-muted-foreground">{row.label}</dt>
                     <dd class="min-w-0">
                       {#if row.badge}
-                        <span
-                          class="inline-flex max-w-full items-center truncate rounded-md bg-muted px-2 py-0.5 text-xs"
-                        >
+                        <Badge variant="secondary" class="max-w-full truncate">
                           {row.value}
-                        </span>
+                        </Badge>
                       {:else}
                         <span class="font-medium">{row.value}</span>
                       {/if}

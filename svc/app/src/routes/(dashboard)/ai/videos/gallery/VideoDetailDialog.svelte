@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Badge } from "@lerpz/ui/components/badge";
 import { Button } from "@lerpz/ui/components/button";
 import {
     Dialog,
@@ -183,11 +184,9 @@ function handleOpenChange(details: { open: boolean }) {
                     <dt class="text-muted-foreground">{row.label}</dt>
                     <dd class="min-w-0">
                       {#if row.badge}
-                        <span
-                          class="inline-flex max-w-full items-center truncate rounded-md bg-muted px-2 py-0.5 text-xs"
-                        >
+                        <Badge variant="secondary" class="max-w-full truncate">
                           {row.value}
-                        </span>
+                        </Badge>
                       {:else}
                         <span class="font-medium">{row.value}</span>
                       {/if}

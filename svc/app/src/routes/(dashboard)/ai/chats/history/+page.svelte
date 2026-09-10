@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Badge } from "@lerpz/ui/components/badge";
 import { Input } from "@lerpz/ui/components/input";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
@@ -7,7 +8,7 @@ import { createQuery } from "@tanstack/svelte-query";
 import { getListChatsUrl, listChats } from "$lib/api/chats/chats.js";
 import type { Conversation } from "$lib/api/models/index.js";
 import ChatHistoryTable from "$lib/components/chats/ChatHistoryTable.svelte";
-import { ErrorState } from "$lib/components/error-state";
+import { ErrorState } from "$lib/components/error-state/index.js";
 
 const query = createQuery(() => ({
     queryKey: [getListChatsUrl()],
@@ -78,9 +79,9 @@ const archivedChats = $derived(
         <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           All chats
         </h2>
-        <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+        <Badge variant="secondary">
           {activeChats.length}
-        </span>
+        </Badge>
       </div>
       {#if activeChats.length === 0}
         <p class="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
@@ -100,9 +101,9 @@ const archivedChats = $derived(
           <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Archived
           </h2>
-          <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          <Badge variant="secondary">
             {archivedChats.length}
-          </span>
+          </Badge>
         </div>
         <ChatHistoryTable data={archivedChats} />
       </section>

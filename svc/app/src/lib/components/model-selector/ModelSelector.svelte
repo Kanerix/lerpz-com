@@ -1,6 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { Badge } from "@lerpz/ui/components/badge";
+import { Button } from "@lerpz/ui/components/button";
 import {
     Popover,
     PopoverContent,
@@ -360,19 +361,17 @@ function handleListKeydown(e: KeyboardEvent) {
                     aria-label="Reasoning level"
                   >
                     {#each REASONING_LEVELS as level (level.value)}
-                      <button
-                        type="button"
+                      <Button
+                        variant={reasoningLevel === level.value
+                          ? "default"
+                          : "ghost"}
+                        size="xs"
+                        class="flex-1"
                         aria-pressed={reasoningLevel === level.value}
                         onclick={() => setReasoningLevel(level.value)}
-                        class={cn(
-                          "flex-1 cursor-pointer rounded-sm px-2.5 py-1 text-xs font-medium transition-colors",
-                          reasoningLevel === level.value
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-muted",
-                        )}
                       >
                         {level.label}
-                      </button>
+                      </Button>
                     {/each}
                   </div>
                 </div>
@@ -386,24 +385,19 @@ function handleListKeydown(e: KeyboardEvent) {
         </ScrollArea>
 
         <div class="border-t p-3">
-          <button
-            type="button"
-            class={cn(
-              "flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              detailModel.value === value
-                ? "bg-muted text-muted-foreground"
-                : "bg-primary text-primary-foreground hover:bg-primary/90",
-            )}
+          <Button
+            class="w-full"
+            variant={detailModel.value === value ? "secondary" : "default"}
             disabled={detailModel.value === value}
             onclick={() => selectModel(detailModel.value)}
           >
             {#if detailModel.value === value}
-              <Icon icon="fa6-solid:check" class="size-4" />
+              <Icon icon="fa6-solid:check" />
               Selected
             {:else}
               Use this model
             {/if}
-          </button>
+          </Button>
         </div>
       {:else}
         <div

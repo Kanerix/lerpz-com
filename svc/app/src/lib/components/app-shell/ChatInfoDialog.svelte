@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
+import { Badge } from "@lerpz/ui/components/badge";
 import { Button, buttonVariants } from "@lerpz/ui/components/button";
 import {
     Dialog,
@@ -101,9 +102,9 @@ function handleOpenChange(details: { open: boolean }) {
           <div class="flex items-center justify-between gap-4">
             <dt class="text-muted-foreground">Model</dt>
             <dd class="min-w-0">
-              <span class="inline-flex max-w-full items-center truncate rounded-md bg-muted px-2 py-0.5 text-xs">
+              <Badge variant="secondary" class="max-w-full truncate">
                 {conversation?.model ?? "—"}
-              </span>
+              </Badge>
             </dd>
           </div>
           <div class="flex items-center justify-between gap-4">
