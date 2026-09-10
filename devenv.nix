@@ -1,4 +1,8 @@
-{ pkgs, lib, config, inputs, ... }:
+{
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   systemPackages = with pkgs; [
@@ -37,7 +41,7 @@ in
     ])
     ++ cliTools
     ++ systemPackages
-    ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.libiconv ];
+    ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.libiconv ];
 
   env.SQLX_OFFLINE = "true";
 
