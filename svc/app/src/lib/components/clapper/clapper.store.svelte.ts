@@ -1,6 +1,6 @@
 import {
-    MODEL_STORAGE_KEYS,
     loadStoredModel,
+    MODEL_STORAGE_KEYS,
     storeModel,
 } from "$lib/ai/model-storage.js";
 
@@ -42,19 +42,21 @@ export type DurationOption = {
 // Clip lengths the models understand. Video generation clamps requests to the
 // 4-8 second range and defaults to the longest, so those are the values we
 // expose.
+export const LONGEST_DURATION: DurationOption = {
+    value: 8,
+    label: "8 seconds",
+};
+
 export const DURATIONS: DurationOption[] = [
     { value: 4, label: "4 seconds" },
     { value: 6, label: "6 seconds" },
-    { value: 8, label: "8 seconds" },
+    LONGEST_DURATION,
 ];
 
-export const DEFAULT_DURATION = 8;
+export const DEFAULT_DURATION = LONGEST_DURATION.value;
 
 export function resolveDuration(value: number): DurationOption {
-    return (
-        DURATIONS.find((d) => d.value === value) ??
-        DURATIONS[DURATIONS.length - 1]
-    );
+    return DURATIONS.find((d) => d.value === value) ?? LONGEST_DURATION;
 }
 
 class ClapperStore {
