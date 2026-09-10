@@ -1,7 +1,7 @@
 <script lang="ts">
 import { notifyPromptEnhanced } from "$lib/ai/enhance.js";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
-import { EnhanceButton } from "$lib/components/prompt";
+import { EnhanceButton } from "$lib/components/prompt/index.js";
 import ClapperAspectRatio from "./ClapperAspectRatio.svelte";
 import ClapperDuration from "./ClapperDuration.svelte";
 import { clapperStore } from "./clapper.store.svelte.js";

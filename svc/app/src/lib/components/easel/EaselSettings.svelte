@@ -3,7 +3,7 @@ import Icon from "@iconify/svelte";
 import { cn } from "@lerpz/ui/lib/utils";
 import { notifyPromptEnhanced } from "$lib/ai/enhance.js";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
-import { EnhanceButton } from "$lib/components/prompt";
+import { EnhanceButton } from "$lib/components/prompt/index.js";
 import EaselAspectRatio from "./EaselAspectRatio.svelte";
 import {
     easelStore,

@@ -5,7 +5,7 @@ import {
     PromptComposer,
     PromptInputRow,
     PromptSubmitButton,
-} from "$lib/components/prompt";
+} from "$lib/components/prompt/index.js";
 import ClapperSettings from "./ClapperSettings.svelte";
 import ClapperStatusBar from "./ClapperStatusBar.svelte";
 import { clapperStore } from "./clapper.store.svelte.js";

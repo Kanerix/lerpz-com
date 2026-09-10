@@ -5,7 +5,7 @@ import {
     PromptComposer,
     PromptInputRow,
     PromptSubmitButton,
-} from "$lib/components/prompt";
+} from "$lib/components/prompt/index.js";
 import EaselSettings from "./EaselSettings.svelte";
 import EaselStatusBar from "./EaselStatusBar.svelte";
 import { easelStore } from "./easel.store.svelte.js";

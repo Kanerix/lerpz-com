@@ -12,7 +12,7 @@ import {
     ErrorDialog,
     errorDialog,
     showError,
-} from "$lib/components/error-dialog";
+} from "$lib/components/error-dialog/index.js";
 import "../app.css";
 import type { Snippet } from "svelte";
 

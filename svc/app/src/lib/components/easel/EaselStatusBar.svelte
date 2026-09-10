@@ -1,5 +1,5 @@
 <script lang="ts">
-import { PromptStatusBar } from "$lib/components/prompt";
+import { PromptStatusBar } from "$lib/components/prompt/index.js";
 
 let {
     isGenerating = false,

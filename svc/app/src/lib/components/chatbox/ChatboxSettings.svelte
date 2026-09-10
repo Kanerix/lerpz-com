@@ -4,7 +4,7 @@ import type { Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import ModelSelector from "$lib/components/model-selector/ModelSelector.svelte";
 import { REASONING_KEY } from "$lib/components/model-selector/reasoning.js";
-import { EnhanceButton } from "$lib/components/prompt";
+import { EnhanceButton } from "$lib/components/prompt/index.js";
 import { getChatboxContext } from "./chatbox-context.svelte.js";
 
 let {

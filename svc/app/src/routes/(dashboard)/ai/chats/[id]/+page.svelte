@@ -5,7 +5,7 @@ import { getAiContext } from "$lib/ai/context.svelte.js";
 import { getChat } from "$lib/api/chats/chats.js";
 import ChatView from "$lib/components/chatbox/ChatView.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
-import { ErrorState } from "$lib/components/error-state";
+import { ErrorState } from "$lib/components/error-state/index.js";
 import type { PageProps } from "./$types.js";
 
 let { params }: PageProps = $props();
