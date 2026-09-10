@@ -1,7 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
 import { cn } from "@lerpz/ui/lib/utils";
-import { fade } from "svelte/transition";
+import { fade } from "$lib/utils/transitions.js";
 
 // A compact status line shown above a prompt composer. Rotates through
 // playful "busy" messages while working, surfaces errors, and can flash a

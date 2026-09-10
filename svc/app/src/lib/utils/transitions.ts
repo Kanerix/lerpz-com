@@ -1,11 +1,13 @@
 import { prefersReducedMotion } from "svelte/motion";
 import {
-    fade as svelteFade,
-    fly as svelteFly,
-    slide as svelteSlide,
     type FadeParams,
     type FlyParams,
+    type ScaleParams,
     type SlideParams,
+    fade as svelteFade,
+    fly as svelteFly,
+    scale as svelteScale,
+    slide as svelteSlide,
     type TransitionConfig,
 } from "svelte/transition";
 
@@ -42,4 +44,18 @@ export function fly(node: Element, params?: FlyParams): TransitionConfig {
 /** Opacity fade. Fades aren't motion, so this runs unchanged either way. */
 export function fade(node: Element, params?: FadeParams): TransitionConfig {
     return svelteFade(node, params);
+}
+
+/**
+ * Grow or shrink in place. Like `fly`, the size change is the motion, so it
+ * degrades to a plain fade when the user prefers reduced motion.
+ */
+export function scale(node: Element, params?: ScaleParams): TransitionConfig {
+    if (prefersReducedMotion.current) {
+        return svelteFade(node, {
+            delay: params?.delay,
+            duration: params?.duration,
+        });
+    }
+    return svelteScale(node, params);
 }

@@ -2,15 +2,15 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { cubicOut } from "svelte/easing";
-import { fly } from "svelte/transition";
 import { filterModelsByModality, type Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
-import { ErrorDialog } from "$lib/components/error-dialog";
+import { ErrorDialog } from "$lib/components/error-dialog/index.js";
 import {
     PromptComposer,
     PromptInputRow,
     PromptSubmitButton,
-} from "$lib/components/prompt";
+} from "$lib/components/prompt/index.js";
+import { fly } from "$lib/utils/transitions.js";
 import ChatboxSettings from "./ChatboxSettings.svelte";
 import ChatStatusBar from "./ChatStatusBar.svelte";
 import type { ChatboxSubmitArgs } from "./chatbox-context.svelte.js";

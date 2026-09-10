@@ -14,6 +14,7 @@ import { Typewriter } from "@lerpz/ui/components/typewriter";
 import { cn } from "@lerpz/ui/lib/utils";
 import { useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
+import { prefersReducedMotion } from "svelte/motion";
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import {
     deleteChatMessage,
@@ -25,7 +26,8 @@ import type { ConversationMessage } from "$lib/api/models/index.js";
 import ModelAvatar from "$lib/components/avatar/ModelAvatar.svelte";
 import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
-import { showError } from "$lib/components/error-dialog";
+import { showError } from "$lib/components/error-dialog/index.js";
+import { fade } from "$lib/utils/transitions.js";
 import CopyButton from "./CopyButton.svelte";
 import DeleteButton from "./DeleteButton.svelte";
 import EditButton from "./EditButton.svelte";
@@ -255,7 +257,10 @@ $effect(() => {
     }
 });
 
-function bubbleIn(_node: Element, { role }: { role: string }) {
+function bubbleIn(node: Element, { role }: { role: string }) {
+    if (prefersReducedMotion.current) {
+        return fade(node, { duration: 350 });
+    }
     const x = role === "user" ? 16 : -16;
     return {
         duration: 350,

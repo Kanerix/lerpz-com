@@ -2,8 +2,8 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { cn } from "@lerpz/ui/lib/utils";
-import { fade, scale } from "svelte/transition";
 import { resolveAspectRatio } from "$lib/components/clapper/clapper.store.svelte.js";
+import { fade, scale } from "$lib/utils/transitions.js";
 
 let {
     video = null,

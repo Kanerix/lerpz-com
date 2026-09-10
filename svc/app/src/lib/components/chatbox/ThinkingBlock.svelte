@@ -2,7 +2,7 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { Typewriter } from "@lerpz/ui/components/typewriter";
-import { slide } from "svelte/transition";
+import { slide } from "$lib/utils/transitions.js";
 import Markdown from "./Markdown.svelte";
 
 let {

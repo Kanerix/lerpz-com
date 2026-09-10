@@ -2,6 +2,8 @@
 import { cn } from "@lerpz/ui/lib/utils";
 import { onMount, type Snippet } from "svelte";
 import { cubicOut } from "svelte/easing";
+import { prefersReducedMotion } from "svelte/motion";
+import { fade } from "$lib/utils/transitions.js";
 import PromptCard from "./PromptCard.svelte";
 
 // Shared shell that gives every prompt composer (chat, image, video) the same
@@ -35,7 +37,10 @@ onMount(() => {
 });
 
 // Matches the chatbox intro: rise up and gently scale in.
-function composerIn(_node: Element) {
+function composerIn(node: Element) {
+    if (prefersReducedMotion.current) {
+        return fade(node, { duration: 550 });
+    }
     return {
         duration: 550,
         easing: cubicOut,
