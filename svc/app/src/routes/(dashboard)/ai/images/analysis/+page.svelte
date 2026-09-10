@@ -27,8 +27,9 @@ import type {
     ImageItem,
     ImageListResponse,
 } from "$lib/api/models/index.js";
-import { showError } from "$lib/components/error-dialog";
-import { ErrorState } from "$lib/components/error-state";
+import { showError } from "$lib/components/error-dialog/index.js";
+import { ErrorState } from "$lib/components/error-state/index.js";
+import { dropZoneVariants, thumbnailVariants } from "./analysis-variants.js";
 
 const PAGE_SIZE = 24;
 // Uploads are inlined as base64 in the request body, so keep them reasonable.
@@ -282,9 +283,7 @@ const skeletonCount = 9;
             }}
             ondragleave={() => (isDragging = false)}
             ondrop={onDrop}
-            class="flex flex-1 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-16 text-center transition {isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:border-primary/50'}"
+            class={dropZoneVariants({ dragging: isDragging })}
           >
             <Icon
               icon="fa6-solid:cloud-arrow-up"
@@ -355,9 +354,7 @@ const skeletonCount = 9;
                 onclick={() => selectImage(image)}
                 aria-pressed={isSelected}
                 title={image.title ?? image.prompt}
-                class="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-muted/30 outline-none transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring {isSelected
-                  ? 'border-primary ring-2 ring-primary'
-                  : 'border-border hover:border-primary/50'}"
+                class={thumbnailVariants({ selected: isSelected })}
               >
                 <img
                   src={image.url}

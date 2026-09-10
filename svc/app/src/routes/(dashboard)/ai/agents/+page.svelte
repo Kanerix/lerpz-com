@@ -10,6 +10,7 @@ import {
     SelectTrigger,
 } from "@lerpz/ui/components/select";
 import { toast } from "svelte-sonner";
+import { optionCardVariants } from "./agents-variants.js";
 
 // DRAFT: this page scaffolds the "deploy a new agent" flow. Submitting should
 // call `createAgent` from `$lib/api/agents/agents.ts` once the api OpenAPI
@@ -158,10 +159,7 @@ async function deploy(event: SubmitEvent) {
         <button
           type="button"
           onclick={() => (memoryMode = "new")}
-          class="flex items-start gap-3 rounded-xl border p-4 text-left transition-colors
-            {memoryMode === 'new'
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:bg-muted/50'}"
+          class={optionCardVariants({ selected: memoryMode === "new" })}
         >
           <Icon icon="fa6-solid:plus" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <span class="flex flex-col gap-0.5">
@@ -172,10 +170,7 @@ async function deploy(event: SubmitEvent) {
         <button
           type="button"
           onclick={() => (memoryMode = "existing")}
-          class="flex items-start gap-3 rounded-xl border p-4 text-left transition-colors
-            {memoryMode === 'existing'
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:bg-muted/50'}"
+          class={optionCardVariants({ selected: memoryMode === "existing" })}
         >
           <Icon icon="fa6-solid:database" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <span class="flex flex-col gap-0.5">

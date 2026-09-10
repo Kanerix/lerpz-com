@@ -19,6 +19,7 @@
         "@lerpz/ui": "workspace:*",
         "@tanstack/svelte-query": "^6.1.33",
         "@tanstack/table-core": "^8.21.3",
+        "class-variance-authority": "^0.7.1",
         "@tiptap/core": "^3",
         "@tiptap/extensions": "^3",
         "@tiptap/markdown": "^3",

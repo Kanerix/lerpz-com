@@ -5,6 +5,7 @@ import { Button } from "@lerpz/ui/components/button";
 import { Input } from "@lerpz/ui/components/input";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { toast } from "svelte-sonner";
+import { categoryPillVariants } from "./marketplace-variants.js";
 
 // DRAFT: static marketplace catalogue. Wire up to a templates endpoint so
 // "Deploy" hands a template off to the new-agent flow, pre-filling the model,
@@ -151,10 +152,7 @@ function deploy(template: AgentTemplate) {
         <button
           type="button"
           onclick={() => (activeCategory = category)}
-          class="rounded-full border px-3 py-1 text-sm transition-colors
-            {activeCategory === category
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-border text-muted-foreground hover:bg-muted'}"
+          class={categoryPillVariants({ active: activeCategory === category })}
         >
           {category}
         </button>
@@ -247,9 +245,7 @@ function deploy(template: AgentTemplate) {
             </div>
             <div class="flex flex-wrap gap-1.5">
               {#each template.tags as tag (tag)}
-                <span class="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {tag}
-                </span>
+                <Badge variant="secondary">{tag}</Badge>
               {/each}
             </div>
             <div class="mt-auto flex items-center justify-between gap-3 border-t pt-3">
