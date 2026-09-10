@@ -53,10 +53,12 @@ const video = createVideo({
 });
 const modelsHook = createModels();
 
-function startVideo(prompt: string, options?: Parameters<typeof video.start>[1]) {
+function startVideo(
+    prompt: string,
+    options?: Parameters<typeof video.start>[1],
+) {
     // Cap the remembered prompt so a long one doesn't bloat the notification.
-    lastVideoPrompt =
-        prompt.length > 140 ? `${prompt.slice(0, 139)}…` : prompt;
+    lastVideoPrompt = prompt.length > 140 ? `${prompt.slice(0, 139)}…` : prompt;
     video.start(prompt, options);
 }
 

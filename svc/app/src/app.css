@@ -8,7 +8,7 @@
  * scrollbar width and reads as an inconsistent max-width.
  */
 html {
-  scrollbar-gutter: stable;
+    scrollbar-gutter: stable;
 }
 
 /*

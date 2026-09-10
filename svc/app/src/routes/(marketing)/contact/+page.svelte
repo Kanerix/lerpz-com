@@ -7,14 +7,16 @@ const channels = [
     {
         icon: "fa6-solid:envelope",
         title: "Email us",
-        description: "The fastest way to reach the Lerpz team for questions or support.",
+        description:
+            "The fastest way to reach the Lerpz team for questions or support.",
         actionLabel: contactEmail,
         href: `mailto:${contactEmail}`,
     },
     {
         icon: "fa6-brands:github",
         title: "GitHub",
-        description: "Browse our projects, report issues, or follow along with development.",
+        description:
+            "Browse our projects, report issues, or follow along with development.",
         actionLabel: "github.com/lerpz",
         href: "https://github.com/lerpz",
     },
