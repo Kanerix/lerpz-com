@@ -16,7 +16,7 @@ what the conventions are.
 - Know the full path of a file before editing it. Do not guess paths.
 - Check whether a skill covers the task. `migration` for schema changes,
   `rust-crate` for a new shared crate, `typescript-package` for a new shared
-  package.
+  package, `ci` for investigating a failed pipeline run.
 
 ## Command line tools
 
@@ -25,16 +25,39 @@ They respect `.gitignore`, so they skip `target/`, `node_modules/` and
 `.svelte-kit/` without being told. The classic tools crawl those directories and
 will waste minutes.
 
-| Instead of   | Use   | Notes                                                            |
-| ------------ | ----- | ---------------------------------------------------------------- |
-| `grep -r`    | `rg`  | Filter by language with `rg -t rust`, `rg -t ts`, `rg -t svelte` |
-| `find -name` | `fd`  | `fd -e rs`, `fd handler svc/api`                                 |
-| `sed -i`     | `sd`  | Literal by default, so no regex escaping for a plain rename      |
-| `jq`         | `jaq` | For the OpenAPI spec and the `.sqlx` cache entries               |
+| Instead of   | Use        | Notes                                                            |
+| ------------ | ---------- | ---------------------------------------------------------------- |
+| `grep -r`    | `rg`       | Filter by language with `rg -t rust`, `rg -t ts`, `rg -t svelte` |
+| `find -name` | `fd`       | `fd -e rs`, `fd handler svc/api`                                 |
+| `sed -i`     | `sd`       | Literal by default, so no regex escaping for a plain rename      |
+| `jq`         | `jaq`      | For the OpenAPI spec and the `.sqlx` cache entries               |
+| `rg -U`      | `ast-grep` | Match by syntax tree. Rust and TS, no Svelte grammar             |
 
 Search with `rg` before you search with anything else. Pair it with `sd` for a
 mechanical rename, such as `rg -l OldName | xargs sd OldName NewName`, and read
 the diff afterwards. Do not use a bulk replace for anything that needs judgement.
+
+Reach for `ast-grep` when the shape matters more than the text, such as every
+handler signature or every `.unwrap()` call:
+
+```sh
+ast-grep --lang rust --pattern 'pub async fn handler($$$A) -> $R { $$$B }' svc/
+```
+
+The pattern has to parse on its own, so match a whole item rather than a fragment
+such as a single argument. There is no Svelte grammar, so `.svelte` files stay
+with `rg`.
+
+When a macro error is opaque, expand it with `cargo expand -p api api::failure`.
+The generated code behind `query_as!`, `routes!`, `generate_config!` and the
+utoipa and axum attributes usually shows the cause faster than the error does.
+
+Run everything through `devenv shell -- <cmd>`. A bare `cargo` picks up whatever
+the host has on `PATH`, which is not necessarily the toolchain pinned in
+`rust-toolchain.toml`.
+
+`just fmt` covers Rust and TypeScript, not Nix. After editing `devenv.nix`, run
+`nixfmt --check devenv.nix`, which reports without writing to the file.
 
 ## While writing
 
@@ -63,6 +86,10 @@ just check-rust    # Rust changes
 just check-ts      # TypeScript or Svelte changes
 just test          # Rust behaviour changes
 ```
+
+`just check-rust` prints roughly three lines of output per warning. When you only
+need the list, `cargo clippy --workspace --all-targets --message-format=short`
+reports the same warnings one line each.
 
 Then say what changed, which files, and what you actually ran. If you could not
 verify something, write that instead of implying it works. Mention unrelated
