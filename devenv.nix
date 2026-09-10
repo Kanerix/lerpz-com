@@ -5,6 +5,13 @@ let
     openssl
     pkg-config
   ];
+
+  cliTools = with pkgs; [
+    ripgrep
+    fd
+    sd
+    jaq
+  ];
 in
 {
   languages.rust = {
@@ -28,6 +35,7 @@ in
       kind
       terraform
     ])
+    ++ cliTools
     ++ systemPackages
     ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.libiconv ];
 
