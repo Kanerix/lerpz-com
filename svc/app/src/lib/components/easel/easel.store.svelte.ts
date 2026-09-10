@@ -1,6 +1,6 @@
 import {
-    MODEL_STORAGE_KEYS,
     loadStoredModel,
+    MODEL_STORAGE_KEYS,
     storeModel,
 } from "$lib/ai/model-storage.js";
 

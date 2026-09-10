@@ -1,5 +1,5 @@
-import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
 import type { ProblemSchema } from "$lib/api/models/index.js";
+import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
 import { authenticatedFetch } from "./fetch.js";
 
 /**

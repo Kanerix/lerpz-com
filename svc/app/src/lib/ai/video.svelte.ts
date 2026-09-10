@@ -1,8 +1,8 @@
+import type { VideoRequest } from "$lib/api/models/index.js";
 import {
     createVideo as createVideoJob,
     getVideoJob,
 } from "$lib/api/videos/videos.js";
-import type { VideoRequest } from "$lib/api/models/index.js";
 
 export type UseVideoOptions = {
     model?: string;

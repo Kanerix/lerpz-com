@@ -1,6 +1,6 @@
-import { createSseConnection } from "$lib/http/sse.js";
 import { getCreateImageUrl } from "$lib/api/images/images.js";
 import type { ImageRequest } from "$lib/api/models/index.js";
+import { createSseConnection } from "$lib/http/sse.js";
 
 export type UseImageOptions = {
     model?: string;
