@@ -18,18 +18,18 @@ let { class: className = "" }: { class?: string } = $props();
 const sidebar = useSidebar();
 const pathname = $derived(page.url.pathname);
 
-interface SubItem {
+type SubItem = {
     title: string;
     href: string;
     icon: string;
-}
+};
 
-interface Category {
+type Category = {
     name: string;
     icon: string;
     href: string;
     items: SubItem[];
-}
+};
 
 const categories: Category[] = [
     {

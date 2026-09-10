@@ -32,12 +32,12 @@ const themeLabel = $derived(
     themeOptions.find((t) => t.value === $userPrefersMode)?.label ?? "System",
 );
 
-interface Toggle {
+type Toggle = {
     id: string;
     title: string;
     description: string;
     enabled: boolean;
-}
+};
 
 let notifications = $state<Toggle[]>([
     {

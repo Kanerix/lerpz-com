@@ -14,13 +14,13 @@ let { class: className = "" }: { class?: string } = $props();
 
 const pathname = $derived(page.url.pathname);
 
-interface NavItem {
+type NavItem = {
     title: string;
     url: string;
     icon: string;
     /** App role required to see this item. Omit to always show it. */
     role?: string;
-}
+};
 
 const pages: NavItem[] = [
     { title: "Docs", url: "/docs", icon: "fa6-regular:file-lines" },
