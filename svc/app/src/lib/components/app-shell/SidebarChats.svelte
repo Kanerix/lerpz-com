@@ -27,8 +27,8 @@ import {
     listChats,
 } from "$lib/api/chats/chats.js";
 import type { Conversation } from "$lib/api/models/index.js";
-import { showError } from "$lib/components/error-dialog";
-import { ErrorState } from "$lib/components/error-state";
+import { showError } from "$lib/components/error-dialog/index.js";
+import { ErrorState } from "$lib/components/error-state/index.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 import ChatInfoDialog from "./ChatInfoDialog.svelte";
 
@@ -188,7 +188,7 @@ const groups = $derived.by(() => {
                 <DropdownMenuTrigger
                   data-sidebar="menu-action"
                   aria-label="Chat options"
-                  class="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
+                  class="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-sidebar-ring group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
                 >
                   {#if isPending}
                     <Icon icon="fa6-solid:spinner" class="size-3.5 animate-spin" />

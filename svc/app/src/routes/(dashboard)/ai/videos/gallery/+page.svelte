@@ -9,13 +9,11 @@ import {
 } from "@lerpz/ui/components/dropdown-menu";
 import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import { Skeleton } from "@lerpz/ui/components/skeleton";
-import {
-    createInfiniteQuery,
-} from "@tanstack/svelte-query";
+import { createInfiniteQuery } from "@tanstack/svelte-query";
 import type { VideoItem, VideoListResponse } from "$lib/api/models/index.js";
 import { getListVideosUrl, listVideos } from "$lib/api/videos/videos.js";
-import { showError } from "$lib/components/error-dialog";
-import { ErrorState } from "$lib/components/error-state";
+import { showError } from "$lib/components/error-dialog/index.js";
+import { ErrorState } from "$lib/components/error-state/index.js";
 import { downloadFile } from "$lib/utils/download.js";
 import { formatDuration } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
@@ -215,7 +213,7 @@ const skeletonHeights = [180, 384, 180, 384, 240, 180, 384, 180];
           <DropdownMenu align="end" sideOffset={4}>
             <DropdownMenuTrigger
               aria-label="Video options"
-              class="absolute left-2 top-2 flex size-8 items-center justify-center rounded-lg bg-black/35 text-white opacity-0 outline-none backdrop-blur-sm transition-opacity hover:bg-black/55 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+              class="absolute left-2 top-2 flex size-8 items-center justify-center rounded-lg bg-black/35 text-white opacity-0 outline-none backdrop-blur-sm transition-opacity hover:bg-black/55 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 data-[state=open]:opacity-100"
             >
               <Icon icon="fa6-solid:ellipsis" class="size-3.5" />
             </DropdownMenuTrigger>

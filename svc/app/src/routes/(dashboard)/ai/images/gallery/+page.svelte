@@ -21,8 +21,8 @@ import {
     listImages,
 } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
-import { showError } from "$lib/components/error-dialog";
-import { ErrorState } from "$lib/components/error-state";
+import { showError } from "$lib/components/error-dialog/index.js";
+import { ErrorState } from "$lib/components/error-state/index.js";
 import { downloadImage } from "$lib/utils/download.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 import ImageDetailDialog from "./ImageDetailDialog.svelte";
@@ -239,7 +239,7 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
           <DropdownMenu align="end" sideOffset={4}>
             <DropdownMenuTrigger
               aria-label="Image options"
-              class="absolute left-2 top-2 flex size-8 items-center justify-center rounded-lg bg-black/35 text-white opacity-0 outline-none backdrop-blur-sm transition-opacity hover:bg-black/55 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+              class="absolute left-2 top-2 flex size-8 items-center justify-center rounded-lg bg-black/35 text-white opacity-0 outline-none backdrop-blur-sm transition-opacity hover:bg-black/55 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 data-[state=open]:opacity-100"
             >
               {#if isPending}
                 <Icon icon="fa6-solid:spinner" class="size-3.5 animate-spin" />
