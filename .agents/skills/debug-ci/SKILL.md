@@ -1,6 +1,6 @@
 ---
 name: ci
-description: Investigate a GitHub Actions run for this repository with the gh CLI. Use when a pipeline run fails, when a deploy did not happen, or when a task refers to a run, pull request or issue you cannot see.
+description: Investigate a GitHub Actions run with the gh CLI. Use for failed pipelines, missing deploys, and runs, pull requests or issues you cannot see.
 ---
 
 # Investigating a CI run
@@ -46,9 +46,9 @@ branch or the set of changed paths.
 
 ## Reproduce it locally
 
-Find the `run:` command in the failing step and run the same command yourself,
-through `devenv shell -- <cmd>`. If the step uses an action rather than a
-command, read what the action does and find the local equivalent.
+Find the `run:` command in the failing step and run the same command yourself.
+If the step uses an action rather than a command, read what the action does and
+find the local equivalent.
 
 Fix the cause in the repository. Do not change a workflow to make a failure go
 away unless the workflow is the thing that is wrong.

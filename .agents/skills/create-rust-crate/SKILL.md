@@ -1,6 +1,6 @@
 ---
 name: rust-crate
-description: Add a new shared Rust crate under crates/ in this Cargo workspace, wired up with workspace dependencies, workspace lints, module layout and the thiserror error pattern. Use when a piece of Rust logic needs to be shared between services.
+description: Add a new shared Rust crate to the workspace. Use when Rust logic needs to be shared between services.
 ---
 
 # Adding a Rust crate

@@ -1,31 +1,31 @@
 ---
 name: migration
-description: Write a PostgreSQL migration for this repository, following the house SQL style and the sqlx offline cache workflow. Use when adding or changing a table, column, enum type, index or trigger, or when a SQL change means the .sqlx cache has to be regenerated.
+description: Write a PostgreSQL migration and refresh the sqlx cache. Use for table, column, type, index and trigger changes.
 ---
 
 # Writing a migration
 
-Migrations live in the top-level `migrations/` directory and are applied by sqlx.
-Read one or two existing files before writing a new one, for example
-`migrations/20260310101737_chats.sql` and `migrations/20260720102822_user_settings.sql`.
+`AGENTS.md` covers where migrations live and when one may still be edited. This
+file covers the SQL style and what to run afterwards. Read one or two existing
+migrations before writing a new one.
 
 ## Rules
 
 - Create the file with `just migration NAME`. Never hand-name it, the timestamp
   prefix has to match what sqlx expects. `NAME` is snake_case and describes the
   change, such as `user_settings` or `models_insert`.
-- A merged migration is append-only. Fix a mistake with a new migration, never
-  by editing one that has already been applied.
+- Editing a migration is only an option while yours is the only database that
+  has run it, because `just reset` rebuilds from scratch. Once it has gone
+  further, or nobody is sure, correct it with a new migration.
 - Keywords are uppercase.
 
 ## SQL style
 
 Columns are written in three aligned columns: name, type, then constraints. The
-body is indented four spaces. Group related columns under a lowercase comment
-label, and keep the timestamps last under `-- other`.
+body is indented four spaces. Group related columns under a lowercase label, and
+keep the timestamps last under `-- other`.
 
 ```sql
--- Conversations table
 CREATE TABLE conversations (
     id                  UUID            PRIMARY KEY DEFAULT uuidv7(),
     -- ownership
@@ -49,7 +49,6 @@ CREATE TABLE conversations (
   uses them:
 
     ```sql
-    -- Theme preference
     CREATE TYPE theme_pref AS ENUM ('light', 'dark', 'system');
     ```
 
@@ -63,16 +62,22 @@ CREATE TABLE conversations (
         EXECUTE FUNCTION update_timestamp();
     ```
 
-- Put a comment above a table or type when its purpose is not obvious from the
-  name. Explain what it backs or why it exists, not what the columns are.
+- A table or type earns a comment when the name does not carry its purpose. Say
+  what it backs or why it exists, not what the columns are and not that it is a
+  table.
+
+    ```sql
+    -- One row per user, keyed by the identity provider's subject. Backs the
+    -- account settings surface.
+    CREATE TABLE user_settings (
+    ```
 
 ## After writing the SQL
 
 1. Start the database if it is not running: `just infra`.
 2. Apply the migration: `just migrate`.
 3. If any Rust query is affected, run `just prepare` and commit the regenerated
-   `.sqlx` cache in the same commit. The workspace compiles offline, so a
-   missing cache entry breaks the build for everyone else.
+   `.sqlx` cache in the same commit.
 
 ## Using the new schema from Rust
 
@@ -80,5 +85,3 @@ CREATE TABLE conversations (
   `#[derive(sqlx::Type)] #[sqlx(type_name = "theme_pref", rename_all = "lowercase")]`.
 - Selecting an enum column needs a type override in the query, such as
   `SELECT theme AS "theme: ThemePref" FROM user_settings`.
-- Queries use the compile-time `query!`, `query_as!` and `query_scalar!` macros
-  and are written where they are used.

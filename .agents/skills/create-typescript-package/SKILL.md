@@ -1,6 +1,6 @@
 ---
 name: typescript-package
-description: Add a new shared TypeScript or Svelte package under packages/ in this Bun workspace, with the right package.json exports map, tsconfig and Biome wiring. Use when code or configuration needs to be shared between the app and www frontends.
+description: Add a new shared TypeScript or Svelte package to the workspace. Use when code or configuration needs to be shared between frontends.
 ---
 
 # Adding a TypeScript package
@@ -10,8 +10,8 @@ Shared packages live in `packages/`. The root `package.json` already lists
 the reference for a component package and `packages/biome-config` for a
 config-only one.
 
-Add a package only when something is shared between `svc/app` and `svc/www`.
-Code used by one app belongs in that app's `src/lib`.
+Add a package only when the code is genuinely shared. Code used by one service
+belongs in that service.
 
 ## 1. Name it
 
@@ -90,10 +90,10 @@ Add `"@lerpz/foo": "workspace:*"` to the consuming app's dependencies and run
 - Svelte components are PascalCase, one per file, in a kebab-case directory with
   an `index.ts` barrel:
 
-  ```ts
-  export { default as Button } from "./Button.svelte";
-  export type { ButtonProps } from "./button-variants.js";
-  ```
+    ```ts
+    export { default as Button } from "./Button.svelte";
+    export type { ButtonProps } from "./button-variants.js";
+    ```
 
 - Runes only. Props are an inline object type on `$props()`, children are
   `children?: Snippet` rendered with `{@render children?.()}`.
