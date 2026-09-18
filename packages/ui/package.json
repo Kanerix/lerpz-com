@@ -33,6 +33,7 @@
         "svelte": "^5.0.0"
     },
     "exports": {
+        ".": "./src/index.ts",
         "./globals.css": "./src/styles/globals.css",
         "./postcss.config": "./postcss.config.mjs",
         "./lib/*": "./src/lib/*.ts",
