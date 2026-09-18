@@ -73,18 +73,28 @@ Do not write comments that:
 
 - Restate what the code already says.
 - Narrate a change or its history. That belongs in the commit message.
-- Mark a section of a file, for example:
-
-    ```
-    // ---------------------- Stuff here ----------------------
-    ```
-
-    Split the code into smaller functions, modules or files instead.
+- Assume the machine the code runs on, such as installed CLI tools, absolute
+  paths or a particular operating system.
 
 Documentation comments on public APIs are encouraged and are not covered by the
 rules above, but they should explain purpose, behaviour and caveats rather than
 repeat the signature. Follow the language's documentation conventions and keep
 existing comments up to date when the surrounding code changes.
+
+## Structure
+
+Use the language's own structure to separate code, not comments. A file that
+needs a banner to explain where one part ends and the next begins is a file that
+wants to be split up.
+
+Do not mark sections of a file with a comment, for example:
+
+```
+// ---------------------- Stuff here ----------------------
+```
+
+Split the code into smaller functions, modules or files instead, and let the
+names carry the meaning the banner was trying to give.
 
 ## Language rules
 
