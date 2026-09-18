@@ -99,7 +99,10 @@ pub async fn handler(
         )
         .with_error(err)
     })?;
-    let subtype = format.to_mime_type().strip_prefix("image/").unwrap_or("png");
+    let subtype = format
+        .to_mime_type()
+        .strip_prefix("image/")
+        .unwrap_or("png");
 
     tracing::trace!("requesting analysis for uploaded image");
     let analysis = super::analyze_bytes(&openai, subtype, &bytes, token.upn).await?;

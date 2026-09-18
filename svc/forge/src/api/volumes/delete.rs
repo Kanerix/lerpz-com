@@ -1,4 +1,7 @@
-use axum::{extract::{Path, State}, http::StatusCode};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+};
 use kube::api::DeleteParams;
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,

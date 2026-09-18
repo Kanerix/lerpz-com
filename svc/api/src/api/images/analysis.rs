@@ -7,9 +7,7 @@ use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
 };
-use lerpz_metadata::{
-    Metadata, MetadataClient, MetadataKind, models::StorageMetadata,
-};
+use lerpz_metadata::{Metadata, MetadataClient, MetadataKind, models::StorageMetadata};
 use uuid::Uuid;
 
 use crate::{

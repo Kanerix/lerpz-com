@@ -261,10 +261,9 @@ async fn submit_job(
         });
     }
 
-    let job: Value = response
-        .json()
-        .await
-        .map_err(|_| UpstreamError::provider("The video provider returned an unexpected response."))?;
+    let job: Value = response.json().await.map_err(|_| {
+        UpstreamError::provider("The video provider returned an unexpected response.")
+    })?;
 
     let operation_name = extract_operation_name(&job)
         .ok_or_else(|| {

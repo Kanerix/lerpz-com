@@ -76,16 +76,13 @@ pub(crate) fn agent_of(labels: Option<&BTreeMap<String, String>>) -> Option<Stri
 /// invalid identifier is a `400` from Forge rather than a `422` relayed back
 /// from the API server.
 pub(crate) fn validate_agent(agent: &str) -> Result<(), Problem> {
-    let invalid = |detail: String| {
-        Problem::new(
-            StatusCode::BAD_REQUEST,
-            "Invalid agent identifier",
-            detail,
-        )
-    };
+    let invalid =
+        |detail: String| Problem::new(StatusCode::BAD_REQUEST, "Invalid agent identifier", detail);
 
     if agent.is_empty() {
-        return Err(invalid("The agent identifier must not be empty.".to_owned()));
+        return Err(invalid(
+            "The agent identifier must not be empty.".to_owned(),
+        ));
     }
 
     if agent.len() > MAX_AGENT_LEN {
@@ -165,7 +162,10 @@ pub(crate) fn kube_problem(err: kube::Error, resource: &str) -> Problem {
     };
 
     let (title, detail) = match status {
-        StatusCode::NOT_FOUND => ("Resource not found", format!("The {resource} does not exist.")),
+        StatusCode::NOT_FOUND => (
+            "Resource not found",
+            format!("The {resource} does not exist."),
+        ),
         StatusCode::CONFLICT => (
             "Resource already exists",
             format!("The {resource} has already been provisioned."),

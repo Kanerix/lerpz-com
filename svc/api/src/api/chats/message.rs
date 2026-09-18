@@ -224,8 +224,7 @@ pub async fn handler(
     }
 
     let request = request_builder.build()?;
-    let sse_stream =
-        start_completion_sse(openai, request, conv_id, database, model_family).await?;
+    let sse_stream = start_completion_sse(openai, request, conv_id, database, model_family).await?;
 
     Ok(Sse::new(sse_stream))
 }

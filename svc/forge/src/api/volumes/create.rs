@@ -112,10 +112,7 @@ pub async fn handler(
             access_modes: Some(vec!["ReadWriteOnce".to_owned()]),
             storage_class_name: Some(storage_class),
             resources: Some(VolumeResourceRequirements {
-                requests: Some(BTreeMap::from([(
-                    "storage".to_owned(),
-                    Quantity(size),
-                )])),
+                requests: Some(BTreeMap::from([("storage".to_owned(), Quantity(size))])),
                 ..Default::default()
             }),
             ..Default::default()

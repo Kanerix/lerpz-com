@@ -242,7 +242,13 @@ async fn run_job(
     // The job yields a single terminal event once rendering finishes.
     let Some(event) = stream.next().await else {
         tracing::error!(%job_id, %operation_name, "video generation poll ended without an event");
-        job_store::fail(&redis, job_id, &oid, "The video generation ended unexpectedly.").await;
+        job_store::fail(
+            &redis,
+            job_id,
+            &oid,
+            "The video generation ended unexpectedly.",
+        )
+        .await;
         return;
     };
 

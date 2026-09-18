@@ -33,7 +33,7 @@ mod video;
 
 pub use chat::ChatEvent;
 pub use image::{ImageEvent, ImageRequest};
-pub use video::{VideoEvent, VideoJob, VideoRequest, VertexConfig};
+pub use video::{VertexConfig, VideoEvent, VideoJob, VideoRequest};
 
 /// A boxed stream of image generation events.
 pub type ImageStream = Pin<Box<dyn Stream<Item = Result<ImageEvent, UpstreamError>> + Send>>;

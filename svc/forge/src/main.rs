@@ -58,10 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "connected to the kubernetes api"
     );
 
-    let state = AppState {
-        azure_config,
-        kube,
-    };
+    let state = AppState { azure_config, kube };
 
     let cors = CorsLayer::new()
         .allow_origin(CONFIG.ALLOWED_ORIGINS.clone())

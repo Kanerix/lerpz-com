@@ -27,7 +27,8 @@ enum Env {
 ///
 /// Lazy loaded using [`LazyLock`] to ensure that the configuration is only
 /// loaded once.
-pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::from_env().expect("failed to load config from environment"));
+pub static CONFIG: LazyLock<Config> =
+    LazyLock::new(|| Config::from_env().expect("failed to load config from environment"));
 
 generate_config!(
     ENV: Env = get_env_parse,

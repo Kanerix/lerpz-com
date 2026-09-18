@@ -3,8 +3,8 @@ use std::sync::Arc;
 use async_openai::Client;
 use axum::extract::FromRef;
 use bb8_redis::RedisConnectionManager;
-use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_ai::portkey::PortkeyConfig;
+use lerpz_axum::middleware::azure::AzureConfig;
 
 pub(crate) type OpenAI = Arc<Client<PortkeyConfig>>;
 

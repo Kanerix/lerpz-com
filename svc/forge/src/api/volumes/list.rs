@@ -1,4 +1,7 @@
-use axum::{Json, extract::{Query, State}};
+use axum::{
+    Json,
+    extract::{Query, State},
+};
 use kube::api::ListParams;
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,

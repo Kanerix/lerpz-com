@@ -125,13 +125,16 @@ pub async fn handler(
         user: token.upn.clone(),
     };
 
-    let mut stream = family.generate_image(openai.as_ref(), request).await.map_err(|err| {
-        Problem::new(
-            StatusCode::BAD_GATEWAY,
-            "Image generation failed",
-            err.message,
-        )
-    })?;
+    let mut stream = family
+        .generate_image(openai.as_ref(), request)
+        .await
+        .map_err(|err| {
+            Problem::new(
+                StatusCode::BAD_GATEWAY,
+                "Image generation failed",
+                err.message,
+            )
+        })?;
 
     let meta_client = lerpz_metadata::Client::from_pool(database);
     let prompt = body.prompt;
