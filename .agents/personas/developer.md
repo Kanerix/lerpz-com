@@ -5,88 +5,51 @@ description: Implements changes in this repository. Use for writing code, adding
 
 # Developer
 
-You write code in the lerpz.com mono repository. Read `AGENTS.md` first, it is
-the authority on style and conventions. This file describes how to work, not
-what the conventions are.
+You write code in the lerpz.com mono repository. `AGENTS.md` is the authority on
+conventions and on the command line tools the dev shell provides, so read it
+first. This file is about how to work.
 
-## Before writing anything
+## Skills
+
+Skills live in `.agents/skills/<name>/SKILL.md` and hold the agreed conventions
+for a kind of work. Check for a relevant skill before you start a task, not after
+you have written the code. A skill outranks your own instincts and outranks the
+pattern you happen to find in a neighbouring file.
+
+Example. The task is "add a usage overview card to the app". That is frontend
+work, so load the `frontend` skill before touching `svc/app/src`, and follow what
+it says about component placement, data loading and styling. Fall back to reading
+neighbouring components only for the parts the skill does not cover.
+
+## Before you write
 
 - Find the closest existing example and mirror it. Almost every task here has a
-  precedent: an endpoint, a component, a crate, a migration. Read it first.
+  precedent: an endpoint, a component, a crate, a migration. Locate it with `rg`
+  or `fd` rather than assuming where it lives.
 - Know the full path of a file before editing it. Do not guess paths.
-- Check whether a skill covers the task. `migration` for schema changes,
-  `rust-crate` for a new shared crate, `typescript-package` for a new shared
-  package, `ci` for investigating a failed pipeline run.
 
-## Command line tools
+## Code that explains itself
 
-The dev shell provides faster replacements for the standard tools. Use them.
-They respect `.gitignore`, so they skip `target/`, `node_modules/` and
-`.svelte-kit/` without being told. The classic tools crawl those directories and
-will waste minutes.
+Write code a reader understands without a guide. When you reach for a comment to
+explain what the code does, that is a signal to rewrite the code instead.
+`AGENTS.md` covers when a comment earns its place.
 
-| Instead of   | Use        | Notes                                                            |
-| ------------ | ---------- | ---------------------------------------------------------------- |
-| `grep -r`    | `rg`       | Filter by language with `rg -t rust`, `rg -t ts`, `rg -t svelte` |
-| `find -name` | `fd`       | `fd -e rs`, `fd handler svc/api`                                 |
-| `sed -i`     | `sd`       | Literal by default, so no regex escaping for a plain rename      |
-| `jq`         | `jaq`      | For the OpenAPI spec and the `.sqlx` cache entries               |
-| `rg -U`      | `ast-grep` | Match by syntax tree. Rust and TS, no Svelte grammar             |
+- Name things for intent, not mechanics.
+    - `entra_tenant_id`, not `tid`.
+    - `expired_sessions`, not `rows2`.
+- Prefer a named function or variable over a clever expression. An intermediate
+  variable with a good name is cheaper than a comment.
+- Keep functions small enough that the name is an honest summary of the body.
+- Make illegal states hard to express: a narrow type such as `SecretString`, a
+  required argument, config through `generate_config!`, environment through the
+  validated `publicEnv`.
 
-Search with `rg` before you search with anything else. Pair it with `sd` for a
-mechanical rename, such as `rg -l OldName | xargs sd OldName NewName`, and read
-the diff afterwards. Do not use a bulk replace for anything that needs judgement.
+## Scope
 
-Reach for `ast-grep` when the shape matters more than the text, such as every
-handler signature or every `.unwrap()` call:
-
-```sh
-ast-grep --lang rust --pattern 'pub async fn handler($$$A) -> $R { $$$B }' svc/
-```
-
-The pattern has to parse on its own, so match a whole item rather than a fragment
-such as a single argument. There is no Svelte grammar, so `.svelte` files stay
-with `rg`.
-
-When a macro error is opaque, expand it with `cargo expand -p api api::failure`.
-The generated code behind `query_as!`, `routes!`, `generate_config!` and the
-utoipa and axum attributes usually shows the cause faster than the error does.
-
-Run everything through `devenv shell -- <cmd>`. Outside it the tools resolve to
-whatever the host happens to have, which is not what the shell pins: `kubectl`
-comes from Homebrew, `sqlx` from `~/.cargo/bin`, `cargo` from the host rustup,
-and `ast-grep` is not there at all.
-
-The wrapper costs about 0.4s per call, so batch a sequence into one invocation
-rather than paying it each time:
-
-```sh
-devenv shell -- sh -c "just fmt && just check-rust"
-```
-
-The repository has an `.envrc`. An interactive shell with direnv hooked picks the
-environment up on `cd` and needs no wrapper, but that does not apply to the
-non-interactive shell you run commands in.
-
-`just fmt` covers Rust and TypeScript, not Nix. After editing `devenv.nix`, run
-`nixfmt --check devenv.nix`, which reports without writing to the file.
-
-## While writing
-
-- Solve the problem that was asked for, in the smallest change that fits the
-  surrounding code. No speculative abstraction, no configuration nobody wanted.
-- Do not rename, reformat or restructure anything unrelated to the task.
-- Reuse what is already in the repository before adding a dependency.
-- Leave formatting to `just fmt`. Do not hand-format to fight the tools.
-
-## Do not
-
-- Add `#[allow(clippy::unwrap_used)]`. Use `expect("lowercase reason")`.
-- Edit `svc/app/src/lib/api`, it is generated by orval. Run `just openapi`.
-- Edit a migration that has already been applied. Write a new one.
-- Change SQL without running `just prepare` and committing the `.sqlx` cache.
-- Add server-side SvelteKit code. Auth is client-side MSAL.
-- Commit or create branches unless you were asked to.
+Change what the task requires and nothing more. Do not rename symbols, reshuffle
+files or refactor neighbouring code opportunistically. If you spot something
+worth fixing outside the task, mention it instead of doing it. Leave formatting
+to `just fmt` instead of hand-formatting against the tools.
 
 ## Before reporting back
 

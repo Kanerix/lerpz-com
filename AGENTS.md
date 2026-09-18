@@ -4,9 +4,11 @@ This is a general-purpose mono repository for the Lerpz organisation.
 
 ## Personas
 
-Unless told otherwise, work as the developer persona described in
-`.agents/personas/developer.md`. Read it alongside this file. It covers how to
-work, this file covers the conventions.
+Always read your persona first.
+
+Unless told otherwise, work as the developer persona in
+`.agents/personas/developer.md`. A persona covers how to work, this file covers
+the conventions and the tooling it works with.
 
 The other personas in `.agents/personas/` are used when the task calls for them:
 `researcher.md` for read-only questions about the codebase, and `reviewer.md`
@@ -96,11 +98,49 @@ Do not mark sections of a file with a comment, for example:
 Split the code into smaller functions, modules or files instead, and let the
 names carry the meaning the banner was trying to give.
 
+## Command line tools
+
+The dev shell provides faster replacements for the standard tools. Use them.
+They respect `.gitignore`, so they skip `target/`, `node_modules/` and
+`.svelte-kit/` without being told. The classic tools crawl those directories and
+will waste minutes.
+
+| Instead of   | Use        | Notes                                                            |
+| ------------ | ---------- | ---------------------------------------------------------------- |
+| `grep -r`    | `rg`       | Filter by language with `rg -t rust`, `rg -t ts`, `rg -t svelte` |
+| `find -name` | `fd`       | `fd -e rs`, `fd handler svc/api`                                 |
+| `sed -i`     | `sd`       | Literal by default, so no regex escaping for a plain rename      |
+| `jq`         | `jaq`      | For the OpenAPI spec and the `.sqlx` cache entries               |
+| `rg -U`      | `ast-grep` | Match by syntax tree. Rust and TS, no Svelte grammar             |
+
+Search with `rg` before you search with anything else. Pair it with `sd` for a
+mechanical rename, such as `rg -l OldName | xargs sd OldName NewName`, and read
+the diff afterwards. Do not use a bulk replace for anything that needs judgement.
+
+Reach for `ast-grep` when the shape matters more than the text, such as every
+handler signature or every `.unwrap()` call:
+
+```sh
+ast-grep --lang rust --pattern 'pub async fn handler($$$A) -> $R { $$$B }' svc/
+```
+
+The pattern has to parse on its own, so match a whole item rather than a fragment
+such as a single argument. There is no Svelte grammar, so `.svelte` files stay
+with `rg`.
+
+When a macro error is opaque, expand it with `cargo expand -p api api::failure`.
+The generated code behind `query_as!`, `routes!`, `generate_config!` and the
+utoipa and axum attributes usually shows the cause faster than the error does.
+
+The repository has an `.envrc`. An interactive shell with direnv hooked picks
+the environment up on `cd` and needs no wrapper, but that does not apply to the
+non-interactive shell you run commands in.
+
 ## Language rules
 
-`just fmt` runs `cargo fmt` and Biome, and `just check` runs Clippy,
-`svelte-check` and Biome. Leave formatting to those tools and do not hand-format
-code to look different from what they produce.
+`just fmt` formats the code and `just check` lints and type-checks it. Leave that
+to the recipes and do not hand-format code to look different from what they
+produce. `just --list` describes the rest.
 
 ### Rust
 
@@ -151,9 +191,12 @@ Edition 2024 on the nightly toolchain. Every dependency is declared in
 Bun workspaces, Svelte 5 and SvelteKit 2, checked with `svelte-check` and linted
 and formatted by Biome.
 
-- Runes only: `$props`, `$state`, `$derived` and `$effect`. `export let`,
-  `<slot>`, `on:click` and `writable` or `readable` stores do not appear in this
-  codebase and should not be introduced.
+- Runes only: `$props`, `$state`, `$derived` and `$effect`. Do not introduce
+  `export let`, `<slot>` or `on:click`, which have direct runes equivalents.
+- Do not write your own stores. `$state` in a `.svelte.ts` module covers shared
+  state, and `createSubscriber` from `svelte/reactivity` covers a value backed by
+  a subscription. When a dependency exposes a store, bridge it with `fromStore`
+  rather than spreading the store contract through the codebase.
 - Relative and `$lib` imports carry a `.js` extension, since
   `verbatimModuleSyntax` is on and the build is ESM. Type-only imports use
   `import type`. Prefer `type` aliases over `interface`.
@@ -172,8 +215,9 @@ and formatted by Biome.
   `cn()` from `@lerpz/ui/lib/utils`, and keep variants in a sibling
   `*-variants.ts` using CVA. Do not sort Tailwind classes, as the rule is off on
   purpose.
-- Shared components come from `@lerpz/ui` through subpath imports such as
-  `@lerpz/ui/components/button`. The package has no root export and no build
+- Shared components come from the `@lerpz/ui` root export, such as
+  `import { Button } from "@lerpz/ui"`. Styles, hooks and helpers keep their
+  subpaths, such as `@lerpz/ui/lib/utils`. The package ships source with no build
   step, and wraps `@ark-ui/svelte`.
 - Read environment variables through the validated `publicEnv` export rather than
   `$env` directly.
@@ -188,6 +232,10 @@ and formatted by Biome.
 ### SQL
 
 Migrations live in the top-level `migrations/` directory and are created with
-`just migration NAME`. Keywords are uppercase. Once a migration is merged it is
-append-only, so fix a mistake with a new migration rather than editing one that
-has already been applied.
+`just migration NAME`.
+
+Editing a migration that has already run changes its checksum and breaks every
+database that applied the old version. One you wrote yourself and have only run
+locally can still be edited, since `just reset` rebuilds the database from
+scratch. For anything else, ask whether it has been applied in production. If it
+has, or nobody is sure, fix the mistake with a new migration instead.
