@@ -33,8 +33,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # rust-toolchain.toml pins the channel but lists no components, because
+      # locally devenv supplies rustfmt and clippy through nix. A plain rustup
+      # install gets neither, so ask for them explicitly.
       - name: Setup Rust
-        run: rustup show active-toolchain || rustup toolchain install
+        run: rustup toolchain install nightly --profile minimal --component rustfmt --component clippy
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
