@@ -27,7 +27,7 @@ use crate::oapi::IMAGES_TAG;
         ),
     ),
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = crate::state::AppState)]
 pub async fn handler() -> HandlerResult<()> {
     Ok(())
 }

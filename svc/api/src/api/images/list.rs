@@ -119,8 +119,8 @@ fn public_url(bucket: &str, key: &str) -> String {
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(database): State<DatabasePool>,
     Query(params): Query<ListQuery>,
+    State(database): State<DatabasePool>,
 ) -> HandlerResult<Json<ImageListResponse>> {
     let limit = params.limit.unwrap_or(DEFAULT_LIMIT).clamp(1, MAX_LIMIT);
 

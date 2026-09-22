@@ -16,7 +16,7 @@ use crate::state::{AppState, DatabasePool, RedisPool, S3Client};
 const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct HealthCheck {
+pub struct HealthCheckResponse {
     /// Whether the database connection is healthy
     database: bool,
     /// Whether the Redis connection is healthy
@@ -37,7 +37,7 @@ pub struct HealthCheck {
         (
             status = OK,
             description = "Service is healthy",
-            body = HealthCheck
+            body = HealthCheckResponse
         ),
         (
             status = INTERNAL_SERVER_ERROR,
@@ -52,10 +52,10 @@ pub async fn handler(
     State(pool): State<DatabasePool>,
     State(redis): State<RedisPool>,
     State(s3): State<S3Client>,
-) -> HandlerResult<(StatusCode, Json<HealthCheck>)> {
+) -> HandlerResult<(StatusCode, Json<HealthCheckResponse>)> {
     let database_ok = timeout(
         HEALTH_CHECK_TIMEOUT,
-        sqlx::query_scalar::<_, i32>("SELECT 1").fetch_one(&pool),
+        sqlx::query_scalar!("SELECT 1").fetch_one(&pool),
     )
     .await
     .is_ok_and(|result| result.is_ok());
@@ -82,7 +82,7 @@ pub async fn handler(
 
     Ok((
         status_code,
-        Json(HealthCheck {
+        Json(HealthCheckResponse {
             database: database_ok,
             redis: redis_ok,
             s3: s3_ok,

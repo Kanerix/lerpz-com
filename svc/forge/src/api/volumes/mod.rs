@@ -24,7 +24,7 @@ pub fn router() -> OpenApiRouter<AppState> {
 
 /// A persistent memory volume attached to an agent.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct MemoryVolume {
+pub struct MemoryVolumeResponse {
     /// Name of the underlying `PersistentVolumeClaim`
     pub name: String,
     /// Identifier of the agent this volume belongs to
@@ -39,7 +39,7 @@ pub struct MemoryVolume {
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-impl From<PersistentVolumeClaim> for MemoryVolume {
+impl From<PersistentVolumeClaim> for MemoryVolumeResponse {
     fn from(pvc: PersistentVolumeClaim) -> Self {
         let name = pvc.name_any();
         let agent = resources::agent_of(pvc.metadata.labels.as_ref());

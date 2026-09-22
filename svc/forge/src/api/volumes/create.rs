@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 use crate::{
-    api::volumes::{COMPONENT, MemoryVolume},
+    api::volumes::{COMPONENT, MemoryVolumeResponse},
     config::CONFIG,
     oapi::VOLUMES_TAG,
     resources,
@@ -52,7 +52,7 @@ pub struct CreateVolumeRequest {
         (
             status = CREATED,
             description = "The memory volume was provisioned",
-            body = MemoryVolume
+            body = MemoryVolumeResponse
         ),
         (
             status = BAD_REQUEST,
@@ -85,7 +85,7 @@ pub async fn handler(
     _token: AzureAccessToken,
     State(kube): State<KubeClient>,
     Json(body): Json<CreateVolumeRequest>,
-) -> HandlerResult<(StatusCode, Json<MemoryVolume>)> {
+) -> HandlerResult<(StatusCode, Json<MemoryVolumeResponse>)> {
     resources::validate_agent(&body.agent)?;
 
     let name = resources::memory_volume_name(&body.agent);

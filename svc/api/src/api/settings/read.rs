@@ -5,7 +5,7 @@ use lerpz_axum::{
 };
 
 use crate::{
-    api::settings::UserSettings,
+    api::settings::UserSettingsResponse,
     oapi::SETTINGS_TAG,
     state::{AppState, DatabasePool},
 };
@@ -23,7 +23,7 @@ use crate::{
         (
             status = OK,
             description = "The user's account settings",
-            body = UserSettings
+            body = UserSettingsResponse
         ),
         (
             status = UNAUTHORIZED,
@@ -43,11 +43,11 @@ use crate::{
 pub async fn handler(
     token: AzureAccessToken,
     State(database): State<DatabasePool>,
-) -> HandlerResult<Json<UserSettings>> {
+) -> HandlerResult<Json<UserSettingsResponse>> {
     let user_id = token.sub;
 
     let settings = sqlx::query_as!(
-        UserSettings,
+        UserSettingsResponse,
         r#"SELECT
             theme AS "theme: _",
             notify_product_updates,

@@ -8,7 +8,7 @@ use lerpz_axum::{
 };
 
 use crate::{
-    api::runtimes::AgentRuntime,
+    api::runtimes::AgentRuntimeResponse,
     oapi::RUNTIMES_TAG,
     resources,
     state::{AppState, KubeClient},
@@ -27,7 +27,7 @@ use crate::{
         (
             status = OK,
             description = "The agent's runtime",
-            body = AgentRuntime
+            body = AgentRuntimeResponse
         ),
         (
             status = BAD_REQUEST,
@@ -58,9 +58,9 @@ use crate::{
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(kube): State<KubeClient>,
     Path(agent): Path<String>,
-) -> HandlerResult<Json<AgentRuntime>> {
+    State(kube): State<KubeClient>,
+) -> HandlerResult<Json<AgentRuntimeResponse>> {
     resources::validate_agent(&agent)?;
 
     let name = resources::runtime_name(&agent);

@@ -7,7 +7,7 @@ use serde::Deserialize;
 use utoipa::ToSchema;
 
 use crate::{
-    api::settings::{ThemePref, UserSettings},
+    api::settings::{ThemePref, UserSettingsResponse},
     oapi::SETTINGS_TAG,
     state::{AppState, DatabasePool},
 };
@@ -51,7 +51,7 @@ pub struct UpdateSettingsRequest {
         (
             status = OK,
             description = "The updated account settings",
-            body = UserSettings
+            body = UserSettingsResponse
         ),
         (
             status = BAD_REQUEST,
@@ -78,11 +78,11 @@ pub async fn handler(
     token: AzureAccessToken,
     State(database): State<DatabasePool>,
     Json(body): Json<UpdateSettingsRequest>,
-) -> HandlerResult<Json<UserSettings>> {
+) -> HandlerResult<Json<UserSettingsResponse>> {
     let user_id = token.sub;
 
     let settings = sqlx::query_as!(
-        UserSettings,
+        UserSettingsResponse,
         r#"INSERT INTO user_settings (
             user_id,
             theme,

@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct Conversation {
+pub struct ConversationResponse {
     /// Unique conversation identifier
     pub(crate) id: Uuid,
     /// Conversation title (auto-generated from the first prompt if not provided)
@@ -40,7 +40,7 @@ pub struct Conversation {
         (
             status = OK,
             description = "List of conversations",
-            body = Vec<Conversation>
+            body = Vec<ConversationResponse>
         ),
         (
             status = UNAUTHORIZED,
@@ -60,11 +60,11 @@ pub struct Conversation {
 pub async fn handler(
     token: AzureAccessToken,
     State(database): State<DatabasePool>,
-) -> HandlerResult<Json<Vec<Conversation>>> {
+) -> HandlerResult<Json<Vec<ConversationResponse>>> {
     let user_id = token.sub;
 
     let conversations = sqlx::query_as!(
-        Conversation,
+        ConversationResponse,
         "SELECT id, title, model, archived, created_at, updated_at
         FROM conversations
         WHERE user_id = $1 ORDER BY updated_at DESC",

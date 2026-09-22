@@ -22,7 +22,7 @@ use crate::{
     summary = "Reclaim an agent's memory volume",
     description = "Deletes the agent's `PersistentVolumeClaim`. Whether the \
         underlying data is destroyed depends on the StorageClass reclaim policy. \
-        Delete the agent's runtime first — a claim still mounted by a running \
+        Delete the agent's runtime first. A claim still mounted by a running \
         pod stays `Terminating` until the pod is gone.",
     params(
         ("agent" = String, Path, description = "Identifier of the agent"),
@@ -61,8 +61,8 @@ use crate::{
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(kube): State<KubeClient>,
     Path(agent): Path<String>,
+    State(kube): State<KubeClient>,
 ) -> HandlerResult<StatusCode> {
     resources::validate_agent(&agent)?;
 

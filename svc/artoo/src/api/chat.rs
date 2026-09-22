@@ -8,7 +8,7 @@ use axum::{Json, extract::State};
 use http::{StatusCode, header};
 use lerpz_axum::middleware::azure::AzureAccessToken;
 use lerpz_axum::problem::{HandlerResult, Problem, ProblemSchema};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use utoipa::ToSchema;
 
 use crate::factory::AgentFactory;
@@ -21,25 +21,27 @@ pub struct ChatRequest {
     pub message: String,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ChatResponse {
-    pub response: String,
-}
-
 #[utoipa::path(
     post,
     path = "/chat",
     tag = AGENT_TAG,
     summary = "Chat with the AI agent",
-    description = "Send a plain-text message to the AI agent and receive a \
-        response. The agent will automatically retrieve relevant context from \
-        the knowledge base and invoke tools as needed.",
+    description = "Send a plain-text message to the AI agent and receive the \
+        reply as a server-sent event stream. The agent retrieves relevant \
+        context from the knowledge base and invokes tools as needed.",
     request_body = ChatRequest,
     responses(
         (
             status = OK,
-            description = "Agent replied successfully",
-            body = ChatResponse
+            description = "SSE stream of agent events. Events: \
+                init (conversation ID), \
+                message (reply text), \
+                tool_call (name of the tool being called), \
+                tool_result (output of the tool call), \
+                saved (conversation state persisted), \
+                error (error message)",
+            content_type = "text/event-stream",
+            body = String
         ),
         (
             status = UNAUTHORIZED,

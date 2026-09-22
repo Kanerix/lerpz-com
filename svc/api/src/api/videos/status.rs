@@ -9,7 +9,6 @@ use lerpz_axum::{
     problem::{HandlerResult, Problem, ProblemSchema},
 };
 use serde::Serialize;
-use sqlx::Row as _;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -105,9 +104,9 @@ pub struct VideoJobResponse {
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     token: AzureAccessToken,
+    Path(id): Path<Uuid>,
     State(database): State<DatabasePool>,
     State(redis): State<RedisPool>,
-    Path(id): Path<Uuid>,
 ) -> HandlerResult<Json<VideoJobResponse>> {
     let oid = token.oid.ok_or(Problem::new(
         StatusCode::INTERNAL_SERVER_ERROR,
@@ -137,38 +136,29 @@ pub async fn handler(
     // to build the result the same way the list endpoint does.
     let video = match record.video_id {
         Some(vid) => {
-            let row = sqlx::query(
+            let row = sqlx::query!(
                 r#"SELECT prompt, model, title, tags, storage_bucket, storage_key,
                           format, width, height, duration, created_at
                    FROM video_metadata
                    WHERE id = $1"#,
+                vid,
             )
-            .bind(vid)
             .fetch_optional(&database)
             .await?;
 
-            match row {
-                Some(row) => {
-                    let bucket: String = row.try_get("storage_bucket")?;
-                    let key: String = row.try_get("storage_key")?;
-                    Some(JobVideo {
-                        id: vid,
-                        url: public_url(&bucket, &key),
-                        prompt: row.try_get("prompt")?,
-                        model: row.try_get("model")?,
-                        title: row.try_get("title")?,
-                        tags: row
-                            .try_get::<Option<Vec<String>>, _>("tags")?
-                            .unwrap_or_default(),
-                        format: row.try_get("format")?,
-                        width: row.try_get("width")?,
-                        height: row.try_get("height")?,
-                        duration: row.try_get("duration")?,
-                        created_at: row.try_get("created_at")?,
-                    })
-                }
-                None => None,
-            }
+            row.map(|r| JobVideo {
+                id: vid,
+                url: public_url(&r.storage_bucket, &r.storage_key),
+                prompt: r.prompt,
+                model: r.model,
+                title: r.title,
+                tags: r.tags.unwrap_or_default(),
+                format: r.format,
+                width: r.width,
+                height: r.height,
+                duration: r.duration,
+                created_at: r.created_at,
+            })
         }
         None => None,
     };

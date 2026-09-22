@@ -19,7 +19,7 @@ use crate::state::{AppState, KubeClient};
 const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct HealthCheck {
+pub struct HealthCheckResponse {
     /// Whether the Kubernetes API is reachable and Forge is authorised to list
     /// the resources it manages
     cluster: bool,
@@ -39,12 +39,12 @@ pub struct HealthCheck {
         (
             status = OK,
             description = "Service is healthy",
-            body = HealthCheck
+            body = HealthCheckResponse
         ),
         (
             status = SERVICE_UNAVAILABLE,
             description = "The Kubernetes API is unreachable",
-            body = HealthCheck
+            body = HealthCheckResponse
         ),
         (
             status = INTERNAL_SERVER_ERROR,
@@ -57,7 +57,7 @@ pub struct HealthCheck {
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     State(kube): State<KubeClient>,
-) -> HandlerResult<(StatusCode, Json<HealthCheck>)> {
+) -> HandlerResult<(StatusCode, Json<HealthCheckResponse>)> {
     // A limited, label-filtered list is the cheapest call that exercises both
     // connectivity and Forge's RBAC in the namespace it actually writes to.
     let params = ListParams::default()
@@ -79,7 +79,7 @@ pub async fn handler(
 
     Ok((
         status_code,
-        Json(HealthCheck {
+        Json(HealthCheckResponse {
             cluster: cluster_ok,
             namespace: CONFIG.KUBE_NAMESPACE.to_string(),
         }),

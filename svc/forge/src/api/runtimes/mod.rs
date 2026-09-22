@@ -24,7 +24,7 @@ pub fn router() -> OpenApiRouter<AppState> {
 
 /// A container runtime executing an agent.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct AgentRuntime {
+pub struct AgentRuntimeResponse {
     /// Name of the underlying `Deployment`
     pub name: String,
     /// Identifier of the agent this runtime executes
@@ -41,7 +41,7 @@ pub struct AgentRuntime {
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-impl From<Deployment> for AgentRuntime {
+impl From<Deployment> for AgentRuntimeResponse {
     fn from(deployment: Deployment) -> Self {
         let name = deployment.name_any();
         let agent = resources::agent_of(deployment.metadata.labels.as_ref());

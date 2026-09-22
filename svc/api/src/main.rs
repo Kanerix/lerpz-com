@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let aws_credentials = Credentials::new(
         CONFIG.AWS_ACCESS_KEY_ID.as_ref(),
-        CONFIG.AWS_SECRET_ACCESS_KEY.as_ref(),
+        CONFIG.AWS_SECRET_ACCESS_KEY.expose_secret(),
         None,
         None,
         "env",
@@ -138,7 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let html = scalar_html(&scalar_config, None).replace(
         "<title>Scalar API Reference</title>",
-        "<title>Lerpz AI — API references</title>",
+        "<title>Lerpz AI API references</title>",
     );
 
     let app = router
@@ -148,7 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
-    tracing::info!("server started listening on {}", CONFIG.ADDR);
+    tracing::info!(addr = %CONFIG.ADDR, "server listening");
 
     let service = app.into_make_service();
     axum::serve(listener, service)

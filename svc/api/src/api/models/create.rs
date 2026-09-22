@@ -12,7 +12,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelSettings};
+use super::{ModelResponse, ModelSettings};
 
 /// Parameters for creating a new model.
 #[derive(Debug, Deserialize, ToSchema)]
@@ -53,7 +53,7 @@ pub struct CreateModelRequest {
         (
             status = CREATED,
             description = "The newly created model",
-            body = Model
+            body = ModelResponse
         ),
         (
             status = BAD_REQUEST,
@@ -86,11 +86,11 @@ pub async fn handler(
     _token: AzureAccessToken,
     State(database): State<DatabasePool>,
     Json(body): Json<CreateModelRequest>,
-) -> HandlerResult<(StatusCode, Json<Model>)> {
+) -> HandlerResult<(StatusCode, Json<ModelResponse>)> {
     let settings = body.settings.unwrap_or_else(|| json!({}));
 
     let model = sqlx::query_as!(
-        Model,
+        ModelResponse,
         r#"INSERT INTO models
             (display_name, description, family, deployment_name, provider, modalities, settings)
         VALUES ($1, $2, $3, $4, $5, $6, $7)

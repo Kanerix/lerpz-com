@@ -160,9 +160,9 @@ pub async fn handler(
     // created at all, so surface it synchronously rather than via a job record.
     let job = family.start_video(openai.as_ref(), request).await.map_err(|upstream| {
         if upstream.is_user() {
-            tracing::warn!(%oid, model = %model_name, reason = %upstream.message, "video generation rejected by provider");
+            tracing::warn!(%oid, model = %model_name, reason = %upstream.message, "provider rejects video generation");
         } else {
-            tracing::error!(%oid, model = %model_name, "video generation request failed: {}", upstream.message);
+            tracing::error!(%oid, model = %model_name, reason = %upstream.message, "video generation request failed");
         }
         Problem::new(
             StatusCode::BAD_GATEWAY,
@@ -195,11 +195,11 @@ pub async fn handler(
         )
     })?;
 
-    tracing::debug!(%job_id, %operation_name, model = %model_name, "video generation job created");
+    tracing::debug!(%job_id, %operation_name, model = %model_name, "tracking video generation job");
 
     // Drive the render in the background. The task owns everything it needs, so
     // it outlives the request. Note: an in-flight task is lost on restart, which
-    // leaves its record stuck in `in_progress` until the TTL expires it —
+    // leaves its record stuck in `in_progress` until the TTL expires it. That is
     // acceptable for this scope.
     let prompt = body.prompt;
     tokio::spawn(run_job(
@@ -241,7 +241,7 @@ async fn run_job(
 
     // The job yields a single terminal event once rendering finishes.
     let Some(event) = stream.next().await else {
-        tracing::error!(%job_id, %operation_name, "video generation poll ended without an event");
+        tracing::error!(%job_id, %operation_name, "video generation poll ends without an event");
         job_store::fail(
             &redis,
             job_id,
@@ -255,9 +255,9 @@ async fn run_job(
     let (video_bytes, format, width, height, duration) = match event {
         Err(upstream) => {
             if upstream.is_user() {
-                tracing::warn!(%operation_name, reason = %upstream.message, "video generation rejected by provider");
+                tracing::warn!(%operation_name, reason = %upstream.message, "provider rejects video generation");
             } else {
-                tracing::error!(%operation_name, "video generation failed: {}", upstream.message);
+                tracing::error!(%operation_name, reason = %upstream.message, "video generation failed");
             }
             job_store::fail(&redis, job_id, &oid, &upstream.message).await;
             return;
@@ -316,7 +316,7 @@ async fn run_job(
     };
 
     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &video_bytes).await {
-        tracing::error!(%operation_name, "{err}");
+        tracing::error!(%operation_name, %err, "failed to save video to storage");
         job_store::fail(&redis, job_id, &oid, &err.to_string()).await;
         return;
     }
@@ -324,7 +324,7 @@ async fn run_job(
     tracing::trace!(%operation_name, "persisting metadata to database");
     let meta_client = lerpz_metadata::Client::from_pool(database);
     if let Err(err) = meta_client.insert(metadata).await {
-        tracing::error!(%operation_name, "{err}");
+        tracing::error!(%operation_name, %err, "failed to persist video metadata");
         job_store::fail(&redis, job_id, &oid, &err.to_string()).await;
         return;
     }

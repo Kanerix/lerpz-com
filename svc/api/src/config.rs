@@ -49,7 +49,7 @@ generate_config!(
     DATABASE_URL: SecretString = get_env_from,
     REDIS_URL: SecretString = get_env_from,
     AWS_ACCESS_KEY_ID: Arc<str> = get_env_from,
-    AWS_SECRET_ACCESS_KEY: Arc<str> = get_env_from,
+    AWS_SECRET_ACCESS_KEY: SecretString = get_env_from,
     AWS_REGION: Arc<str> = get_env_from,
     AWS_S3_ENDPOINT: Arc<str> = get_env_from,
     AWS_S3_BUCKET: Arc<str> = get_env_from

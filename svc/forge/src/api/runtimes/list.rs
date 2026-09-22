@@ -11,7 +11,7 @@ use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::{
-    api::runtimes::AgentRuntime,
+    api::runtimes::AgentRuntimeResponse,
     oapi::RUNTIMES_TAG,
     resources,
     state::{AppState, KubeClient},
@@ -37,7 +37,7 @@ pub struct ListRuntimesQuery {
         (
             status = OK,
             description = "The managed agent runtimes",
-            body = Vec<AgentRuntime>
+            body = Vec<AgentRuntimeResponse>
         ),
         (
             status = UNAUTHORIZED,
@@ -56,9 +56,9 @@ pub struct ListRuntimesQuery {
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(kube): State<KubeClient>,
     Query(query): Query<ListRuntimesQuery>,
-) -> HandlerResult<Json<Vec<AgentRuntime>>> {
+    State(kube): State<KubeClient>,
+) -> HandlerResult<Json<Vec<AgentRuntimeResponse>>> {
     let selector = match query.agent.as_deref() {
         Some(agent) => {
             resources::validate_agent(agent)?;
@@ -75,7 +75,7 @@ pub async fn handler(
     let runtimes = deployments
         .items
         .into_iter()
-        .map(AgentRuntime::from)
+        .map(AgentRuntimeResponse::from)
         .collect();
 
     Ok(Json(runtimes))

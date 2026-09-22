@@ -11,7 +11,7 @@ use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::{
-    api::volumes::MemoryVolume,
+    api::volumes::MemoryVolumeResponse,
     oapi::VOLUMES_TAG,
     resources,
     state::{AppState, KubeClient},
@@ -37,7 +37,7 @@ pub struct ListVolumesQuery {
         (
             status = OK,
             description = "The managed memory volumes",
-            body = Vec<MemoryVolume>
+            body = Vec<MemoryVolumeResponse>
         ),
         (
             status = UNAUTHORIZED,
@@ -56,9 +56,9 @@ pub struct ListVolumesQuery {
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(kube): State<KubeClient>,
     Query(query): Query<ListVolumesQuery>,
-) -> HandlerResult<Json<Vec<MemoryVolume>>> {
+    State(kube): State<KubeClient>,
+) -> HandlerResult<Json<Vec<MemoryVolumeResponse>>> {
     let selector = match query.agent.as_deref() {
         Some(agent) => {
             resources::validate_agent(agent)?;
@@ -72,7 +72,11 @@ pub async fn handler(
         .await
         .map_err(|err| resources::kube_problem(err, "memory volumes"))?;
 
-    let volumes = claims.items.into_iter().map(MemoryVolume::from).collect();
+    let volumes = claims
+        .items
+        .into_iter()
+        .map(MemoryVolumeResponse::from)
+        .collect();
 
     Ok(Json(volumes))
 }

@@ -2,7 +2,7 @@
 //!
 //! Every object Forge creates carries the [`MANAGED_BY_LABEL`], and every read
 //! path filters on it via [`managed_selector`]. That is what keeps Forge from
-//! listing — or worse, deleting — a `PersistentVolumeClaim` or `Deployment`
+//! listing, or worse deleting, a `PersistentVolumeClaim` or `Deployment`
 //! that some other tool owns in the same namespace.
 
 use std::collections::BTreeMap;

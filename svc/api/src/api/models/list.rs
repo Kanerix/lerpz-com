@@ -9,7 +9,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::Model;
+use super::ModelResponse;
 
 #[utoipa::path(
     method(get),
@@ -23,7 +23,7 @@ use super::Model;
         (
             status = OK,
             description = "List of available models",
-            body = Vec<Model>
+            body = Vec<ModelResponse>
         ),
         (
             status = UNAUTHORIZED,
@@ -43,9 +43,9 @@ use super::Model;
 pub async fn handler(
     _token: AzureAccessToken,
     State(database): State<DatabasePool>,
-) -> HandlerResult<Json<Vec<Model>>> {
+) -> HandlerResult<Json<Vec<ModelResponse>>> {
     let models = sqlx::query_as!(
-        Model,
+        ModelResponse,
         r#"SELECT
             id,
             display_name,

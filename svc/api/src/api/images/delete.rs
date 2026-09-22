@@ -47,9 +47,9 @@ use crate::{
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
+    Path(id): Path<Uuid>,
     State(database): State<DatabasePool>,
     State(s3): State<S3Client>,
-    Path(id): Path<Uuid>,
 ) -> HandlerResult<()> {
     let meta_client = lerpz_metadata::Client::from_pool(database);
 

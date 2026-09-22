@@ -16,7 +16,7 @@ use crate::{
     state::{AppState, DatabasePool},
 };
 
-use super::{Model, ModelSettings};
+use super::{ModelResponse, ModelSettings};
 
 /// Parameters for updating an existing model.
 ///
@@ -66,7 +66,7 @@ pub struct UpdateModelRequest {
         (
             status = OK,
             description = "The updated model",
-            body = Model
+            body = ModelResponse
         ),
         (
             status = BAD_REQUEST,
@@ -106,9 +106,9 @@ pub async fn handler(
     Path(id): Path<Uuid>,
     State(database): State<DatabasePool>,
     Json(body): Json<UpdateModelRequest>,
-) -> HandlerResult<Json<Model>> {
+) -> HandlerResult<Json<ModelResponse>> {
     let model = sqlx::query_as!(
-        Model,
+        ModelResponse,
         r#"UPDATE models SET
             display_name = COALESCE($2, display_name),
             description = COALESCE($3, description),

@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&CONFIG.ADDR).await?;
-    tracing::info!("server started listening on {}", CONFIG.ADDR);
+    tracing::info!(addr = %CONFIG.ADDR, "server listening");
 
     let service = app.into_make_service();
     axum::serve(listener, service)

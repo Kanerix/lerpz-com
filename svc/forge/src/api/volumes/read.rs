@@ -8,7 +8,7 @@ use lerpz_axum::{
 };
 
 use crate::{
-    api::volumes::MemoryVolume,
+    api::volumes::MemoryVolumeResponse,
     oapi::VOLUMES_TAG,
     resources,
     state::{AppState, KubeClient},
@@ -27,7 +27,7 @@ use crate::{
         (
             status = OK,
             description = "The agent's memory volume",
-            body = MemoryVolume
+            body = MemoryVolumeResponse
         ),
         (
             status = BAD_REQUEST,
@@ -58,9 +58,9 @@ use crate::{
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(kube): State<KubeClient>,
     Path(agent): Path<String>,
-) -> HandlerResult<Json<MemoryVolume>> {
+    State(kube): State<KubeClient>,
+) -> HandlerResult<Json<MemoryVolumeResponse>> {
     resources::validate_agent(&agent)?;
 
     let name = resources::memory_volume_name(&agent);

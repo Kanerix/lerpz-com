@@ -20,7 +20,7 @@ struct MsGraphMe {
     /// Present for cloud-only and synced accounts; absent for some
     /// guest/federated types.
     mail: Option<String>,
-    /// Always present – used as a fallback when `mail` is `None`.
+    /// Always present. Used as a fallback when `mail` is `None`.
     user_principal_name: String,
 }
 
@@ -33,7 +33,7 @@ pub struct UserProfile {
 /// Tool that fetches the authenticated user's profile from Microsoft Graph.
 ///
 /// The access token is captured at construction time and is **never** forwarded
-/// to the LLM – only the tool's JSON schema (empty arg object) is sent.
+/// to the LLM. Only the tool's JSON schema (empty arg object) is sent.
 pub struct GetUserProfile {
     client: Client,
     token: String,
@@ -86,10 +86,9 @@ impl Tool for GetUserProfile {
             .await
             .map_err(|e| ToolError::ProfileFailed(e.to_string()))?;
 
-        tracing::debug!(name = %graph_me.display_name, "user profile fetched");
+        tracing::debug!(name = %graph_me.display_name, "returning user profile");
 
         Ok(UserProfile {
-            // The user's display name from Entra ID.
             name: graph_me.display_name,
             // `mail` can be absent for certain account types; fall back to UPN.
             email: graph_me.mail.unwrap_or(graph_me.user_principal_name),

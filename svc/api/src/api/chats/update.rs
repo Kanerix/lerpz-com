@@ -12,7 +12,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    api::chats::list::Conversation,
+    api::chats::list::ConversationResponse,
     oapi::CHATS_TAG,
     state::{AppState, DatabasePool},
 };
@@ -44,7 +44,7 @@ pub struct UpdateChatRequest {
         (
             status = OK,
             description = "The updated conversation",
-            body = Conversation
+            body = ConversationResponse
         ),
         (
             status = UNAUTHORIZED,
@@ -72,11 +72,11 @@ pub async fn handler(
     Path(conv_id): Path<Uuid>,
     State(database): State<DatabasePool>,
     Json(body): Json<UpdateChatRequest>,
-) -> HandlerResult<Json<Conversation>> {
+) -> HandlerResult<Json<ConversationResponse>> {
     let user_id = token.sub;
 
     let updated = sqlx::query_as!(
-        Conversation,
+        ConversationResponse,
         "UPDATE conversations
         SET archived = $1
         WHERE id = $2 AND user_id = $3

@@ -60,10 +60,10 @@ use super::ImageAnalysisResponse;
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     token: AzureAccessToken,
+    Path(id): Path<Uuid>,
     State(openai): State<OpenAI>,
     State(database): State<DatabasePool>,
     State(s3): State<S3Client>,
-    Path(id): Path<Uuid>,
 ) -> HandlerResult<Json<ImageAnalysisResponse>> {
     let meta_client = lerpz_metadata::Client::from_pool(database);
 

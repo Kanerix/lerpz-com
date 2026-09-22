@@ -11,19 +11,16 @@ mod update;
 ///
 /// Maps to the `theme_pref` enum type defined in the database schema. `system`
 /// defers to the user's operating-system preference.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, sqlx::Type)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, ToSchema, sqlx::Type,
+)]
 #[sqlx(type_name = "theme_pref", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum ThemePref {
     Light,
     Dark,
+    #[default]
     System,
-}
-
-impl Default for ThemePref {
-    fn default() -> Self {
-        Self::System
-    }
 }
 
 /// The authenticated user's account settings.
@@ -32,7 +29,7 @@ impl Default for ThemePref {
 /// notification preferences. Every field is always present; when a user has no
 /// stored settings the server responds with the defaults.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct UserSettings {
+pub struct UserSettingsResponse {
     /// Preferred colour theme.
     pub theme: ThemePref,
     /// Receive product-update notifications (new tools, models and features).
@@ -43,7 +40,7 @@ pub struct UserSettings {
     pub notify_security_alerts: bool,
 }
 
-impl Default for UserSettings {
+impl Default for UserSettingsResponse {
     fn default() -> Self {
         Self {
             theme: ThemePref::default(),

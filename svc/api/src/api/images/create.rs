@@ -145,9 +145,9 @@ pub async fn handler(
                 Ok(event) => event,
                 Err(upstream) => {
                     if upstream.is_user() {
-                        tracing::warn!(reason = %upstream.message, "image generation rejected by provider");
+                        tracing::warn!(reason = %upstream.message, "provider rejects image generation");
                     } else {
-                        tracing::error!("image generation failed: {}", upstream.message);
+                        tracing::error!(reason = %upstream.message, "image generation failed");
                     }
                     yield Ok(Event::default()
                         .event("error")
@@ -174,7 +174,7 @@ pub async fn handler(
                     let image_bytes: Vec<u8> = match BASE64.decode(&b64) {
                         Ok(bytes) => bytes,
                         Err(err) => {
-                            tracing::error!("{err}");
+                            tracing::error!(%err, "failed to decode generated image");
                             yield Ok(Event::default()
                                 .event("error")
                                 .json_data(err.to_string())
@@ -190,7 +190,7 @@ pub async fn handler(
                             Ok(reader) => match reader.into_dimensions() {
                                 Ok(dims) => dims,
                                 Err(err) => {
-                                    tracing::error!("{err}");
+                                    tracing::error!(%err, "failed to read image dimensions");
                                     yield Ok(Event::default()
                                         .event("error")
                                         .json_data(err.to_string())
@@ -236,7 +236,7 @@ pub async fn handler(
                     };
 
                     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &image_bytes).await {
-                        tracing::error!("{err}");
+                        tracing::error!(%err, "failed to save image to storage");
                         yield Ok(Event::default()
                             .event("error")
                             .json_data(err.to_string())
@@ -253,7 +253,7 @@ pub async fn handler(
                                 .expect("failed to serialize saved event"));
                         }
                         Err(err) => {
-                            tracing::error!("{err}");
+                            tracing::error!(%err, "failed to persist image metadata");
                             yield Ok(Event::default()
                                 .event("error")
                                 .json_data(err.to_string())

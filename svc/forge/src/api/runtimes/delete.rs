@@ -60,8 +60,8 @@ use crate::{
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     _token: AzureAccessToken,
-    State(kube): State<KubeClient>,
     Path(agent): Path<String>,
+    State(kube): State<KubeClient>,
 ) -> HandlerResult<StatusCode> {
     resources::validate_agent(&agent)?;
 

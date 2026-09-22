@@ -23,7 +23,7 @@ use serde::Deserialize;
 use utoipa::ToSchema;
 
 use crate::{
-    api::runtimes::{AgentRuntime, COMPONENT},
+    api::runtimes::{AgentRuntimeResponse, COMPONENT},
     config::CONFIG,
     oapi::RUNTIMES_TAG,
     resources,
@@ -77,7 +77,7 @@ pub struct CreateRuntimeRequest {
         (
             status = CREATED,
             description = "The runtime was provisioned",
-            body = AgentRuntime
+            body = AgentRuntimeResponse
         ),
         (
             status = BAD_REQUEST,
@@ -110,7 +110,7 @@ pub async fn handler(
     _token: AzureAccessToken,
     State(kube): State<KubeClient>,
     Json(body): Json<CreateRuntimeRequest>,
-) -> HandlerResult<(StatusCode, Json<AgentRuntime>)> {
+) -> HandlerResult<(StatusCode, Json<AgentRuntimeResponse>)> {
     resources::validate_agent(&body.agent)?;
 
     let name = resources::runtime_name(&body.agent);

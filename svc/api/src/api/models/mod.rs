@@ -27,7 +27,7 @@ pub struct ModelSettings {
 
 /// An AI model that can be routed to via Portkey.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct Model {
+pub struct ModelResponse {
     /// Unique model identifier.
     pub id: Uuid,
     /// Human-readable name shown in UIs.

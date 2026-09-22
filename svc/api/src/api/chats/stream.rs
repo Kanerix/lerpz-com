@@ -56,9 +56,9 @@ fn completion_sse(
             match event {
                 Err(upstream) => {
                     if upstream.is_user() {
-                        tracing::warn!(%conv_id, reason = %upstream.message, "chat completion rejected by provider");
+                        tracing::warn!(%conv_id, reason = %upstream.message, "provider rejects chat completion");
                     } else {
-                        tracing::error!(%conv_id, "chat completion failed: {}", upstream.message);
+                        tracing::error!(%conv_id, reason = %upstream.message, "chat completion failed");
                     }
                     yield Ok(Event::default().event("error").data(upstream.message));
                     break;
@@ -72,7 +72,7 @@ fn completion_sse(
                     yield Ok(Event::default().event("message").data(content));
                 }
                 Ok(ChatEvent::Filtered) => {
-                    tracing::warn!(%conv_id, "content filter triggered");
+                    tracing::warn!(%conv_id, "provider filters model output");
                     yield Ok(Event::default()
                         .event("error")
                         .data("content filter triggered"));
@@ -104,7 +104,7 @@ fn completion_sse(
 
         match result {
             Ok(_) => {
-                tracing::trace!(%conv_id, "saved assistant message");
+                tracing::trace!(%conv_id, "confirming saved assistant message");
                 yield Ok(Event::default().event("saved").data(conv_id.to_string()));
             }
             Err(err) => {

@@ -38,7 +38,7 @@ pub struct ConversationMessage {
 
 /// A conversation together with all its messages.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ConversationDetail {
+pub struct ConversationDetailResponse {
     /// Unique conversation identifier.
     id: Uuid,
     /// Conversation title.
@@ -69,7 +69,7 @@ pub struct ConversationDetail {
         (
             status = OK,
             description = "Conversation detail with messages",
-            body = ConversationDetail
+            body = ConversationDetailResponse
         ),
         (
             status = UNAUTHORIZED,
@@ -96,7 +96,7 @@ pub async fn handler(
     token: AzureAccessToken,
     Path(conv_id): Path<Uuid>,
     State(database): State<DatabasePool>,
-) -> HandlerResult<Json<ConversationDetail>> {
+) -> HandlerResult<Json<ConversationDetailResponse>> {
     let user_id = token.sub;
 
     let conversation = sqlx::query!(
@@ -142,7 +142,7 @@ pub async fn handler(
         })
         .collect();
 
-    Ok(Json(ConversationDetail {
+    Ok(Json(ConversationDetailResponse {
         id: conversation.id,
         title: conversation.title,
         model: conversation.model,
