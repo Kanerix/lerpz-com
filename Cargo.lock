@@ -95,7 +95,6 @@ dependencies = [
  "bb8",
  "bb8-redis",
  "chrono",
- "cookie",
  "dotenvy",
  "image",
  "lerpz-ai",
@@ -103,9 +102,7 @@ dependencies = [
  "lerpz-metadata",
  "lerpz-utils",
  "redis",
- "reqwest 0.12.28",
  "scalar_api_reference",
- "schemars",
  "secrecy",
  "serde",
  "serde_json",
@@ -119,7 +116,6 @@ dependencies = [
  "utoipa",
  "utoipa-axum",
  "uuid",
- "validator",
 ]
 
 [[package]]
@@ -1177,16 +1173,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cookie"
-version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ddef33a339a91ea89fb53151bd0a4689cfce27055c291dfa69945475d22c747"
-dependencies = [
- "time",
- "version_check",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1858,7 +1844,6 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-axum",
- "validator",
 ]
 
 [[package]]
@@ -2971,10 +2956,8 @@ dependencies = [
 name = "lerpz-jwt"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "chrono",
  "jsonwebtoken",
- "rand 0.10.2",
  "serde",
  "thiserror 2.0.19",
  "uuid",
@@ -2984,7 +2967,6 @@ dependencies = [
 name = "lerpz-macros"
 version = "0.1.0"
 dependencies = [
- "proc-macro2",
  "quote",
  "syn 2.0.119",
 ]
@@ -3019,7 +3001,6 @@ dependencies = [
 name = "lerpz-utils"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "thiserror 2.0.19",
 ]
 

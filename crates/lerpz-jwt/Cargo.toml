@@ -4,10 +4,8 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-anyhow = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 jsonwebtoken = { workspace = true }
-rand = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 uuid = { workspace = true }
