@@ -4,8 +4,6 @@ import {
     Avatar,
     AvatarFallback,
     AvatarImage,
-} from "@lerpz/ui/components/avatar";
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
@@ -13,13 +11,11 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@lerpz/ui/components/dropdown-menu";
-import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
     useSidebar,
-} from "@lerpz/ui/components/sidebar";
+} from "@lerpz/ui";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import { getCurrentUserPhotoUrl } from "$lib/graph/photo.js";
 

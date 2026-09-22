@@ -3,7 +3,7 @@ const lastUpdated = "19 July 2026";
 </script>
 
 <svelte:head>
-  <title>Privacy Policy — Lerpz AI</title>
+  <title>Privacy Policy | Lerpz AI</title>
   <meta name="description" content="How Lerpz AI collects, uses, and protects your personal data." />
 </svelte:head>
 

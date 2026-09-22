@@ -4,7 +4,7 @@ import type { ConversationMessage } from './conversationMessage';
 /**
  * A conversation together with all its messages.
  */
-export interface ConversationDetail {
+export interface ConversationDetailResponse {
   /** Whether the conversation has been archived by the user. */
   archived: boolean;
   /** Timestamp when the conversation was created. */

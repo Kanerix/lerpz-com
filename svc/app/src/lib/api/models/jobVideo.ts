@@ -1,5 +1,11 @@
 // @ts-nocheck
 
+/**
+ * The completed video attached to a finished job.
+ *
+ * Mirrors the shape returned by the list endpoint so the frontend can render a
+ * job result the same way it renders a listed video.
+ */
 export interface JobVideo {
   /** When the video was created. */
   created_at: string;

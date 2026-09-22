@@ -1,15 +1,15 @@
 <script lang="ts">
 import { InteractionStatus } from "@azure/msal-browser";
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Button,
     Card,
     CardContent,
     CardDescription,
     CardFooter,
     CardHeader,
     CardTitle,
-} from "@lerpz/ui/components/card";
+} from "@lerpz/ui";
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import {

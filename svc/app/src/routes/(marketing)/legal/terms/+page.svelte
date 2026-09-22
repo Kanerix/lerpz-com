@@ -3,7 +3,7 @@ const lastUpdated = "19 July 2026";
 </script>
 
 <svelte:head>
-  <title>Terms of Service — Lerpz AI</title>
+  <title>Terms of Service | Lerpz AI</title>
   <meta name="description" content="The terms and conditions governing your use of Lerpz AI." />
 </svelte:head>
 

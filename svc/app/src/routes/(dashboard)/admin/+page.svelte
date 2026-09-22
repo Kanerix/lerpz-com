@@ -1,14 +1,14 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
 import {
+    Badge,
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@lerpz/ui/components/card";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+    ScrollArea,
+} from "@lerpz/ui";
 import { goto } from "$app/navigation";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 

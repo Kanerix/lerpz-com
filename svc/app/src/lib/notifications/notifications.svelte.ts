@@ -1,4 +1,4 @@
-export interface AppNotification {
+export type AppNotification = {
     id: string;
     title: string;
     /** Optional longer description shown under the title. */
@@ -10,7 +10,7 @@ export interface AppNotification {
     read: boolean;
     /** Creation time in epoch milliseconds, used for ordering and display. */
     createdAt: number;
-}
+};
 
 /** Fields a caller supplies when raising a notification. */
 export type NewNotification = Omit<

@@ -30,7 +30,7 @@ const chat = createChat({
 
 const image = createImage();
 // Video renders run as background jobs, so surface their outcome through the
-// notification bell — the user may have moved to another AI page by the time a
+// notification bell. The user may have moved to another AI page by the time a
 // render finishes. `lastVideoPrompt` gives the notification a meaningful body.
 let lastVideoPrompt = "";
 const video = createVideo({

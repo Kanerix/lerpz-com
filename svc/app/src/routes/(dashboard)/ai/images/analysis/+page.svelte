@@ -1,16 +1,16 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Badge,
+    Button,
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@lerpz/ui/components/card";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+    ScrollArea,
+    Skeleton,
+} from "@lerpz/ui";
 import {
     createInfiniteQuery,
     type InfiniteData,
@@ -26,7 +26,7 @@ import type {
     ImageAnalysisResponse,
     ImageItem,
     ImageListResponse,
-} from "$lib/api/models/index.js";
+} from "$lib/api/models";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
 import { dropZoneVariants, thumbnailVariants } from "./analysis-variants.js";
@@ -234,7 +234,7 @@ const skeletonCount = 9;
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl font-semibold tracking-tight">Image analysis</h1>
       <p class="text-sm text-muted-foreground">
-        Detect a title and tags with a vision model — from your generated
+        Detect a title and tags with a vision model, from your generated
         images or one you bring yourself.
       </p>
     </div>
@@ -296,7 +296,7 @@ const skeletonCount = 9;
               <p class="text-sm text-muted-foreground">
                 {uploadName
                   ? "Click to choose a different image."
-                  : "or click to browse — PNG or JPEG, up to 20 MB."}
+                  : "or click to browse. PNG or JPEG, up to 20 MB."}
               </p>
             </div>
             <input

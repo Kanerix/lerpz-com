@@ -1,15 +1,15 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Badge,
+    Button,
     Popover,
     PopoverContent,
     PopoverPositioner,
     PopoverTrigger,
-} from "@lerpz/ui/components/popover";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Separator } from "@lerpz/ui/components/separator";
+    ScrollArea,
+    Separator,
+} from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { modelFavoritesStore } from "$lib/ai/model-favorites.svelte.js";
 import { modelFamilyLogoForTheme } from "$lib/ai/model-logo.svelte.js";
@@ -140,8 +140,8 @@ function handleListKeydown(e: KeyboardEvent) {
     <div
       class={cn(
         "flex w-full items-center gap-1 rounded-md pr-1 transition-colors",
-        "hover:bg-muted dark:hover:bg-muted/50",
-        isPreview && "bg-muted dark:bg-muted/50",
+        "hover:bg-muted",
+        isPreview && "bg-muted",
       )}
     >
       <button
@@ -170,7 +170,7 @@ function handleListKeydown(e: KeyboardEvent) {
         class={cn(
           "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors",
           "text-muted-foreground hover:bg-background/80 hover:text-foreground",
-          isFavorite && "text-amber-500 hover:text-amber-500",
+          isFavorite && "text-chart-1 hover:text-chart-1",
         )}
         aria-pressed={isFavorite}
         aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
@@ -282,7 +282,7 @@ function handleListKeydown(e: KeyboardEvent) {
             class={cn(
               "ml-auto flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors",
               "text-muted-foreground hover:bg-muted hover:text-foreground",
-              isDetailFavorite && "text-amber-500 hover:text-amber-500",
+              isDetailFavorite && "text-chart-1 hover:text-chart-1",
             )}
             aria-pressed={isDetailFavorite}
             aria-label={isDetailFavorite

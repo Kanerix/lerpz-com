@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { site } from "$lib/config.js";
 
 const mailto = `mailto:${site.contactEmail}`;
@@ -34,7 +34,7 @@ const channels = [
 </script>
 
 <svelte:head>
-  <title>Lerpz – Contact</title>
+  <title>Contact | Lerpz</title>
   <meta name="description" content="Get in touch with the Lerpz AI team." />
 </svelte:head>
 

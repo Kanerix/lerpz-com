@@ -1,4 +1,4 @@
-import type { ProblemSchema } from "$lib/api/models/index.js";
+import type { ProblemSchema } from "$lib/api/models";
 import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
 import { authenticatedFetch } from "./fetch.js";
 
@@ -36,7 +36,7 @@ async function responseToError(response: Response): Promise<Error> {
             return error;
         }
     } catch {
-        // Not JSON – fall through to the raw-text fallback below.
+        // Not JSON, fall through to the raw-text fallback below.
     }
 
     return new Error(body || `HTTP ${response.status}: ${response.statusText}`);
@@ -53,7 +53,7 @@ export type SSEEventHandler = (event: SSEEvent) => void;
 
 /**
  * @deprecated Use {@link SSEEventHandler} with {@link SSEEvent} instead.
- * Kept for backward compatibility — if you only care about the data payload,
+ * Kept for backward compatibility. If you only care about the data payload,
  * you can still pass a `(data: string) => void` callback.
  */
 export type SSEDataOnlyHandler = (data: string) => void;
@@ -63,11 +63,11 @@ export type SSEDataOnlyHandler = (data: string) => void;
  *
  * SSE events are separated by double newlines (`\n\n`). Each line within an
  * event can be one of:
- *   - `data: <payload>`   – the actual data (multiple lines are joined with \n)
- *   - `event: <name>`     – names the event type (default is "message")
- *   - `id: <value>`       – sets the last event ID
- *   - `retry: <ms>`       – reconnection hint
- *   - `: <comment>`       – comment / keep-alive ping, ignored
+ *   - `data: <payload>` is the actual data (multiple lines are joined with \n)
+ *   - `event: <name>` names the event type (default is "message")
+ *   - `id: <value>` sets the last event ID
+ *   - `retry: <ms>` is a reconnection hint
+ *   - `: <comment>` is a comment or keep-alive ping, and is ignored
  *
  * ReadableStream chunks do NOT align with event boundaries, so we buffer
  * incoming text and only emit once we see a complete event.
@@ -84,11 +84,9 @@ export type SSEDataOnlyHandler = (data: string) => void;
 export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
     let buffer = "";
 
-    // Detect whether the callback expects the new SSEEvent object or just a
-    // plain data string. We check the callback's arity: the new-style handler
-    // receives one object arg, the old-style also receives one string arg — so
-    // we can't distinguish by arity alone. Instead we wrap it so both work:
-    // we always parse the full event and call the handler accordingly.
+    // Arity cannot tell the two handler shapes apart, because both take a
+    // single argument. The full event is parsed either way and handed to the
+    // handler, which suits both shapes.
 
     return {
         feed(chunk: string) {
@@ -97,7 +95,7 @@ export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
             // Split on the event boundary (double newline).
             const parts = buffer.split("\n\n");
 
-            // The last part may be incomplete – keep it in the buffer.
+            // The last part may be incomplete, so keep it in the buffer.
             buffer = parts.pop() ?? "";
 
             for (const part of parts) {
@@ -109,7 +107,7 @@ export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
                 let sawData = false;
 
                 for (const line of lines) {
-                    // Comments – silently ignore (used as keep-alive pings).
+                    // Comments are keep-alive pings, so ignore them.
                     if (line.startsWith(":")) continue;
 
                     const colon = line.indexOf(":");
@@ -125,11 +123,11 @@ export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
                         // Per the SSE spec, each `data:` line contributes its
                         // value followed by a newline. Accumulating this way
                         // (rather than joining with a separator) preserves
-                        // payloads that are *only* newlines – e.g. a streamed
-                        // "\n" or "\n\n" token – which would otherwise collapse
+                        // payloads that are *only* newlines, such as a streamed
+                        // "\n" or "\n\n" token, which would otherwise collapse
                         // to an empty string and be dropped, gluing adjacent
                         // markdown blocks together.
-                        data += value + "\n";
+                        data += `${value}\n`;
                         sawData = true;
                     }
 
@@ -150,7 +148,7 @@ export function createSSEParser(onEvent: SSEEventHandler | SSEDataOnlyHandler) {
     };
 }
 
-export interface SseCallbacks {
+export type SseCallbacks = {
     /** Called once the HTTP response is received and the stream is open. */
     onOpen?: () => void;
 
@@ -166,23 +164,23 @@ export interface SseCallbacks {
     onMessage?: (data: string, event: string) => void;
 
     /**
-     * Called when an error occurs – either an HTTP-level error before the stream
+     * Called when an error occurs: an HTTP-level error before the stream
      * starts, a network error mid-stream, an in-band error sent by the server,
      * or an unexpected stream termination.
      */
     onError?: (error: Error) => void;
 
     /**
-     * Called when the stream completes – either cleanly (received a done signal)
-     * or because the connection was closed.
+     * Called when the stream completes, either cleanly after a done signal or
+     * because the connection was closed.
      *
-     * @param incomplete – `true` if the stream ended without a proper completion
+     * @param incomplete `true` if the stream ended without a proper completion
      *   signal, which usually means the response was cut off.
      */
     onClose?: (incomplete: boolean) => void;
-}
+};
 
-export interface SseOptions extends SseCallbacks {
+export type SseOptions = SseCallbacks & {
     /**
      * The string the server sends as the final `data:` payload to signal that
      * the stream is finished. Defaults to `"[DONE]"` (the OpenAI convention).
@@ -204,11 +202,157 @@ export interface SseOptions extends SseCallbacks {
      * Set to `0` or `Infinity` to disable.
      */
     timeoutMs?: number;
-}
+};
 
-export interface SseConnection {
+export type SseConnection = {
     /** Abort the stream and close the connection. */
     close: () => void;
+};
+
+/**
+ * Sends the request and validates the response.
+ *
+ * Resolves to the response body once the stream is open, or to `null` when the
+ * request was aborted or failed. A failure is reported through `onError` and
+ * `onClose` before `null` is returned.
+ */
+async function openEventStream(
+    url: string,
+    init: RequestInit,
+    signal: AbortSignal,
+    { onOpen, onError, onClose }: SseCallbacks,
+): Promise<ReadableStream<Uint8Array> | null> {
+    let response: Response;
+
+    try {
+        response = await authenticatedFetch(url, {
+            ...init,
+            signal,
+        });
+    } catch (err: unknown) {
+        // Network error or user abort before the response arrived.
+        if (signal.aborted) return null;
+        onError?.(
+            err instanceof Error
+                ? err
+                : new Error("Failed to reach the server"),
+        );
+        onClose?.(true);
+        return null;
+    }
+
+    if (!response.ok || !response.body) {
+        onError?.(await responseToError(response));
+        onClose?.(true);
+        return null;
+    }
+
+    onOpen?.();
+    return response.body;
+}
+
+/**
+ * Reads chunks from an open stream, parses them as SSE events and reports each
+ * event through `onMessage`.
+ *
+ * The stream is aborted through `controller` when it goes quiet for longer than
+ * `timeoutMs`. `onClose` is called once the stream ends, whether it was cut off
+ * or finished cleanly.
+ */
+async function readEventStream(
+    body: ReadableStream<Uint8Array>,
+    controller: AbortController,
+    {
+        onMessage,
+        onError,
+        onClose,
+        doneSignal = "[DONE]",
+        doneEvent = null,
+        timeoutMs = 30_000,
+    }: SseOptions,
+): Promise<void> {
+    const signal = controller.signal;
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let receivedDone = false;
+
+    // Inactivity timeout, reset every time we receive data.
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutEnabled = timeoutMs > 0 && timeoutMs < Infinity;
+
+    const clearInactivityTimeout = () => {
+        if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+            timeoutId = undefined;
+        }
+    };
+
+    const resetInactivityTimeout = () => {
+        clearInactivityTimeout();
+        if (timeoutEnabled) {
+            timeoutId = setTimeout(() => {
+                controller.abort();
+                onError?.(
+                    new Error(
+                        `Stream timed out: no data received for ${timeoutMs}ms`,
+                    ),
+                );
+                onClose?.(true);
+            }, timeoutMs);
+        }
+    };
+
+    const parser = createSSEParser(({ event, data }: SSEEvent) => {
+        // A done signal in the data payload stops processing.
+        if (doneSignal !== null && data === doneSignal) {
+            receivedDone = true;
+            return;
+        }
+
+        // A done signal by event type stops processing.
+        if (doneEvent !== null && event === doneEvent) {
+            receivedDone = true;
+            // Still deliver the event so the consumer can read any final data.
+            onMessage?.(data, event);
+            return;
+        }
+
+        // Let the consumer inspect the payload. If the upstream sends errors
+        // in-band (e.g. `{"error": {...}}`), the consumer can detect that
+        // inside onMessage and call close() if needed.
+        onMessage?.(data, event);
+    });
+
+    try {
+        resetInactivityTimeout();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            resetInactivityTimeout();
+            parser.feed(decoder.decode(value, { stream: true }));
+        }
+    } catch (err: unknown) {
+        if (signal.aborted) return; // Already handled by timeout or user close.
+
+        onError?.(
+            err instanceof Error ? err : new Error("Unknown streaming error"),
+        );
+        onClose?.(true);
+        return;
+    } finally {
+        clearInactivityTimeout();
+    }
+
+    // A missing done signal means the response was cut off.
+    const incomplete = doneSignal !== null && !receivedDone;
+    if (incomplete) {
+        onError?.(
+            new Error("Stream ended unexpectedly without a completion signal"),
+        );
+    }
+    onClose?.(incomplete);
 }
 
 /**
@@ -238,140 +382,19 @@ export function createSseConnection(
     init: RequestInit = {},
     options: SseOptions = {},
 ): SseConnection {
-    const {
-        onOpen,
-        onMessage,
-        onError,
-        onClose,
-        doneSignal = "[DONE]",
-        doneEvent = null,
-        timeoutMs = 30_000,
-    } = options;
-
     const controller = new AbortController();
-    const signal = controller.signal;
 
     // Kick off the async work without blocking the caller.
     (async () => {
-        // ------------------------------------------------------------------
-        // Phase 1 – HTTP-level: send the request and validate the response.
-        // ------------------------------------------------------------------
-        let response: Response;
+        const body = await openEventStream(
+            url,
+            init,
+            controller.signal,
+            options,
+        );
+        if (body === null) return;
 
-        try {
-            response = await authenticatedFetch(url, {
-                ...init,
-                signal,
-            });
-        } catch (err: unknown) {
-            // Network error or user abort before the response arrived.
-            if (signal.aborted) return;
-            onError?.(
-                err instanceof Error
-                    ? err
-                    : new Error("Failed to reach the server"),
-            );
-            onClose?.(true);
-            return;
-        }
-
-        if (!response.ok || !response.body) {
-            onError?.(await responseToError(response));
-            onClose?.(true);
-            return;
-        }
-
-        // The connection is open and we got a successful response.
-        onOpen?.();
-
-        // ------------------------------------------------------------------
-        // Phase 2 – Stream-level: read chunks and parse SSE events.
-        // ------------------------------------------------------------------
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let receivedDone = false;
-
-        // Inactivity timeout – reset every time we receive data.
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
-        const timeoutEnabled = timeoutMs > 0 && timeoutMs < Infinity;
-
-        const clearInactivityTimeout = () => {
-            if (timeoutId !== undefined) {
-                clearTimeout(timeoutId);
-                timeoutId = undefined;
-            }
-        };
-
-        const resetInactivityTimeout = () => {
-            clearInactivityTimeout();
-            if (timeoutEnabled) {
-                timeoutId = setTimeout(() => {
-                    controller.abort();
-                    onError?.(
-                        new Error(
-                            `Stream timed out: no data received for ${timeoutMs}ms`,
-                        ),
-                    );
-                    onClose?.(true);
-                }, timeoutMs);
-            }
-        };
-
-        const parser = createSSEParser(({ event, data }: SSEEvent) => {
-            // Done signal by data payload – stop processing.
-            if (doneSignal !== null && data === doneSignal) {
-                receivedDone = true;
-                return;
-            }
-
-            // Done signal by event type – stop processing.
-            if (doneEvent !== null && event === doneEvent) {
-                receivedDone = true;
-                // Still deliver the event so the consumer can read any final data.
-                onMessage?.(data, event);
-                return;
-            }
-
-            // Let the consumer inspect the payload. If the upstream sends errors
-            // in-band (e.g. `{"error": {...}}`), the consumer can detect that
-            // inside onMessage and call close() if needed.
-            onMessage?.(data, event);
-        });
-
-        try {
-            resetInactivityTimeout();
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                resetInactivityTimeout();
-                parser.feed(decoder.decode(value, { stream: true }));
-            }
-        } catch (err: unknown) {
-            if (signal.aborted) return; // Already handled by timeout or user close.
-
-            onError?.(
-                err instanceof Error
-                    ? err
-                    : new Error("Unknown streaming error"),
-            );
-            onClose?.(true);
-            return;
-        } finally {
-            clearInactivityTimeout();
-        }
-
-        // Stream finished — determine if it was a clean or incomplete close.
-        const incomplete = doneSignal !== null && !receivedDone;
-        if (incomplete) {
-            onError?.(
-                new Error(
-                    "Stream ended unexpectedly without a completion signal",
-                ),
-            );
-        }
-        onClose?.(incomplete);
+        await readEventStream(body, controller, options);
     })();
 
     return {

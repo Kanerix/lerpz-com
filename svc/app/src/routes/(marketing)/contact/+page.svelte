@@ -24,7 +24,7 @@ const channels = [
 </script>
 
 <svelte:head>
-  <title>Contact — Lerpz AI</title>
+  <title>Contact | Lerpz AI</title>
   <meta name="description" content="Get in touch with the Lerpz AI team." />
 </svelte:head>
 

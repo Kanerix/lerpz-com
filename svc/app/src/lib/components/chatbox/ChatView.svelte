@@ -1,16 +1,16 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Button,
     Dialog,
     DialogBackdrop,
     DialogContent,
     DialogDescription,
     DialogPositioner,
     DialogTitle,
-} from "@lerpz/ui/components/dialog";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Typewriter } from "@lerpz/ui/components/typewriter";
+    ScrollArea,
+    Typewriter,
+} from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
@@ -22,7 +22,7 @@ import {
     getGetChatUrl,
     getListChatsUrl,
 } from "$lib/api/chats/chats.js";
-import type { ConversationMessage } from "$lib/api/models/index.js";
+import type { ConversationMessage } from "$lib/api/models";
 import ModelAvatar from "$lib/components/avatar/ModelAvatar.svelte";
 import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
@@ -372,8 +372,8 @@ const EXAMPLE_PROMPTS: PromptExample[] = [
                 size="icon"
                 onclick={() => onRetry?.()}
                 class="size-7 rounded-full text-destructive hover:text-destructive"
-                title="Not sent — try again"
-                aria-label="Not sent — try again"
+                title="Not sent. Try again"
+                aria-label="Not sent. Try again"
               >
                 <Icon icon="fa6-solid:rotate-right" class="size-3.5 shrink-0" />
               </Button>

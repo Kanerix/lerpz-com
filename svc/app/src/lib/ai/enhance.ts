@@ -4,7 +4,7 @@ import {
     enhanceImagePrompt,
     enhanceVideoPrompt,
 } from "$lib/api/enhance/enhance.js";
-import type { EnhanceRequest } from "$lib/api/models/index.js";
+import type { EnhanceRequest } from "$lib/api/models";
 
 type EnhanceResult = { status: number; data: unknown };
 type EnhanceFn = (

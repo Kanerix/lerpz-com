@@ -11,7 +11,7 @@ let { children }: { children: Snippet } = $props();
     aria-hidden="true"
     class="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center"
   >
-    <div class="mt-16 h-150 w-225 rounded-full dark:bg-primary/10 blur-3xl"></div>
+    <div class="mt-16 h-150 w-225 rounded-full bg-primary/10 blur-3xl"></div>
   </div>
   <Header />
 

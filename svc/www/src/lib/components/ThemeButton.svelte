@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { mode, toggleMode } from "mode-watcher";
 </script>
 

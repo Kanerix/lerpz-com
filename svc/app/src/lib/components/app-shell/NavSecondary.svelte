@@ -6,7 +6,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lerpz/ui/components/sidebar";
+} from "@lerpz/ui";
 import { page } from "$app/state";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 

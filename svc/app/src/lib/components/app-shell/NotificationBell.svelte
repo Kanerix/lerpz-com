@@ -1,13 +1,13 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { buttonVariants } from "@lerpz/ui/components/button";
 import {
+    buttonVariants,
     Popover,
     PopoverContent,
     PopoverPositioner,
     PopoverTrigger,
-} from "@lerpz/ui/components/popover";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+    ScrollArea,
+} from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { goto } from "$app/navigation";
 import {

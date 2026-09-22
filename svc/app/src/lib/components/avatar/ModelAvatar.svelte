@@ -1,10 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from "@lerpz/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { modelFamilyLogoForTheme } from "$lib/ai/model-logo.svelte.js";
 

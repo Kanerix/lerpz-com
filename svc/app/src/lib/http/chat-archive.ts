@@ -6,7 +6,7 @@
 // regenerated against a build that includes it, prefer the generated
 // `updateChat`/`createUpdateChat` and delete this file.
 
-import type { Conversation } from "$lib/api/models/index.js";
+import type { ConversationResponse } from "$lib/api/models";
 import { customFetch } from "./orval-mutator.js";
 
 export type UpdateChatBody = {
@@ -23,14 +23,14 @@ export const getUpdateChatUrl = (id: string) => `/api/v1/chats/${id}`;
 export async function updateChat(
     id: string,
     body: UpdateChatBody,
-): Promise<Conversation> {
-    const res = await customFetch<{ data: Conversation; status: number }>(
-        getUpdateChatUrl(id),
-        {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        },
-    );
+): Promise<ConversationResponse> {
+    const res = await customFetch<{
+        data: ConversationResponse;
+        status: number;
+    }>(getUpdateChatUrl(id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
     return res.data;
 }

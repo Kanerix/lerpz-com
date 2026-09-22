@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { resolve } from "$app/paths";
 import { site } from "$lib/config.js";
 
@@ -24,7 +24,7 @@ const principles = [
 </script>
 
 <svelte:head>
-  <title>Lerpz – About</title>
+  <title>About | Lerpz</title>
   <meta
     name="description"
     content="Why Lerpz AI exists, how it's put together, and who builds it."

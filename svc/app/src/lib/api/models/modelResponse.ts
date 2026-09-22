@@ -4,7 +4,7 @@ import type { ModelSettings } from './modelSettings';
 /**
  * An AI model that can be routed to via Portkey.
  */
-export interface Model {
+export interface ModelResponse {
   /** Timestamp of when the model was created. */
   created_at: string;
   /** Portkey deployment name used when routing requests. */

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Toaster } from "@lerpz/ui/components/sonner";
+import { Toaster } from "@lerpz/ui";
 import {
     MutationCache,
     QueryCache,

@@ -17,7 +17,7 @@ import type {
 
 import type {
   CreateModelRequest,
-  Model,
+  ModelResponse,
   ProblemSchema,
   UpdateModelRequest
 } from './.';
@@ -31,7 +31,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 export type listModelsResponse200 = {
-  data: Model[]
+  data: ModelResponse[]
   status: 200
 }
 
@@ -125,7 +125,7 @@ export const createListModels = <TError = ErrorType<ProblemSchema>,
       return createMutation(() => ({ ...getListModelsMutationOptions(options?.()) }), queryClient);
     }
     export type createModelResponse201 = {
-  data: Model
+  data: ModelResponse
   status: 201
 }
 
@@ -236,7 +236,7 @@ export function createCreateModel<TData = Awaited<ReturnType<typeof createModel>
 
 
 export type getModelResponse200 = {
-  data: Model
+  data: ModelResponse
   status: 200
 }
 
@@ -441,7 +441,7 @@ export function createDeleteModel<TData = Awaited<ReturnType<typeof deleteModel>
 
 
 export type updateModelResponse200 = {
-  data: Model
+  data: ModelResponse
   status: 200
 }
 

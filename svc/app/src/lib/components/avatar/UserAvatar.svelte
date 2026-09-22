@@ -1,10 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from "@lerpz/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import { getCurrentUserPhotoUrl } from "$lib/graph/photo.js";

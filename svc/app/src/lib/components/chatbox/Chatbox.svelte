@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { cubicOut } from "svelte/easing";
 import { filterModelsByModality, type Model } from "$lib/ai/models.svelte.js";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";

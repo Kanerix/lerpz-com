@@ -6,7 +6,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lerpz/ui/components/sidebar";
+} from "@lerpz/ui";
 
 let { class: className = "" }: { class?: string } = $props();
 </script>

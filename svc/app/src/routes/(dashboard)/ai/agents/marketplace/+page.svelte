@@ -1,9 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
-import { Input } from "@lerpz/ui/components/input";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+import { Badge, Button, Input, ScrollArea } from "@lerpz/ui";
 import { toast } from "svelte-sonner";
 import { categoryPillVariants } from "./marketplace-variants.js";
 

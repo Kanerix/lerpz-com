@@ -1,11 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@lerpz/ui/components/tooltip";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 
 let {

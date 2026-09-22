@@ -1,7 +1,7 @@
 {
   "name": "Lerpz AI Portal",
   "short_name": "Lerpz AI",
-  "description": "The AI portal for your organisation. Sign in with your work account to chat with AI models, generate images and video, and more — centralised and maintained for your whole team.",
+  "description": "The AI portal for your organisation. Sign in with your work account to chat with AI models, generate images and video, and more. Centralised and maintained for your whole team.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

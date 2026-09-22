@@ -72,7 +72,7 @@ export function toProblemError(error: unknown): unknown {
             const parsed: unknown = JSON.parse(message.slice(start, end + 1));
             if (isProblemSchema(parsed)) return parsed;
         } catch {
-            // Not a problem payload – fall through and keep the original error.
+            // Not a problem payload, fall through and keep the original error.
         }
     }
     return error;

@@ -3,7 +3,7 @@ import type { SendChatOptions } from "$lib/ai/chat.svelte.js";
 import type { StartImageOptions } from "$lib/ai/image.svelte.js";
 import type { Model } from "$lib/ai/models.svelte.js";
 import type { StartVideoOptions } from "$lib/ai/video.svelte.js";
-import type { ConversationMessage } from "$lib/api/models/index.js";
+import type { ConversationMessage } from "$lib/api/models";
 
 export const AI_CONTEXT_KEY = Symbol("ai-context");
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { page } from "$app/state";
 import { msalStore } from "$lib/auth/msal.svelte.js";

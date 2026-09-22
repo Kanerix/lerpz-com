@@ -10,7 +10,7 @@ import type {
 } from '@tanstack/svelte-query';
 
 import type {
-  HealthCheck,
+  HealthCheckResponse,
   ProblemSchema
 } from '../models';
 
@@ -105,7 +105,7 @@ export const createTriggerFailure = <TError = ErrorType<ProblemSchema>,
       return createMutation(() => ({ ...getTriggerFailureMutationOptions(options?.()) }), queryClient);
     }
     export type healthCheckResponse200 = {
-  data: HealthCheck
+  data: HealthCheckResponse
   status: 200
 }
 

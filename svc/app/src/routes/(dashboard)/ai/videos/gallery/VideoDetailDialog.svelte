@@ -1,19 +1,19 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Badge,
+    Button,
     Dialog,
     DialogBackdrop,
     DialogClose,
     DialogContent,
     DialogPositioner,
     DialogTitle,
-} from "@lerpz/ui/components/dialog";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+    ScrollArea,
+    Skeleton,
+} from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
-import type { VideoItem, VideoListResponse } from "$lib/api/models/index.js";
+import type { VideoItem, VideoListResponse } from "$lib/api/models";
 import { getListVideosUrl, listVideos } from "$lib/api/videos/videos.js";
 import { formatDate, formatDuration } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";

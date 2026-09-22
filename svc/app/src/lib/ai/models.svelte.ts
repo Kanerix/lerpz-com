@@ -1,4 +1,4 @@
-import type { Model as ApiModel } from "$lib/api/models/index.js";
+import type { ModelResponse as ApiModel } from "$lib/api/models";
 import { listModels } from "$lib/api/models/models.js";
 
 export type ChatboxVariant = "chat" | "image" | "video";

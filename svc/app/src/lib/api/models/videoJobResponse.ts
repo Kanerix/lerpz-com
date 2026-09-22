@@ -11,6 +11,5 @@ export interface VideoJobResponse {
   id: string;
   /** Lifecycle status: `in_progress`, `completed`, or `failed`. */
   status: string;
-  /** The generated video. Present only when `status` is `completed`. */
-  video?: JobVideo;
+  video?: null | JobVideo;
 }

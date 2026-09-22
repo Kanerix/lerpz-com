@@ -8,7 +8,7 @@ import type { ThemePref } from './themePref';
  * notification preferences. Every field is always present; when a user has no
  * stored settings the server responds with the defaults.
  */
-export interface UserSettings {
+export interface UserSettingsResponse {
   /** Receive the weekly activity digest. */
   notify_activity_digest: boolean;
   /** Receive product-update notifications (new tools, models and features). */

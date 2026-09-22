@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { asset, resolve } from "$app/paths";
 import { page } from "$app/state";

@@ -8,7 +8,7 @@ import type {
     ConversationMessage,
     EditLatestMessageRequest,
     MessageRequest,
-} from "$lib/api/models/index.js";
+} from "$lib/api/models";
 import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
 import { createSseConnection, type SseProblemError } from "$lib/http/sse.js";
 
@@ -26,7 +26,7 @@ function toErrorValue(data: string): unknown {
         const parsed: unknown = JSON.parse(data);
         if (isProblemSchema(parsed)) return parsed;
     } catch {
-        // Not JSON – fall through and keep the raw string.
+        // Not JSON, fall through and keep the raw string.
     }
     return data;
 }
@@ -87,9 +87,10 @@ export function createChat(options: UseChatOptions = {}) {
         return () => closeRef?.();
     });
 
-    // Remove the failed exchange – the last user message and any partial
-    // assistant reply streamed before the error. Used when the user retries or
-    // sends a new message so a stale "not sent" bubble doesn't linger.
+    // Remove the failed exchange, meaning the last user message and any
+    // partial assistant reply streamed before the error. Used when the user
+    // retries or sends a new message so a stale "not sent" bubble doesn't
+    // linger.
     function discardFailedExchange() {
         for (let i = messages.length - 1; i >= 0; i--) {
             if (messages[i]?.role === "user") {

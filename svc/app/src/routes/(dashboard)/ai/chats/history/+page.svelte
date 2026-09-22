@@ -1,12 +1,9 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Input } from "@lerpz/ui/components/input";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+import { Badge, Input, ScrollArea, Skeleton } from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
 import { getListChatsUrl, listChats } from "$lib/api/chats/chats.js";
-import type { Conversation } from "$lib/api/models/index.js";
+import type { ConversationResponse } from "$lib/api/models";
 import ChatHistoryTable from "$lib/components/chats/ChatHistoryTable.svelte";
 import { ErrorState } from "$lib/components/error-state/index.js";
 
@@ -18,7 +15,7 @@ const query = createQuery(() => ({
 let search = $state("");
 const normalizedSearch = $derived(search.trim().toLowerCase());
 
-function matches(c: Conversation): boolean {
+function matches(c: ConversationResponse): boolean {
     if (!normalizedSearch) return true;
     const title = (c.title ?? "Untitled").toLowerCase();
     return (

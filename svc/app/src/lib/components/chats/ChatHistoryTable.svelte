@@ -1,7 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
+import { Badge, Button } from "@lerpz/ui";
 import { useQueryClient } from "@tanstack/svelte-query";
 import {
     type ColumnDef,
@@ -11,7 +10,7 @@ import {
     type SortingState,
 } from "@tanstack/table-core";
 import { getListChatsUrl } from "$lib/api/chats/chats.js";
-import type { Conversation } from "$lib/api/models/index.js";
+import type { ConversationResponse } from "$lib/api/models";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { updateChat } from "$lib/http/chat-archive.js";
 import { createSvelteTable } from "$lib/utils/table.svelte.js";
@@ -19,14 +18,14 @@ import { createSvelteTable } from "$lib/utils/table.svelte.js";
 let {
     data,
 }: {
-    data: Conversation[];
+    data: ConversationResponse[];
 } = $props();
 
 const queryClient = useQueryClient();
 
 let pendingIds = $state<string[]>([]);
 
-async function toggleArchive(conv: Conversation) {
+async function toggleArchive(conv: ConversationResponse) {
     if (pendingIds.includes(conv.id)) return;
     const nextArchived = !conv.archived;
     pendingIds = [...pendingIds, conv.id];
@@ -44,7 +43,7 @@ async function toggleArchive(conv: Conversation) {
 
 let sorting = $state<SortingState>([{ id: "updated_at", desc: true }]);
 
-const columns: ColumnDef<Conversation>[] = [
+const columns: ColumnDef<ConversationResponse>[] = [
     {
         id: "title",
         header: "Title",
@@ -90,7 +89,7 @@ const table = createSvelteTable({
     getSortedRowModel: getSortedRowModel(),
 });
 
-function headerText(header: Header<Conversation, unknown>): string {
+function headerText(header: Header<ConversationResponse, unknown>): string {
     const label = header.column.columnDef.header;
     return typeof label === "string" ? label : "";
 }

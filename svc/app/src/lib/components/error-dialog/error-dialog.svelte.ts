@@ -52,7 +52,7 @@ export const errorDialog = createErrorDialogStore();
 
 /**
  * Surface any thrown value through the global error dialog. This is the single
- * entry point for "the initial response contained an error" — use it in the
+ * entry point for "the initial response contained an error". Use it in the
  * `catch` block of any direct API call so error handling stays uniform.
  */
 export function showError(value: unknown): void {

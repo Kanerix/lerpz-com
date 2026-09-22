@@ -17,8 +17,8 @@ import type {
 
 import type {
   ChatRequest,
-  Conversation,
-  ConversationDetail,
+  ConversationDetailResponse,
+  ConversationResponse,
   EditLatestMessageRequest,
   MessageRequest,
   ProblemSchema,
@@ -34,7 +34,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 export type listChatsResponse200 = {
-  data: Conversation[]
+  data: ConversationResponse[]
   status: 200
 }
 
@@ -234,7 +234,7 @@ export function createCreateChat<TData = Awaited<ReturnType<typeof createChat>>,
 
 
 export type getChatResponse200 = {
-  data: ConversationDetail
+  data: ConversationDetailResponse
   status: 200
 }
 
@@ -555,7 +555,7 @@ export function createDeleteChat<TData = Awaited<ReturnType<typeof deleteChat>>,
 
 
 export type updateChatResponse200 = {
-  data: Conversation
+  data: ConversationResponse
   status: 200
 }
 

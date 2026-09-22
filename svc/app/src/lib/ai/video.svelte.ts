@@ -1,4 +1,4 @@
-import type { VideoRequest } from "$lib/api/models/index.js";
+import type { VideoRequest } from "$lib/api/models";
 import {
     createVideo as createVideoJob,
     getVideoJob,

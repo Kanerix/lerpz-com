@@ -24,7 +24,7 @@ const values = [
 </script>
 
 <svelte:head>
-  <title>About — Lerpz AI</title>
+  <title>About | Lerpz AI</title>
   <meta name="description" content="Learn about Lerpz AI, the centrally maintained AI portal for your organisation." />
 </svelte:head>
 

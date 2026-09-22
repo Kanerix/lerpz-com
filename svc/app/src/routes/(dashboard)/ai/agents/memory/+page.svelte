@@ -1,8 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+import { Badge, Button, ScrollArea } from "@lerpz/ui";
 
 // DRAFT: static volume data. Wire up to the cluster's PersistentVolumeClaim
 // listing so this reflects real memory volumes. Each volume holds an agent's
@@ -63,9 +61,9 @@ const statusMeta: Record<
     VolumeStatus,
     { label: string; dot: string; variant: "secondary" | "outline" }
 > = {
-    bound: { label: "Bound", dot: "bg-green-500", variant: "secondary" },
-    available: { label: "Available", dot: "bg-sky-500", variant: "outline" },
-    pending: { label: "Pending", dot: "bg-amber-500", variant: "outline" },
+    bound: { label: "Bound", dot: "bg-chart-2", variant: "secondary" },
+    available: { label: "Available", dot: "bg-primary", variant: "outline" },
+    pending: { label: "Pending", dot: "bg-chart-1", variant: "outline" },
 };
 
 const totalCapacity = $derived(

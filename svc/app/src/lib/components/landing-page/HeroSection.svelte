@@ -1,7 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
-import { TextLoop } from "@lerpz/ui/components/text-loop";
+import { Button, TextLoop } from "@lerpz/ui";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 
 const isAuthenticated = $derived(msalStore.isAuthenticated);
@@ -30,7 +29,7 @@ async function signIn() {
 
   <p class="max-w-xl text-lg text-muted-foreground leading-relaxed">
     Sign in with your work account to access AI chat, image and video
-    generation, and more — centralised and maintained for everyone in the
+    generation, and more, centralised and maintained for everyone in the
     organisation.
   </p>
 

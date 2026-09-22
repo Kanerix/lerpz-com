@@ -13,7 +13,7 @@ const description = $derived(
 </script>
 
 <svelte:head>
-  <title>Lerpz – {title}</title>
+  <title>{title} | Lerpz</title>
 </svelte:head>
 
 <ErrorState status={page.status} {title} {description} />

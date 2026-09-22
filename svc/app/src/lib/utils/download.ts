@@ -3,10 +3,10 @@
  *
  * The image is fetched into a {@link Blob} rather than relying on a plain
  * `<a href={url} download>` because the `download` attribute is ignored for
- * cross-origin URLs — the browser would navigate to / open the image instead
- * of saving it. Fetching to a blob forces an actual download and lets us name
- * the file. Note this requires the image host to permit cross-origin fetches
- * (CORS); otherwise the request will reject.
+ * cross-origin URLs, so the browser would navigate to or open the image
+ * instead of saving it. Fetching to a blob forces an actual download and lets
+ * us name the file. Note this requires the image host to permit cross-origin
+ * fetches (CORS); otherwise the request will reject.
  *
  * Must run in the browser (it touches `document`), so call it from client-side
  * event handlers.
@@ -97,7 +97,7 @@ function resolveFilename(
         const last = pathname.split("/").pop();
         if (last) base = decodeURIComponent(last);
     } catch {
-        // Malformed URL — keep the default base name.
+        // Malformed URL, so keep the default base name.
     }
 
     if (base.includes(".")) return base;

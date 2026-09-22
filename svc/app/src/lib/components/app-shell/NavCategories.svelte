@@ -8,7 +8,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     useSidebar,
-} from "@lerpz/ui/components/sidebar";
+} from "@lerpz/ui";
 import { cubicOut } from "svelte/easing";
 import { page } from "$app/state";
 import { fly, slide } from "$lib/utils/transitions.js";

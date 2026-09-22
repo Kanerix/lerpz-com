@@ -1,31 +1,31 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Badge,
+    Button,
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@lerpz/ui/components/card";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+    Skeleton,
+} from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
 import { getHealthCheckUrl } from "$lib/api/health/health.js";
-import type { HealthCheck } from "$lib/api/models/index.js";
+import type { HealthCheckResponse } from "$lib/api/models";
 import { authenticatedFetch } from "$lib/http/fetch.js";
 
 type ServiceStatus = "operational" | "outage" | "unknown";
 
 // The health endpoint returns 200 when everything is healthy and 503 when a
-// dependency is down — but *both* responses carry the same HealthCheck body
+// dependency is down, but *both* responses carry the same HealthCheckResponse body
 // describing each component. Only unexpected statuses (e.g. 500) or network
 // failures are treated as real errors. We bypass the generated client here
 // because its shared fetch mutator throws away the body on any non-2xx status.
-async function fetchHealth(signal: AbortSignal): Promise<HealthCheck> {
+async function fetchHealth(signal: AbortSignal): Promise<HealthCheckResponse> {
     const response = await authenticatedFetch(getHealthCheckUrl(), { signal });
     if (response.status === 200 || response.status === 503) {
-        return (await response.json()) as HealthCheck;
+        return (await response.json()) as HealthCheckResponse;
     }
     throw new Error(`Health check failed with status ${response.status}`);
 }
@@ -34,7 +34,7 @@ const query = createQuery(() => ({
     queryKey: [getHealthCheckUrl()],
     queryFn: ({ signal }: { signal: AbortSignal }) => fetchHealth(signal),
     refetchInterval: 30_000,
-    // This page *is* the error surface — it reports outages inline and polls,
+    // This page *is* the error surface. It reports outages inline and polls,
     // so it opts out of the global error dialog.
     meta: { skipGlobalErrorDialog: true },
 }));
@@ -53,8 +53,8 @@ const statusMeta: Record<
         label: "Operational",
         icon: "fa6-solid:circle-check",
         badgeVariant: "default",
-        dot: "bg-emerald-500",
-        text: "text-emerald-500",
+        dot: "bg-chart-2",
+        text: "text-chart-2",
     },
     outage: {
         label: "Outage",
@@ -73,7 +73,7 @@ const statusMeta: Record<
 };
 
 const components: {
-    key: keyof HealthCheck;
+    key: keyof HealthCheckResponse;
     name: string;
     description: string;
     icon: string;
@@ -104,7 +104,7 @@ const health = $derived(query.data);
 // returned an unexpected status, so we genuinely don't know the components.
 const apiUp = $derived(!query.isError);
 
-function componentStatus(key: keyof HealthCheck): ServiceStatus {
+function componentStatus(key: keyof HealthCheckResponse): ServiceStatus {
     if (query.isLoading || !apiUp || !health) return "unknown";
     return health[key] ? "operational" : "outage";
 }
@@ -140,7 +140,7 @@ const lastUpdated = $derived.by(() => {
 </script>
 
 <svelte:head>
-  <title>Status — Lerpz AI</title>
+  <title>Status | Lerpz AI</title>
   <meta name="description" content="Live status of Lerpz AI services." />
 </svelte:head>
 

@@ -1,16 +1,16 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Button,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@lerpz/ui/components/dropdown-menu";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+    ScrollArea,
+    Skeleton,
+} from "@lerpz/ui";
 import { createInfiniteQuery } from "@tanstack/svelte-query";
-import type { VideoItem, VideoListResponse } from "$lib/api/models/index.js";
+import type { VideoItem, VideoListResponse } from "$lib/api/models";
 import { getListVideosUrl, listVideos } from "$lib/api/videos/videos.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";

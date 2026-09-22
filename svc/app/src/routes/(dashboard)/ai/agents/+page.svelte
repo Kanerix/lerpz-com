@@ -1,14 +1,14 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
-import { Input } from "@lerpz/ui/components/input";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import {
+    Button,
+    Input,
+    ScrollArea,
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-} from "@lerpz/ui/components/select";
+} from "@lerpz/ui";
 import { toast } from "svelte-sonner";
 import { optionCardVariants } from "./agents-variants.js";
 
@@ -61,7 +61,7 @@ async function deploy(event: SubmitEvent) {
     if (!canDeploy || deploying) return;
     deploying = true;
     try {
-        // TODO: await createAgent({ ... }) — provisions a Deployment + PVC.
+        // TODO: await createAgent({ ... }) provisions a Deployment and a PVC.
         await new Promise((resolve) => setTimeout(resolve, 700));
         toast.success(`Agent "${name}" queued for deployment`, {
             description: `Namespace ${namespace} · ${

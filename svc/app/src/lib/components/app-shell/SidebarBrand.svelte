@@ -1,5 +1,5 @@
 <script lang="ts">
-import { SidebarMenu, SidebarMenuItem } from "@lerpz/ui/components/sidebar";
+import { SidebarMenu, SidebarMenuItem } from "@lerpz/ui";
 </script>
 
 <SidebarMenu>

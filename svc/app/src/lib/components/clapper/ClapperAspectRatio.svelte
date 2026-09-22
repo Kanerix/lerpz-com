@@ -5,7 +5,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@lerpz/ui/components/dropdown-menu";
+} from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import {
     ASPECT_RATIOS,

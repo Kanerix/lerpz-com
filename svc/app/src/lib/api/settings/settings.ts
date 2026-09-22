@@ -18,7 +18,7 @@ import type {
 import type {
   ProblemSchema,
   UpdateSettingsRequest,
-  UserSettings
+  UserSettingsResponse
 } from '../models';
 
 import { customFetch } from '../../http/orval-mutator';
@@ -30,7 +30,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 export type getSettingsResponse200 = {
-  data: UserSettings
+  data: UserSettingsResponse
   status: 200
 }
 
@@ -124,7 +124,7 @@ export const createGetSettings = <TError = ErrorType<ProblemSchema>,
       return createMutation(() => ({ ...getGetSettingsMutationOptions(options?.()) }), queryClient);
     }
     export type updateSettingsResponse200 = {
-  data: UserSettings
+  data: UserSettingsResponse
   status: 200
 }
 

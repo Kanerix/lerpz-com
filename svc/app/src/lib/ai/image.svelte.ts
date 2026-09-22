@@ -1,5 +1,5 @@
 import { getCreateImageUrl } from "$lib/api/images/images.js";
-import type { ImageRequest } from "$lib/api/models/index.js";
+import type { ImageRequest } from "$lib/api/models";
 import { createSseConnection } from "$lib/http/sse.js";
 
 export type UseImageOptions = {
@@ -30,7 +30,7 @@ function parseImageFrame(data: string): string | null {
             return `data:image/${format};base64,${parsed.b64}`;
         }
     } catch {
-        // Malformed payload – ignore this frame.
+        // Malformed payload, so ignore this frame.
     }
     return null;
 }

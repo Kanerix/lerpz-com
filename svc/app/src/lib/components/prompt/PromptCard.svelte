@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Card, CardContent } from "@lerpz/ui/components/card";
+import { Card, CardContent } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import type { Snippet } from "svelte";
 

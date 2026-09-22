@@ -1,14 +1,14 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
-import { Input } from "@lerpz/ui/components/input";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
 import {
+    Button,
+    Input,
+    ScrollArea,
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-} from "@lerpz/ui/components/select";
+} from "@lerpz/ui";
 import { setMode, userPrefersMode } from "mode-watcher";
 import { toast } from "svelte-sonner";
 import { msalStore } from "$lib/auth/msal.svelte.js";

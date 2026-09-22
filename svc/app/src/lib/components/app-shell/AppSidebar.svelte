@@ -1,12 +1,12 @@
 <script lang="ts">
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Separator as SeparatorComp } from "@lerpz/ui/components/separator";
 import {
+    ScrollArea,
+    Separator as SeparatorComp,
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarRail,
-} from "@lerpz/ui/components/sidebar";
+} from "@lerpz/ui";
 import NavCategories from "./NavCategories.svelte";
 import NavSecondary from "./NavSecondary.svelte";
 import NewChatButton from "./NewChatButton.svelte";

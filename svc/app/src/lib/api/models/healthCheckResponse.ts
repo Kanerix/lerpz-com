@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-export interface HealthCheck {
+export interface HealthCheckResponse {
   /** Whether the database connection is healthy */
   database: boolean;
   /** Whether the Redis connection is healthy */

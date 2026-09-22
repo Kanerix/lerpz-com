@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { page } from "$app/state";
 
 const isNotFound = $derived(page.status === 404);

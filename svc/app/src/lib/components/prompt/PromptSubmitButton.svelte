@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 
 // The submit/send button shared by prompt composers. While a reply is
 // streaming it turns into a clickable stop square so the user can cancel;

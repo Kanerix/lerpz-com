@@ -1,7 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
-import { Typewriter } from "@lerpz/ui/components/typewriter";
+import { Button, Typewriter } from "@lerpz/ui";
 import { slide } from "$lib/utils/transitions.js";
 import Markdown from "./Markdown.svelte";
 

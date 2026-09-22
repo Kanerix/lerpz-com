@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
+import { Button } from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import {
@@ -205,7 +205,7 @@ const EXAMPLE_PROMPTS: PromptExample[] = [
         <div class="space-y-1">
           <p class="text-base font-medium">Rendering in the background</p>
           <p class="max-w-sm text-sm text-muted-foreground">
-            You'll get a notification when the video is ready — it keeps going
+            You'll get a notification when the video is ready. It keeps going
             even if you leave this page.
           </p>
         </div>

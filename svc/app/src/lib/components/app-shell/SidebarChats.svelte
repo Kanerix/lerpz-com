@@ -6,16 +6,14 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@lerpz/ui/components/dropdown-menu";
-import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lerpz/ui/components/sidebar";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+    Skeleton,
+} from "@lerpz/ui";
 import { createQuery, useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
 import { toast } from "svelte-sonner";
@@ -26,7 +24,7 @@ import {
     getListChatsUrl,
     listChats,
 } from "$lib/api/chats/chats.js";
-import type { Conversation } from "$lib/api/models/index.js";
+import type { ConversationResponse } from "$lib/api/models";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
 import { fade, fly } from "$lib/utils/transitions.js";
@@ -42,19 +40,19 @@ const query = createQuery(() => ({
 }));
 
 // The conversation shown in the info dialog, and whether it is open.
-let infoConversation = $state<Conversation | null>(null);
+let infoConversation = $state<ConversationResponse | null>(null);
 let infoOpen = $state(false);
 
 // Conversations currently being deleted, so the row can show a spinner and
 // ignore repeat clicks.
 let pendingIds = $state<string[]>([]);
 
-function openInfo(conv: Conversation) {
+function openInfo(conv: ConversationResponse) {
     infoConversation = conv;
     infoOpen = true;
 }
 
-async function handleDelete(conv: Conversation) {
+async function handleDelete(conv: ConversationResponse) {
     if (pendingIds.includes(conv.id)) return;
     pendingIds = [...pendingIds, conv.id];
     try {
@@ -84,7 +82,7 @@ const DATE_GROUP_ORDER: DateGroup[] = [
     "A month ago",
 ];
 
-function getTime(conv: Conversation): number {
+function getTime(conv: ConversationResponse): number {
     const dateStr = conv.updated_at ?? conv.created_at;
     return dateStr ? new Date(dateStr).getTime() : 0;
 }
@@ -114,7 +112,7 @@ const groups = $derived.by(() => {
         .filter((conv) => !conv.archived)
         .sort((a, b) => getTime(b) - getTime(a))
         .slice(0, MAX_CHATS);
-    const map = new Map<DateGroup, Conversation[]>();
+    const map = new Map<DateGroup, ConversationResponse[]>();
     for (const conv of convs) {
         const g = getDateGroup(conv.updated_at ?? conv.created_at);
         if (!map.has(g)) map.set(g, []);

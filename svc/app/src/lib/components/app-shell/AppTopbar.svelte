@@ -1,7 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Input } from "@lerpz/ui/components/input";
-import { SidebarTrigger } from "@lerpz/ui/components/sidebar";
+import { Input, SidebarTrigger } from "@lerpz/ui";
 import ThemeButton from "$lib/components/ThemeButton.svelte";
 import NotificationBell from "./NotificationBell.svelte";
 

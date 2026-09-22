@@ -1,14 +1,14 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button } from "@lerpz/ui/components/button";
 import {
+    Button,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@lerpz/ui/components/dropdown-menu";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+    ScrollArea,
+    Skeleton,
+} from "@lerpz/ui";
 import {
     createInfiniteQuery,
     type InfiniteData,
@@ -20,7 +20,7 @@ import {
     getListImagesUrl,
     listImages,
 } from "$lib/api/images/images.js";
-import type { ImageItem, ImageListResponse } from "$lib/api/models/index.js";
+import type { ImageItem, ImageListResponse } from "$lib/api/models";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
 import { downloadImage } from "$lib/utils/download.js";

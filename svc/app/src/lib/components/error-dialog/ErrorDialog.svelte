@@ -1,7 +1,8 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Button, buttonVariants } from "@lerpz/ui/components/button";
 import {
+    Button,
+    buttonVariants,
     Dialog,
     DialogBackdrop,
     DialogClose,
@@ -9,8 +10,8 @@ import {
     DialogDescription,
     DialogPositioner,
     DialogTitle,
-} from "@lerpz/ui/components/dialog";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+    ScrollArea,
+} from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { toast } from "svelte-sonner";
 import { highlightJson, stringifyJson } from "./json-highlight.js";

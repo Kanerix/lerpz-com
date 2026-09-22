@@ -1,12 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import {
-    Card,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@lerpz/ui/components/card";
+import { Badge, Card, CardDescription, CardHeader, CardTitle } from "@lerpz/ui";
 
 const tools = [
     {
@@ -14,7 +8,7 @@ const tools = [
         title: "AI Chat",
         description:
             "Have conversations with large language models. Ask questions, \
-            summarise documents, or draft content — with your full chat history \
+            summarise documents, or draft content, with your full chat history \
             a click away.",
         badge: "Available",
         badgeVariant: "default" as const,
@@ -24,7 +18,7 @@ const tools = [
         title: "Image Generation",
         description:
             "Generate images from text prompts and keep them organised in your \
-            personal gallery — ideal for mockups, visual references, and \
+            personal gallery. Ideal for mockups, visual references, and \
             creative work.",
         badge: "Available",
         badgeVariant: "default" as const,

@@ -1,8 +1,9 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button, buttonVariants } from "@lerpz/ui/components/button";
 import {
+    Badge,
+    Button,
+    buttonVariants,
     Dialog,
     DialogBackdrop,
     DialogClose,
@@ -10,10 +11,10 @@ import {
     DialogDescription,
     DialogPositioner,
     DialogTitle,
-} from "@lerpz/ui/components/dialog";
+} from "@lerpz/ui";
 import { cn } from "@lerpz/ui/lib/utils";
 import { toast } from "svelte-sonner";
-import type { Conversation } from "$lib/api/models/index.js";
+import type { ConversationResponse } from "$lib/api/models";
 
 let {
     open = $bindable(false),
@@ -23,7 +24,7 @@ let {
     /** Controls visibility of the dialog. Bindable. */
     open?: boolean;
     /** The conversation whose details are displayed. */
-    conversation?: Conversation | null;
+    conversation?: ConversationResponse | null;
     /** Called whenever the open state changes (backdrop click, Escape, …). */
     onOpenChange?: (open: boolean) => void;
 } = $props();

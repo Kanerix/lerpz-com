@@ -1,8 +1,6 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { Badge } from "@lerpz/ui/components/badge";
-import { Button } from "@lerpz/ui/components/button";
-import { ScrollArea } from "@lerpz/ui/components/scroll-area";
+import { Badge, Button, ScrollArea } from "@lerpz/ui";
 
 // DRAFT: static session data. Wire up to the sessions API
 // (`$lib/api/sessions`) so this reflects the live pods backing each agent. Each
@@ -68,8 +66,8 @@ const statusMeta: Record<
     SessionStatus,
     { label: string; dot: string; variant: "default" | "secondary" | "outline" }
 > = {
-    running: { label: "Running", dot: "bg-green-500", variant: "secondary" },
-    pending: { label: "Pending", dot: "bg-amber-500", variant: "outline" },
+    running: { label: "Running", dot: "bg-chart-2", variant: "secondary" },
+    pending: { label: "Pending", dot: "bg-chart-1", variant: "outline" },
     stopped: {
         label: "Stopped",
         dot: "bg-muted-foreground",

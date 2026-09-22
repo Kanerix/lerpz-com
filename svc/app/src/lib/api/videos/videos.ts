@@ -134,34 +134,38 @@ export const createListVideos = <TError = ErrorType<ProblemSchema>,
       return createMutation(() => ({ ...getListVideosMutationOptions(options?.()) }), queryClient);
     }
     export type createVideoResponse202 = {
-      data: CreateVideoResponse
-      status: 202
-    }
+  data: CreateVideoResponse
+  status: 202
+}
 
-    export type createVideoResponse400 = {
-      data: ProblemSchema
-      status: 400
-    }
+export type createVideoResponse400 = {
+  data: ProblemSchema
+  status: 400
+}
 
-    export type createVideoResponse401 = {
-      data: ProblemSchema
-      status: 401
-    }
+export type createVideoResponse401 = {
+  data: ProblemSchema
+  status: 401
+}
 
-    export type createVideoResponse500 = {
-      data: ProblemSchema
-      status: 500
-    }
+export type createVideoResponse500 = {
+  data: ProblemSchema
+  status: 500
+}
 
-    export type createVideoResponseSuccess = (createVideoResponse202) & {
-      headers: Headers;
-    };
-    ;
-    export type createVideoResponseError = (createVideoResponse400 | createVideoResponse401 | createVideoResponse500) & {
-      headers: Headers;
-    };
+export type createVideoResponse502 = {
+  data: ProblemSchema
+  status: 502
+}
 
-    export type createVideoResponse = (createVideoResponseSuccess | createVideoResponseError)
+export type createVideoResponseSuccess = (createVideoResponse202) & {
+  headers: Headers;
+};
+export type createVideoResponseError = (createVideoResponse400 | createVideoResponse401 | createVideoResponse500 | createVideoResponse502) & {
+  headers: Headers;
+};
+
+export type createVideoResponse = (createVideoResponseSuccess | createVideoResponseError)
 
 export const getCreateVideoUrl = () => {
 
@@ -172,6 +176,7 @@ export const getCreateVideoUrl = () => {
 }
 
 /**
+ * Starts a video generation job and returns immediately with a job id. The render runs in the background; poll `GET /videos/jobs/{id}` until the job reaches a terminal state (`completed` or `failed`).
  * @summary Create a new video
  */
 export const createVideo = async (videoRequest: VideoRequest, options?: RequestInit): Promise<createVideoResponse> => {
@@ -294,5 +299,47 @@ export const getVideoJob = async (id: string, options?: RequestInit): Promise<ge
 
 
 
+export const getGetVideoJobMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getVideoJob>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof getVideoJob>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['getVideoJob'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getVideoJob>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  getVideoJob(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GetVideoJobMutationResult = NonNullable<Awaited<ReturnType<typeof getVideoJob>>>
+
+    export type GetVideoJobMutationError = ErrorType<ProblemSchema>
+
+    /**
+ * @summary Get video job status
+ */
+export const createGetVideoJob = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getVideoJob>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof getVideoJob>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getGetVideoJobMutationOptions(options?.()) }), queryClient);
+    }

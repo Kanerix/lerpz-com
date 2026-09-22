@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Skeleton } from "@lerpz/ui/components/skeleton";
+import { Skeleton } from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
 import { getAiContext } from "$lib/ai/context.svelte.js";
 import { getChat } from "$lib/api/chats/chats.js";

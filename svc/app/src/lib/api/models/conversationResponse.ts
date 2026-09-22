@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-export interface Conversation {
+export interface ConversationResponse {
   /** Whether the conversation has been archived by the user */
   archived: boolean;
   /**
