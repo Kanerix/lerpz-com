@@ -12,11 +12,11 @@ terraform {
     }
   }
 
-  # Remote State — Azure Blob Storage
+  # Remote State: Azure Blob Storage
   #
   # FIRST-TIME SETUP (two steps):
   #
-  #   Step 1 — Comment out the backend block below. Run:
+  #   Step 1: Comment out the backend block below. Run:
   #
   #     terraform init
   #     terraform apply \
@@ -24,7 +24,7 @@ terraform {
   #       -target=azurerm_storage_account.tfstate \
   #       -target=azurerm_storage_container.tfstate
   #
-  #   Step 2 — Uncomment the backend block below, then run:
+  #   Step 2: Uncomment the backend block below, then run:
   #
   #     terraform init -migrate-state
   #

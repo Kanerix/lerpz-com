@@ -15,7 +15,7 @@
 ## What is Lerpz?
 
 A monorepo containing shared libraries, services, and packages for the Lerpz
-platform — an internal enterprise AI portal that provides chat interfaces, user
+platform, an internal enterprise AI portal that provides chat interfaces, user
 management, and organizational tools, all backed by Microsoft Entra ID
 authentication.
 
@@ -50,12 +50,12 @@ Terraform definitions they deploy to, and the migrations that back them.
 | `dragonfly` | Cache | Dragonfly (Redis-compatible) | 6379 |
 | `minio` | Object storage | MinIO | 6000 / 6001 |
 
-Ports 3000–3999 are web pages, 4000–4999 are publicly reachable APIs, 5000–5999
-are internal services, and 6000–6999 is third-party infrastructure. The
-infrastructure ports above are what you connect to **from your machine**;
-in-network those containers keep their vendor defaults (`postgres:5432`,
-`minio:9000`). See [docs/NAMING.md](docs/NAMING.md) for the naming rules and the
-conventions for adding a new service.
+Ports 3000 to 3999 are web pages, 4000 to 4999 are publicly reachable APIs,
+5000 to 5999 are internal services, and 6000 to 6999 is third-party
+infrastructure. The infrastructure ports above are what you connect to **from
+your machine**; in-network those containers keep their vendor defaults
+(`postgres:5432`, `minio:9000`). See [docs/NAMING.md](docs/NAMING.md) for the
+naming rules and the conventions for adding a new service.
 
 ## Architecture
 
@@ -185,8 +185,8 @@ docker compose --profile k8s up forge   # in a container
 ```
 
 It mounts `~/.kube` read-only and exits on startup if no cluster answers. Because
-a kind/minikube kubeconfig points at `127.0.0.1` — which inside the container is
-the container itself — running `forge` in the kind cluster under [`k8s/`](k8s)
+a kind/minikube kubeconfig points at `127.0.0.1`, which inside the container is
+the container itself, running `forge` in the kind cluster under [`k8s/`](k8s)
 is usually the better path. See [k8s/README.md](k8s/README.md).
 
 ## Database
@@ -226,13 +226,17 @@ Compile-time query checks run offline by default, against the cached metadata in
 | [`deploy-container.yaml`](.github/workflows/deploy-container.yaml) | `app`, `api`, `artoo`, `forge` as containers |
 | [`deploy-gh-page.yaml`](.github/workflows/deploy-gh-page.yaml) | `www` to GitHub Pages |
 
+`pipeline.yaml` also runs a `check` job on every push and pull request, which
+calls [`check.yaml`](.github/workflows/check.yaml) for the Rust and TypeScript
+checks. The deploy jobs wait for it to pass.
+
 Only changed services are deployed, and `www` publishes from `main` only. The
 container deploy jobs are currently commented out in `pipeline.yaml`, so `www`
 is the only service the pipeline actually ships.
 
 ## Documentation
 
-- [docs/NAMING.md](docs/NAMING.md) — service naming and port conventions
-- [docs/BRAND.md](docs/BRAND.md) — typeface, colour tokens and frontend traits
-- [docs/INFRA.md](docs/INFRA.md) — infrastructure
-- [docs/GUID.md](docs/GUID.md) — identifiers
+- [docs/NAMING.md](docs/NAMING.md): service naming and port conventions
+- [docs/BRAND.md](docs/BRAND.md): typeface, colour tokens and frontend traits
+- [docs/INFRA.md](docs/INFRA.md): infrastructure
+- [docs/GUID.md](docs/GUID.md): identifiers

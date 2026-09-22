@@ -19,8 +19,10 @@ belongs in that service.
 
 ## 2. Manifest
 
-Packages ship source. There is no build step, no `dist` and no root export, so
-consumers import through subpaths.
+Packages ship source. There is no build step and no `dist`. A helper or config
+package exposes subpaths only. A component package also exposes a root export
+that re-exports every component, because `AGENTS.md` requires consumers to take
+components from the root and keep subpaths for styles, hooks and helpers.
 
 ```json
 {
@@ -30,7 +32,8 @@ consumers import through subpaths.
     "type": "module",
     "scripts": {
         "check": "tsc --noEmit",
-        "lint": "biome check"
+        "lint": "biome check",
+        "format": "biome format --write"
     },
     "devDependencies": {
         "@lerpz/biome-config": "workspace:*",
@@ -43,11 +46,23 @@ consumers import through subpaths.
 }
 ```
 
-The `check` and `lint` script names matter, the root `bun --filter '*'` scripts
-call them by name. A Svelte package uses
-`"check": "svelte-check --tsconfig ./tsconfig.json"` instead, takes `svelte` as
-a `peerDependency` on `^5.0.0`, and exports components as
-`"./components/*": "./src/components/*/index.ts"`.
+The `check`, `lint` and `format` script names matter, the root
+`bun --filter '*'` scripts call them by name. A package that omits one is
+silently skipped by `just check` or `just fmt`.
+
+A Svelte package uses `"check": "svelte-check --tsconfig ./tsconfig.json"`
+instead, takes `svelte` as a `peerDependency` on `^5.0.0`, and adds a root
+export alongside the component subpath:
+
+```json
+"exports": {
+    ".": "./src/index.ts",
+    "./components/*": "./src/components/*/index.ts"
+}
+```
+
+`src/index.ts` re-exports each component directory barrel, which is what makes
+`import { Button } from "@lerpz/ui"` work.
 
 Do not add an export entry for a directory that does not exist.
 
@@ -63,8 +78,9 @@ Do not add an export entry for a directory that does not exist.
 }
 ```
 
-`packages/ui/tsconfig.json` hand-copies its options instead of extending the
-shared base, which drops `noUncheckedIndexedAccess`. Do not copy that.
+`packages/ui/tsconfig.json` extends the shared base. Do not hand-copy the
+options into a package instead, which silently drops `noUncheckedIndexedAccess`
+and the declaration settings.
 
 `biome.json`:
 
@@ -79,8 +95,9 @@ shared base, which drops `noUncheckedIndexedAccess`. Do not copy that.
 ## 4. Wire it up
 
 Add `"@lerpz/foo": "workspace:*"` to the consuming app's dependencies and run
-`bun install`. Import through the subpath, such as
-`import { thing } from "@lerpz/foo/lib/thing"`.
+`bun install`. Import helpers through the subpath, such as
+`import { thing } from "@lerpz/foo/lib/thing"`, and components from the root,
+such as `import { Button } from "@lerpz/ui"`.
 
 ## 5. Source conventions
 

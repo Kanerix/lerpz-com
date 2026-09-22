@@ -1,7 +1,7 @@
 # Local Kubernetes (kind) setup
 
 This directory runs the entire Lerpz stack on a local [kind](https://kind.sigs.k8s.io/)
-cluster with **Traefik** as the ingress controller — the Kubernetes equivalent
+cluster with **Traefik** as the ingress controller, the Kubernetes equivalent
 of the root `docker-compose.yml`.
 
 ## Layout
@@ -50,7 +50,7 @@ Two things must be adjusted in your app env files before deploying:
    `persistentvolumeclaims` and `deployments`.
 
 Keep a `svc/<name>/.env.docker` per service with these values; the justfile
-turns them into Kubernetes Secrets. `www` has none — it is fully static.
+turns them into Kubernetes Secrets. `www` has none. It is fully static.
 
 ## Bring-up
 
@@ -89,7 +89,7 @@ Or run the whole chain at once with `just all` (after creating the env files).
 Then browse to <https://lerpz.local> (company site), <https://app.lerpz.local>,
 <https://api.lerpz.local>, and <https://agent.lerpz.local>.
 
-`forge` has no IngressRoute on purpose — it holds RBAC over the namespace and is
+`forge` has no IngressRoute on purpose. It holds RBAC over the namespace and is
 only called in-cluster. Reach it for debugging with
 `kubectl -n lerpz port-forward svc/forge 5000:5000`.
 
@@ -102,7 +102,7 @@ Tear everything down with `just down`.
 - **traefik/values.yaml** runs Traefik as a DaemonSet that binds those host
   ports and enables the Kubernetes CRD provider (for `IngressRoute`).
 - **manifests/ingress** declares one `IngressRoute` per host, terminating TLS
-  with the `lerpz-tls` secret — the direct analogue of the Traefik router
+  with the `lerpz-tls` secret, the direct analogue of the Traefik router
   labels in `docker-compose.yml`.
 
 ## Notes / next steps

@@ -20,8 +20,8 @@ terraform/    Infrastructure definitions
 docs/         Conventions and design notes
 ```
 
-`docs/NAMING.md` explains the service names and port ranges. `README.md` has the
-architecture diagram and the command list.
+`docs/NAMING.md` explains the service names and port ranges. `docs/INFRA.md` has
+the architecture diagram. `README.md` has the command list.
 
 ## How to investigate
 
@@ -31,8 +31,8 @@ architecture diagram and the command list.
   example is not a convention.
 - Both stacks matter. A question about an API response often has a Rust answer
   and a TypeScript answer, connected by the generated OpenAPI client.
-- Prefer reading the code over trusting a document. `docs/DATABASE.md` is marked
-  outdated, and comments can lag behind the code.
+- Prefer reading the code over trusting a document. Comments and documentation
+  can lag behind the code, so confirm anything load-bearing against the source.
 
 ## How to report
 

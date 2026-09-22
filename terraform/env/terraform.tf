@@ -12,7 +12,7 @@ terraform {
     }
   }
 
-  # Remote State — Azure Blob Storage
+  # Remote State: Azure Blob Storage
   #
   # The shared module must be applied before any environment.
   #

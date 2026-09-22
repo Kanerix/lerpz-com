@@ -15,8 +15,9 @@ migrations before writing a new one.
   prefix has to match what sqlx expects. `NAME` is snake_case and describes the
   change, such as `user_settings` or `models_insert`.
 - Editing a migration is only an option while yours is the only database that
-  has run it, because `just reset` rebuilds from scratch. Once it has gone
-  further, or nobody is sure, correct it with a new migration.
+  has run it, because `just reset` deletes the data volumes and the next
+  `just infra` plus `just migrate` replays every migration from scratch. Once it
+  has gone further, or nobody is sure, correct it with a new migration.
 - Keywords are uppercase.
 
 ## SQL style

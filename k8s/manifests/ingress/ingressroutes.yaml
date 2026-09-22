@@ -1,4 +1,4 @@
-# Traefik IngressRoutes — the cluster equivalent of the docker-compose Traefik
+# Traefik IngressRoutes, the cluster equivalent of the docker-compose Traefik
 # labels/dynamic config. HTTP entrypoint = `web`, HTTPS = `websecure`.
 #
 # TLS uses the `lerpz-tls` secret. Create it from your mkcert certs with:

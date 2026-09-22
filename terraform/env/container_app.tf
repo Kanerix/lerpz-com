@@ -87,12 +87,12 @@ resource "azurerm_container_app" "lerpz_website" {
   }
 }
 
-# Custom domain — lerpz.com / stag.lerpz.com
+# Custom domain: lerpz.com / stag.lerpz.com
 #
-# IMPORTANT — three-phase setup (Azure requires the hostname to be registered
+# IMPORTANT: three-phase setup (Azure requires the hostname to be registered
 # on the container app *before* a managed certificate can be issued):
 #
-#  Phase 1 — DNS records:
+#  Phase 1: DNS records
 #    After the very first `terraform apply`, retrieve the static IP and domain
 #    verification ID from the outputs, then create the following DNS records at
 #    your registrar:
@@ -108,12 +108,12 @@ resource "azurerm_container_app" "lerpz_website" {
 #      dig A <domain> +short
 #      dig TXT asuid.<domain> +short
 #
-#  Phase 2 — register the hostname (no cert yet):
+#  Phase 2: register the hostname (no cert yet)
 #    Once DNS has propagated, `azurerm_container_app_custom_domain` below
 #    registers the domain on the container app with
 #    certificate_binding_type = "Disabled". Run `terraform apply`.
 #
-#  Phase 3 — issue the managed certificate:
+#  Phase 3: issue the managed certificate
 #    Uncomment `azurerm_container_app_environment_managed_certificate` below
 #    and run `terraform apply`. Azure will validate ownership via HTTP-01 and
 #    issue a free managed TLS certificate.
@@ -128,7 +128,7 @@ resource "azurerm_container_app_custom_domain" "lerpz_com" {
   certificate_binding_type = "SniEnabled"
 }
 
-# Phase 3 — uncomment once the hostname is registered (Phase 2 applied)
+# Phase 3: uncomment once the hostname is registered (Phase 2 applied)
 resource "azurerm_container_app_environment_managed_certificate" "lerpz_com" {
   name                         = replace(local.domain, ".", "-")
   container_app_environment_id = azurerm_container_app_environment.lerpz.id

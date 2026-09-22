@@ -78,8 +78,8 @@ holds the token and addresses them directly.
 `artoo` is the app's main agent. It answers questions and helps users navigate
 the product's features, grounding answers in a Qdrant collection rather than in
 the model alone, and looking the signed-in user up through Microsoft Graph. The
-product UI does not call it yet. All model traffic — chat, embeddings, image
-and video generation — is routed through [Portkey](https://portkey.ai) as a
+product UI does not call it yet. All model traffic, including chat, embeddings,
+image and video generation, is routed through [Portkey](https://portkey.ai) as a
 gateway rather than to a provider directly; `api` additionally holds Vertex AI
 configuration.
 
@@ -88,20 +88,20 @@ configuration.
 Terraform is split into two states. `terraform/shared` holds what every
 environment draws on:
 
-- `azurerm_container_registry` — the shared ACR.
-- `azurerm_storage_account` / `azurerm_storage_container` — remote state.
+- `azurerm_container_registry`: the shared ACR.
+- `azurerm_storage_account` / `azurerm_storage_container`: remote state.
 - `azurerm_user_assigned_identity.deployer` plus role assignments for state
   access and ACR push, federated to GitHub Actions so no secrets are stored.
 
 `terraform/env` is applied once per environment:
 
-- `azurerm_resource_group` — `lerpz-<env>-rg`.
-- `azurerm_container_app_environment` — Consumption workload profile.
-- `azurerm_container_app` — the app, scaling from zero to one replica at
+- `azurerm_resource_group`: `lerpz-<env>-rg`.
+- `azurerm_container_app_environment`: Consumption workload profile.
+- `azurerm_container_app`: the app, scaling from zero to one replica at
   0.25 CPU / 0.5 Gi, with `template[0].container[0].image` ignored so
   deployments do not fight Terraform.
 - `azurerm_container_app_custom_domain` and
-  `azurerm_container_app_environment_managed_certificate` — hostname binding
+  `azurerm_container_app_environment_managed_certificate`: hostname binding
   and the managed certificate.
 - `azurerm_user_assigned_identity.runtime` with `AcrPull`, used to pull images.
 
@@ -129,7 +129,7 @@ Both share one ACR and one Entra ID app registration.
 ## Kubernetes
 
 [`k8s/`](../k8s) runs the whole stack on a local [kind](https://kind.sigs.k8s.io/)
-cluster with Traefik as the ingress controller — the Kubernetes equivalent of
+cluster with Traefik as the ingress controller, the Kubernetes equivalent of
 the root `docker-compose.yml`.
 
 | Host                             | Service |
@@ -146,7 +146,7 @@ answers. See [k8s/README.md](../k8s/README.md).
 ## Planned: user media delivery
 
 `api` requires an S3 endpoint and will not start without one, but no storage
-account, container or CDN is provisioned by Terraform yet — only the remote
+account, container or CDN is provisioned by Terraform yet, only the remote
 state account. Locally that endpoint is MinIO.
 
 ```mermaid

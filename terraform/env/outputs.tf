@@ -41,7 +41,7 @@ output "container_app_environment_domain_verification_id" {
 output "container_app_environment_default_domain" {
   value       = azurerm_container_app_environment.lerpz.default_domain
   description = <<-EOT
-    Default domain of the Container App Environment — useful as a CNAME target
+    Default domain of the Container App Environment, useful as a CNAME target
     for subdomain bindings.
   EOT
 }

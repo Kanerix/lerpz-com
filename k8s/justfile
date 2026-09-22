@@ -57,7 +57,7 @@ tls:
         --dry-run=client -o yaml | kubectl apply -f -
 
 # Create per-app env secrets from svc/*/.env.docker
-# www has no secret — the company site is fully static.
+# www has no secret. The company site is fully static.
 secrets:
     kubectl create namespace {{ns}} --dry-run=client -o yaml | kubectl apply -f -
     kubectl -n {{ns}} create secret generic app-env \

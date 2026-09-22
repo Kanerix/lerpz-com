@@ -248,6 +248,7 @@ Migrations live in the top-level `migrations/` directory and are created with
 
 Editing a migration that has already run changes its checksum and breaks every
 database that applied the old version. One you wrote yourself and have only run
-locally can still be edited, since `just reset` rebuilds the database from
-scratch. For anything else, ask whether it has been applied in production. If it
-has, or nobody is sure, fix the mistake with a new migration instead.
+locally can still be edited, since `just reset` deletes the data volumes and the
+next `just infra` plus `just migrate` replays every migration from scratch. For
+anything else, ask whether it has been applied in production. If it has, or
+nobody is sure, fix the mistake with a new migration instead.
