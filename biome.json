@@ -1,5 +1,6 @@
 {
     "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+    "extends": ["@lerpz/biome-config/svelte"],
     "files": {
         "ignoreUnknown": true,
         "includes": ["**", "!**/*.svg"]
@@ -9,31 +10,10 @@
         "clientKind": "git",
         "useIgnoreFile": true
     },
-    "javascript": {
-        "formatter": {
-            "quoteStyle": "double",
-            "trailingCommas": "all",
-            "semicolons": "always"
-        }
-    },
     "linter": {
-        "enabled": true,
         "rules": {
-            "preset": "recommended",
             "correctness": {
                 "useExhaustiveDependencies": "info"
-            }
-        }
-    },
-    "formatter": {
-        "enabled": true,
-        "indentStyle": "space",
-        "indentWidth": 4
-    },
-    "assist": {
-        "actions": {
-            "source": {
-                "organizeImports": "on"
             }
         }
     }

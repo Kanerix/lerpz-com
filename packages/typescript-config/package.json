@@ -5,5 +5,10 @@
     "license": "PROPRIETARY",
     "publishConfig": {
         "access": "public"
+    },
+    "scripts": {
+        "check": "echo 'no typescript sources to check'",
+        "lint": "biome check",
+        "format": "biome format --write"
     }
 }

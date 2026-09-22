@@ -16,3 +16,5 @@ export { default as SidebarMenuSubItem } from "./SidebarMenuSubItem.svelte";
 export { default as SidebarProvider } from "./SidebarProvider.svelte";
 export { default as SidebarRail } from "./SidebarRail.svelte";
 export { default as SidebarTrigger } from "./SidebarTrigger.svelte";
+export type { SidebarMenuButtonVariants } from "./sidebar-menu-button-variants.js";
+export { sidebarMenuButtonVariants } from "./sidebar-menu-button-variants.js";

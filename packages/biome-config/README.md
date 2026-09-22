@@ -4,9 +4,10 @@ Shared [Biome](https://biomejs.dev) configuration for the Lerpz monorepo.
 
 ## Exports
 
-- `@lerpz/biome-config/svelte` — settings for Svelte projects that use
-  Tailwind CSS (CSS Tailwind directives, the Svelte linter domain, Svelte
-  file overrides, and Tailwind class sorting).
+- `@lerpz/biome-config/svelte`, settings for Svelte projects that use
+  Tailwind CSS (CSS Tailwind directives, the Svelte linter domain, and Svelte
+  file overrides). Tailwind class sorting (`useSortedClasses`) is off on
+  purpose, so classes are left in the order they are written.
 
 ## Usage
 

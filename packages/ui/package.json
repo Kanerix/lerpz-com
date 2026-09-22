@@ -5,7 +5,8 @@
     "type": "module",
     "scripts": {
         "check": "svelte-check --tsconfig ./tsconfig.json",
-        "lint": "biome check"
+        "lint": "biome check",
+        "format": "biome format --write"
     },
     "dependencies": {
         "@ark-ui/svelte": "^5.0.0",
@@ -37,7 +38,6 @@
         "./globals.css": "./src/styles/globals.css",
         "./postcss.config": "./postcss.config.mjs",
         "./lib/*": "./src/lib/*.ts",
-        "./components/*": "./src/components/*/index.ts",
-        "./hooks/*": "./src/hooks/*.svelte.ts"
+        "./components/*": "./src/components/*/index.ts"
     }
 }

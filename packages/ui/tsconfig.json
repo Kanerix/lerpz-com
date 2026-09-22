@@ -1,14 +1,8 @@
 {
+    "extends": "@lerpz/typescript-config/base.json",
     "compilerOptions": {
-        "strict": true,
-        "target": "ES2022",
-        "esModuleInterop": true,
-        "isolatedModules": true,
-        "lib": ["es2022", "DOM", "DOM.Iterable"],
         "module": "ESNext",
         "moduleResolution": "bundler",
-        "resolveJsonModule": true,
-        "skipLibCheck": true,
         "verbatimModuleSyntax": true,
         "paths": {
             "@lerpz/ui/*": ["./src/*"]
