@@ -1,0 +1,88 @@
+name: "Check"
+
+on:
+  workflow_call:
+
+jobs:
+  rust:
+    name: "Rust"
+    runs-on: ubuntu-latest
+
+    # uuidv7() is a Postgres 18 built-in and every table's primary key defaults
+    # to it, so the migrations do not apply on an older server. Pinned rather
+    # than tracking latest, which would move the floor without warning.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: lerpz
+          POSTGRES_PASSWORD: Password123
+          POSTGRES_DB: primary
+        ports:
+          - 6432:5432
+        options: >-
+          --health-cmd "pg_isready -U lerpz -d primary"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgres://lerpz:Password123@localhost:6432/primary"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      # -D warnings is the one place CI is stricter than `just check-rust`.
+      # Locally a warning should not block you mid-change; on main it should.
+      - name: Clippy
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --workspace
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features rustls,postgres
+
+      - name: Migrate
+        run: cargo sqlx migrate run --source migrations
+
+      # Fails when a query changed without `just prepare` being run, which would
+      # otherwise only surface as a broken offline build for everyone else.
+      - name: Verify sqlx cache is current
+        run: cargo sqlx prepare --workspace --check
+
+  typescript:
+    name: "TypeScript"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check
+        run: bun run check
+
+      - name: Lint
+        run: bun run lint

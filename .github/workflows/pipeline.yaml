@@ -27,11 +27,19 @@ on:
     branches:
       - main
       - dev
+  pull_request:
+    branches:
+      - main
+      - dev
 
 jobs:
   prepare:
     name: "Detect changes"
     uses: ./.github/workflows/prepare.yaml
+
+  check:
+    name: "Check"
+    uses: ./.github/workflows/check.yaml
 
   env:
     name: "Resolve environment"
@@ -64,7 +72,7 @@ jobs:
   # this only runs on main to keep dev pushes off the live company site.
   deploy-www:
     name: "Deploy www"
-    needs: [prepare]
+    needs: [prepare, check]
     if: |
       github.ref_name == 'main' &&
       (needs.prepare.outputs.www == 'true' || inputs.www == true)
@@ -78,7 +86,7 @@ jobs:
 
   # deploy-app:
   #   name: "Deploy app"
-  #   needs: [prepare, env]
+  #   needs: [prepare, env, check]
   #   if: needs.prepare.outputs.app == 'true' || inputs.app == true
   #   uses: ./.github/workflows/deploy-container.yaml
   #   with:
@@ -89,7 +97,7 @@ jobs:
 
   # deploy-api:
   #   name: "Deploy api"
-  #   needs: [prepare, env]
+  #   needs: [prepare, env, check]
   #   if: needs.prepare.outputs.api == 'true' || inputs.api == true
   #   uses: ./.github/workflows/deploy-container.yaml
   #   with:
@@ -100,7 +108,7 @@ jobs:
 
   # deploy-artoo:
   #   name: "Deploy artoo"
-  #   needs: [prepare, env]
+  #   needs: [prepare, env, check]
   #   if: needs.prepare.outputs.artoo == 'true' || inputs.artoo == true
   #   uses: ./.github/workflows/deploy-container.yaml
   #   with:
@@ -111,7 +119,7 @@ jobs:
 
   # deploy-forge:
   #   name: "Deploy forge"
-  #   needs: [prepare, env]
+  #   needs: [prepare, env, check]
   #   if: needs.prepare.outputs.forge == 'true' || inputs.forge == true
   #   uses: ./.github/workflows/deploy-container.yaml
   #   with:
