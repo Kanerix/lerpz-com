@@ -57,6 +57,18 @@ descriptions and anything else written for a human to read.
 Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org)
 specification and should be written in the imperative mood, as recommended by Git.
 
+Never commit on your own. Finish the work, report what changed, and let the user
+decide when it gets committed. The same goes for staging, amending, and pushing.
+
+Drafting the message is a different matter, and it is welcome and encouraged.
+When you finish a change, offer a commit message the user can take or edit. A
+good draft saves them the work of reconstructing what you did.
+
+Keep commit messages short and plain. No emoji. Most commits are a subject line
+and nothing else. Add a body only when the subject cannot carry the reason on
+its own. If one message needs a paragraph to cover everything, the commit is
+probably two commits.
+
 ## Comments
 
 Prefer self-explanatory code over comments. Before writing a comment, try to make
