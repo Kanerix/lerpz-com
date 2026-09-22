@@ -26,7 +26,9 @@ use crate::state::{DatabasePool, OpenAI};
 /// - `saved`: the conversation UUID, sent once the reply has been persisted.
 ///
 /// The assistant message (answer plus any accumulated reasoning) is persisted
-/// once the upstream stream completes.
+/// once the upstream stream completes. A stream that produced no answer, such
+/// as one cut short by an upstream failure or a content filter, is not
+/// persisted and ends without a `saved` event.
 pub(super) async fn start_completion_sse(
     openai: OpenAI,
     request: CreateChatCompletionRequest,
@@ -76,6 +78,15 @@ fn completion_sse(
                         .data("content filter triggered"));
                 }
             }
+        }
+
+        // An upstream failure or a content filter can end the stream before a
+        // single token arrives. Persisting that would leave a blank assistant
+        // message in the conversation, so there is nothing to save and nothing
+        // to confirm.
+        if content_buf.trim().is_empty() {
+            tracing::debug!(%conv_id, "discarding assistant message with no content");
+            return;
         }
 
         tracing::trace!(%conv_id, "persisting assistant message");
