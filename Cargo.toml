@@ -13,7 +13,7 @@ authors = ["Kasper Jønsson <kas@lerpz.com>"]
 # Internal
 lerpz-ai = { path = "crates/lerpz-ai" }
 lerpz-axum = { path = "crates/lerpz-axum" }
-lerpz-jwt = { path = "crates/lerpz-jwt" }
+# lerpz-jwt = { path = "crates/lerpz-jwt" }
 # lerpz-macros = { path = "crates/lerpz-macros" }
 lerpz-metadata = { path = "crates/lerpz-metadata" }
 lerpz-pwd = { path = "crates/lerpz-pwd" }
