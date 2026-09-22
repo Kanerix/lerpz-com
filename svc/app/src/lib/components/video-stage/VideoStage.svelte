@@ -2,7 +2,13 @@
 import Icon from "@iconify/svelte";
 import { Button } from "@lerpz/ui/components/button";
 import { cn } from "@lerpz/ui/lib/utils";
-import { resolveAspectRatio } from "$lib/components/clapper/clapper.store.svelte.js";
+import { getAiContext } from "$lib/ai/context.svelte.js";
+import {
+    clapperStore,
+    resolveAspectRatio,
+} from "$lib/components/clapper/clapper.store.svelte.js";
+import type { PromptExample } from "$lib/components/prompt-starter/index.js";
+import { PromptStarter } from "$lib/components/prompt-starter/index.js";
 import { fade, scale } from "$lib/utils/transitions.js";
 
 let {
@@ -93,6 +99,36 @@ const elapsedLabel = $derived.by(() => {
 });
 
 const showProgress = $derived(isLoading && !isBackgrounded);
+
+const ai = getAiContext();
+
+// Fallback family for the starter avatar: whichever video model is selected.
+const selectedFamily = $derived(
+    ai.models.find((m) => m.value === clapperStore.model)?.family ?? null,
+);
+
+const EXAMPLE_PROMPTS: PromptExample[] = [
+    {
+        icon: "fa6-solid:mountain-sun",
+        title: "Set a scene",
+        prompt: "Waves rolling onto a black sand beach at dusk, slow drifting camera.",
+    },
+    {
+        icon: "fa6-solid:person-walking",
+        title: "Follow the action",
+        prompt: "A cyclist weaving through a neon lit city street in the rain.",
+    },
+    {
+        icon: "fa6-solid:cube",
+        title: "Show a product",
+        prompt: "A wristwatch turning slowly on a stone plinth, studio lighting.",
+    },
+    {
+        icon: "fa6-solid:wand-magic-sparkles",
+        title: "Try an effect",
+        prompt: "Ink drops blooming through clear water, close up macro shot.",
+    },
+];
 </script>
 
 <div
@@ -249,24 +285,14 @@ const showProgress = $derived(isLoading && !isBackgrounded);
       </div>
     {:else}
       <!-- Idle: nothing generated yet. -->
-      <div
-        in:fade={{ duration: 200 }}
-        class="m-auto flex flex-col items-center gap-3 px-4 text-center text-muted-foreground"
-      >
-        <span
-          class="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground/80"
-        >
-          <Icon icon="fa6-solid:clapperboard" class="size-5" />
-        </span>
-        <div class="space-y-1">
-          <p class="text-base font-medium text-foreground">
-            Describe a video to bring it to life
-          </p>
-          <p class="max-w-sm text-sm">
-            Write a prompt below, pick a model, aspect ratio and duration, then
-            generate.
-          </p>
-        </div>
+      <div in:fade={{ duration: 200 }} class="m-auto">
+        <PromptStarter
+          family={selectedFamily}
+          title="Create a video"
+          description="Describe a video below to generate one, or pick an example to get started. A render keeps going if you leave the page."
+          examples={EXAMPLE_PROMPTS}
+          onSelect={(prompt) => clapperStore.setPrompt(prompt)}
+        />
       </div>
     {/if}
   </div>
