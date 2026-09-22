@@ -10,8 +10,8 @@
 //! and routing features. It uses a standard OpenAI-compatible REST API but
 //! requires two extra headers:
 //!
-//! - `x-portkey-api-key` — your Portkey workspace API key
-//! - `x-portkey-provider` — the upstream provider to route to
+//! - `x-portkey-api-key`, your Portkey workspace API key
+//! - `x-portkey-provider`, the upstream provider to route to
 //!
 //! # Example
 //!
@@ -32,17 +32,25 @@ use http::HeaderMap;
 use rig_core::providers::openai;
 use secrecy::{ExposeSecret, SecretString};
 
+use crate::portkey::error::{Error, Result};
+
 /// Builds a [`rig-core`](rig_core) [`openai::Client`] pointed at the Portkey AI
 /// gateway.
 ///
 /// The returned client sends the `x-portkey-api-key` and `x-portkey-provider`
 /// headers on every request so Portkey can authenticate and route to the
 /// chosen upstream provider.
+///
+/// # Errors
+///
+/// Returns [`Error::InvalidHeader`] when the API key or provider cannot be used
+/// as a header value, and [`Error::ClientBuild`] when the underlying client
+/// cannot be built.
 pub fn build_client(
     base_url: &str,
     api_key: &SecretString,
     provider: &str,
-) -> anyhow::Result<openai::Client> {
+) -> Result<openai::Client> {
     let mut headers = HeaderMap::new();
 
     headers.insert(
@@ -50,12 +58,16 @@ pub fn build_client(
         api_key
             .expose_secret()
             .parse()
-            .map_err(|e| anyhow::anyhow!(format!("invalid x-portkey-api-key header value: {e}")))?,
+            .map_err(|e| Error::InvalidHeader {
+                name: "x-portkey-api-key",
+                reason: format!("{e}"),
+            })?,
     );
     headers.insert(
         "x-portkey-provider",
-        provider.parse().map_err(|e| {
-            anyhow::anyhow!(format!("invalid x-portkey-provider header value: {e}"))
+        provider.parse().map_err(|e| Error::InvalidHeader {
+            name: "x-portkey-provider",
+            reason: format!("{e}"),
         })?,
     );
 
@@ -64,5 +76,5 @@ pub fn build_client(
         .base_url(base_url)
         .http_headers(headers)
         .build()
-        .map_err(|e| anyhow::anyhow!(format!("failed to build Agent client: {e}")))
+        .map_err(|e| Error::ClientBuild(format!("{e}")))
 }

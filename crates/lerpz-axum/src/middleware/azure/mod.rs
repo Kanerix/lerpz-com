@@ -5,8 +5,8 @@
 //! ```rust
 //! use axum::extract::FromRef;
 //! use lerpz_axum::{
-//!     error::{HandlerError, HandlerResult},
 //!     middleware::azure::{AzureAccessToken, AzureConfig},
+//!     problem::{HandlerResult, Problem},
 //! };
 //!
 //! #[derive(Clone)]
@@ -22,7 +22,7 @@
 //!
 //! async fn example_handler(token: AzureAccessToken) -> HandlerResult<String> {
 //!     if !token.has_scope("example") {
-//!         return Err(HandlerError::unauthorized());
+//!         return Err(Problem::unauthorized());
 //!     }
 //!
 //!     Ok("You have the required scope!".to_string())
@@ -60,13 +60,13 @@ mod validation;
 ///
 /// ```rust
 /// use lerpz_axum::{
-///     error::{HandlerError, HandlerResult},
-///     middleware::azure::{AzureAccessToken, AzureConfig},
+///     middleware::azure::AzureAccessToken,
+///     problem::{HandlerResult, Problem},
 /// };
 ///
 /// async fn example_handler(token: AzureAccessToken) -> HandlerResult<String> {
 ///     if !token.has_scope("example") {
-///         return Err(HandlerError::unauthorized());
+///         return Err(Problem::unauthorized());
 ///     }
 ///
 ///     Ok("You have the required scope!".to_string())
@@ -128,7 +128,6 @@ pub struct AzureAccessToken {
     #[serde(default)]
     pub groups: Vec<String>,
 
-    // Other optional claims
     pub email: Option<String>,
     pub family_name: Option<String>,
     pub given_name: Option<String>,
@@ -177,7 +176,7 @@ impl AzureAccessToken {
 
     /// Check if the token has scope.
     ///
-    /// This will return [`HandlerError::unauthorized()`] if scope is not found.
+    /// This will return [`Problem::unauthorized()`] if scope is not found.
     pub fn require_scope(&self, scope: impl AsRef<str>) -> Result<(), Problem> {
         self.has_scope(scope)
             .then_some(())
@@ -186,7 +185,7 @@ impl AzureAccessToken {
 
     /// Check if the token has any of scopes.
     ///
-    /// This will return [`HandlerError::unauthorized()`] if all scopes are not found.
+    /// This will return [`Problem::unauthorized()`] if all scopes are not found.
     pub fn require_any_scope<T: AsRef<str>>(&self, scopes: &[T]) -> Result<(), Problem> {
         self.has_any_scope(scopes)
             .then_some(())
@@ -206,7 +205,7 @@ impl AzureAccessToken {
 
     /// Check if the token has role.
     ///
-    /// This will return [`HandlerError::unauthorized()`] if role is not found.
+    /// This will return [`Problem::unauthorized()`] if role is not found.
     pub fn require_role(&self, role: impl AsRef<str>) -> Result<(), Problem> {
         self.has_role(role)
             .then_some(())
@@ -215,7 +214,7 @@ impl AzureAccessToken {
 
     /// Check if the token has any of roles.
     ///
-    /// This will return [`HandlerError::unauthorized()`] if all roles are not found.
+    /// This will return [`Problem::unauthorized()`] if all roles are not found.
     pub fn require_any_role<T: AsRef<str>>(&self, roles: &[T]) -> Result<(), Problem> {
         self.has_any_role(roles)
             .then_some(())
@@ -248,7 +247,7 @@ where
         let kid = match header.kid {
             Some(kid) => kid,
             None => {
-                tracing::debug!("JWT token did not provide a 'kid' in header");
+                tracing::debug!("JWT token does not provide a 'kid' in header");
                 return Err(Problem::unauthorized());
             }
         };
@@ -270,13 +269,13 @@ where
         let token_data = match decode::<AzureAccessToken>(token, &decoding_key, &validation) {
             Ok(token) => token,
             Err(err) => {
-                tracing::trace!("validation of JWT claims failed: {err}");
+                tracing::trace!("failed to validate JWT claims: {err}");
                 return Err(Problem::unauthorized());
             }
         };
 
         if !config.validate_azure_claims(&token_data.claims) {
-            tracing::trace!("validation of azure claims failed");
+            tracing::trace!("failed to validate azure claims");
             return Err(Problem::unauthorized());
         }
 

@@ -13,8 +13,11 @@ pub enum Error {
     Sqlx(#[from] sqlx::Error),
 
     /// A generic S3 error.
+    ///
+    /// Boxed because [`aws_sdk_s3::Error`] is large enough to bloat every
+    /// `Result` in this crate.
     #[error(transparent)]
-    S3(#[from] aws_sdk_s3::Error),
+    S3(#[from] Box<aws_sdk_s3::Error>),
 
     /// The metadata is invalid for current operation.
     #[error("invalid metadata: {0}")]

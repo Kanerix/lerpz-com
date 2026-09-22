@@ -17,7 +17,7 @@
 
 mod error;
 
-pub use error::{ErrorKind, UpstreamError, classify_error, humanize_error};
+pub use error::{Error, ErrorKind, Result, UpstreamError, classify_error, humanize_error};
 
 #[cfg(feature = "async-openai")]
 mod config;

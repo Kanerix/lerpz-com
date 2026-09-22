@@ -329,7 +329,7 @@ where
                     instance = ?&problem.instance.as_deref(),
                     log_id = %log_id,
                     server_error = %err,
-                    "A server error occurred"
+                    "responding with a server error"
                 );
             } else {
                 tracing::info!(
@@ -337,7 +337,7 @@ where
                     log_id = %log_id,
                     client_error = %problem.title,
                     message = %problem.detail,
-                    "A client error occurred"
+                    "responding with a client error"
                 );
             }
         }
@@ -490,7 +490,9 @@ mod test {
         assert!(handler_error.extension().is_some());
         assert!(handler_error.log_id().is_none()); // `log_id` is set when turned into a response.
 
-        let error_detail = handler_error.extension().unwrap();
+        let error_detail = handler_error
+            .extension()
+            .expect("extension was attached by the builder");
 
         assert_eq!(error_detail.field, extension.field);
 
@@ -503,7 +505,7 @@ mod test {
     fn test_error_to_handler_result() {
         let example_handler = || -> HandlerResult<i32> { Ok("abc".parse::<i32>()?) };
 
-        let handler_error = example_handler().unwrap_err();
+        let handler_error = example_handler().expect_err("\"abc\" is not a valid i32");
 
         assert!(handler_error.status().is_server_error());
         assert!(handler_error.has_source());
@@ -517,12 +519,12 @@ mod test {
         let example_handler_three = || -> HandlerResult<i16> { Ok("qwe".parse::<i16>()?) };
 
         let handler_error_one = example_handler_one()
-            .unwrap_err()
+            .expect_err("\"abc\" is not a valid i32")
             .with_log_id("example_log_id");
         let handler_error_two = example_handler_two()
-            .unwrap_err()
+            .expect_err("\"xyz\" is not a valid f64")
             .with_log_id("example_log_id");
-        let handler_error_three = example_handler_three().unwrap_err();
+        let handler_error_three = example_handler_three().expect_err("\"qwe\" is not a valid i16");
 
         assert!(handler_error_one.log_id().is_some());
         assert!(handler_error_two.log_id().is_some());

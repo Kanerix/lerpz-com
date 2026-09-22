@@ -21,10 +21,10 @@ pub async fn shutdown_signal() {
 
     tokio::select! {
         _ = ctrl_c => {
-            tracing::info!("Ctrl+C received, starting graceful shutdown");
+            tracing::info!("receiving Ctrl+C, starting graceful shutdown");
         },
         _ = terminate => {
-            tracing::info!("SIGTERM received, starting graceful shutdown");
+            tracing::info!("receiving SIGTERM, starting graceful shutdown");
         },
     }
 }

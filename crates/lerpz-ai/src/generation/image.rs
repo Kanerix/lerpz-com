@@ -96,7 +96,7 @@ pub(super) async fn generate<C: Config>(
                     output_format,
                     ..
                 })) => {
-                    tracing::trace!(index = %partial_image_index, format = %output_format, "generated partial image");
+                    tracing::trace!(index = %partial_image_index, format = %output_format, "receiving partial image");
                     yield Ok(ImageEvent::Partial {
                         b64: b64_json,
                         format: output_format.to_string(),
@@ -107,7 +107,7 @@ pub(super) async fn generate<C: Config>(
                     output_format,
                     ..
                 })) => {
-                    tracing::trace!(format = %output_format, "generated complete image");
+                    tracing::trace!(format = %output_format, "receiving complete image");
                     yield Ok(ImageEvent::Completed {
                         b64: b64_json,
                         format: output_format.to_string(),

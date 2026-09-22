@@ -271,7 +271,7 @@ async fn submit_job(
         })?
         .to_string();
 
-    tracing::debug!(%operation_name, "video generation job created");
+    tracing::debug!(%operation_name, "queueing video generation job");
 
     Ok((http, operation_name))
 }
@@ -288,7 +288,7 @@ impl VideoJob {
 
                 attempts += 1;
                 if attempts > MAX_POLL_ATTEMPTS {
-                    tracing::error!(operation_name = %self.operation_name, "video generation timed out");
+                    tracing::error!(operation_name = %self.operation_name, "timing out video generation");
                     yield Err(UpstreamError::provider("Video generation timed out."));
                     break;
                 }
@@ -350,7 +350,7 @@ impl VideoJob {
                         .pointer("/raiMediaFilteredReasons/0")
                         .and_then(Value::as_str)
                         .unwrap_or("The video was blocked by the safety filter.");
-                    tracing::warn!(operation_name = %self.operation_name, "video blocked by safety filter");
+                    tracing::warn!(operation_name = %self.operation_name, "safety filter blocks video");
                     yield Err(UpstreamError::provider(reason.to_string()));
                     break;
                 }
@@ -372,13 +372,13 @@ impl VideoJob {
                         }
                     }
                     None => {
-                        tracing::error!(operation_name = %self.operation_name, response = %operation, "completed operation had no video");
+                        tracing::error!(operation_name = %self.operation_name, response = %operation, "completed operation has no video");
                         yield Err(UpstreamError::provider("The video provider returned no video."));
                         break;
                     }
                 };
 
-                tracing::trace!(operation_name = %self.operation_name, bytes = bytes.len(), "obtained completed video");
+                tracing::trace!(operation_name = %self.operation_name, bytes = bytes.len(), "obtaining completed video");
 
                 yield Ok(VideoEvent::Completed {
                     bytes,

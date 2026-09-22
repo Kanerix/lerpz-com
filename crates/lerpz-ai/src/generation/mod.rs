@@ -1,7 +1,7 @@
 //! Family-aware AI generation.
 //!
 //! AI providers expose image, video and chat generation in subtly different
-//! ways, so generation is dispatched through a [`Family`] — the provider family
+//! ways, so generation is dispatched through a [`Family`], the provider family
 //! a model belongs to (e.g. OpenAI, Anthropic, Google). This is distinct from
 //! the Portkey *provider* slug used purely for routing: a family decides *how* a
 //! request is issued and how its response is interpreted, whereas the provider

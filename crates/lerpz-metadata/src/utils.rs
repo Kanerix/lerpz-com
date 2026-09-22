@@ -62,7 +62,7 @@ pub async fn save_to_s3(s3: &Client, metadata: &Metadata, bytes: &[u8]) -> Resul
         .body(bytes)
         .send()
         .await
-        .map_err(|e| Error::S3(e.into()))?;
+        .map_err(|e| Error::S3(Box::new(e.into())))?;
 
     Ok(())
 }

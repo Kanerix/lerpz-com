@@ -17,7 +17,7 @@
 /// };
 ///
 /// pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-///     Config::from_env().unwrap()
+///     Config::from_env().expect("every configured environment variable is set")
 /// });
 ///
 /// generate_config! {

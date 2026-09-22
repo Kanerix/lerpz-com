@@ -32,12 +32,12 @@ impl Config for PortkeyConfig {
             self.api_key
                 .expose_secret()
                 .parse()
-                .expect("Invalid x-portkey-api-key header value for PortkeyConfig"),
+                .expect("invalid x-portkey-api-key header value for PortkeyConfig"),
         );
         headers.insert(
             "x-portkey-strict-open-ai-compliance",
             "false".parse().expect(
-                "Invalid x-portkey-strict-open-ai-compliance header value for PortkeyConfig",
+                "invalid x-portkey-strict-open-ai-compliance header value for PortkeyConfig",
             ),
         );
 

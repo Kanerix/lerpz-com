@@ -108,9 +108,19 @@ mod tests {
     #[tokio::test]
     async fn test_password_hashing_and_validate() {
         let salt = uuid::Uuid::new_v4().to_string();
-        let hash = hash_pwd("password", &salt).await.unwrap();
+        let hash = hash_pwd("password", &salt)
+            .await
+            .expect("hashing a password with a uuid salt succeeds");
 
-        assert!(!validate_pwd(&hash, &salt, "drowssap").await.unwrap());
-        assert!(validate_pwd(&hash, &salt, "password").await.unwrap());
+        assert!(
+            !validate_pwd(&hash, &salt, "drowssap")
+                .await
+                .expect("validating against the generated hash succeeds")
+        );
+        assert!(
+            validate_pwd(&hash, &salt, "password")
+                .await
+                .expect("validating against the generated hash succeeds")
+        );
     }
 }

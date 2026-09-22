@@ -7,7 +7,7 @@
 //!
 //! ### Globally unique identifier (GUID)
 //!
-//! Allowed characters are the English alphabet (a–z) and digits (0–9). The GUID
+//! Allowed characters are the English alphabet (a-z) and digits (0-9). The GUID
 //! MUST always be lowercase. Special characters in names (such as `ø`, `é`, `ä`, `ß`)
 //! should be normalized to their closest ASCII equivalents (e.g., `ø` → `o`, `é` → `e`)
 //! before constructing the GUID. If there is no mapping in place for the special character,
@@ -17,8 +17,8 @@
 //!
 //! Where:
 //!
-//! - **x** = first 2–3 letters of the user's first name
-//! - **y** = first 2–3 letters of the user's last name (or middle name)
+//! - **x** = first 2 to 3 letters of the user's first name
+//! - **y** = first 2 to 3 letters of the user's last name (or middle name)
 //! - **w** = the last 2 digits of the year the user was employed
 //! - **domain** = the company's email domain (letters, digits, and `-` as allowed by normal DNS rules)
 //!
@@ -26,6 +26,12 @@
 //! - Kasper Jønsson, Engineer - 15/11/2020 @ lerpz.com -> kasjon.20@lerpz.com
 
 use std::borrow::Cow;
+
+/// A type alias for handling results from this module.
+///
+/// This is a convenience alias for `Result<T, Error>` where [`Error`]
+/// represents UPN-specific errors.
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Errors that can occur when generating a UPN.
 #[derive(thiserror::Error, Debug)]
@@ -65,7 +71,7 @@ impl<'a> UserInfo<'a> {
 /// Generate a UPN based on the provided user information.
 ///
 /// This is a shorthand for [`generate_upn_with_iteration`] with iteration set to 0.
-pub fn generate_upn<'a>(upn: impl Into<UserInfo<'a>>) -> Result<String, Error> {
+pub fn generate_upn<'a>(upn: impl Into<UserInfo<'a>>) -> Result<String> {
     generate_upn_with_iteration(upn, 0)
 }
 
@@ -86,13 +92,11 @@ pub fn generate_upn<'a>(upn: impl Into<UserInfo<'a>>) -> Result<String, Error> {
 ///     domain: "lerpz.com",
 /// };
 ///
-/// let upn = generate_upn_with_iteration(user_info, 0).unwrap();
+/// let upn = generate_upn_with_iteration(user_info, 0)
+///     .expect("user info has a surname and a valid year");
 /// assert_eq!(upn, "kasjon.20@lerpz.com");
 /// ```
-pub fn generate_upn_with_iteration<'a>(
-    upn: impl Into<UserInfo<'a>>,
-    i: usize,
-) -> Result<String, Error> {
+pub fn generate_upn_with_iteration<'a>(upn: impl Into<UserInfo<'a>>, i: usize) -> Result<String> {
     let upn: UserInfo = upn.into();
     let cap = 10 + upn.domain.len();
     let mut buf = String::with_capacity(cap);
@@ -150,7 +154,7 @@ mod tests {
     #[test]
     fn illegal_char() {
         let user_info = UserInfo::new("Kasper", vec!["Jønsson"], 2020, "lerpz.com");
-        let upn = generate_upn(user_info).unwrap();
+        let upn = generate_upn(user_info).expect("user info has a surname and a valid year");
         assert_eq!(upn, "kasjon.20@lerpz.com");
     }
 
@@ -163,22 +167,28 @@ mod tests {
             "lerpz.com",
         );
 
-        let upn = generate_upn_with_iteration(user_info.clone(), 0).unwrap();
+        let upn = generate_upn_with_iteration(user_info.clone(), 0)
+            .expect("user info has three surnames and a valid year");
         assert_eq!(upn, "kasjon.20@lerpz.com");
 
-        let upn = generate_upn_with_iteration(user_info.clone(), 1).unwrap();
+        let upn = generate_upn_with_iteration(user_info.clone(), 1)
+            .expect("user info has three surnames and a valid year");
         assert_eq!(upn, "kastor.20@lerpz.com");
 
-        let upn = generate_upn_with_iteration(user_info.clone(), 2).unwrap();
+        let upn = generate_upn_with_iteration(user_info.clone(), 2)
+            .expect("user info has three surnames and a valid year");
         assert_eq!(upn, "kassor.20@lerpz.com");
 
-        let upn = generate_upn_with_iteration(user_info.clone(), 3).unwrap();
+        let upn = generate_upn_with_iteration(user_info.clone(), 3)
+            .expect("user info has three surnames and a valid year");
         assert_eq!(upn, "kasjon.20@lerpz.com");
 
-        let upn = generate_upn_with_iteration(user_info.clone(), 4).unwrap();
+        let upn = generate_upn_with_iteration(user_info.clone(), 4)
+            .expect("user info has three surnames and a valid year");
         assert_eq!(upn, "kastor.20@lerpz.com");
 
-        let upn = generate_upn_with_iteration(user_info.clone(), 5).unwrap();
+        let upn = generate_upn_with_iteration(user_info.clone(), 5)
+            .expect("user info has three surnames and a valid year");
         assert_eq!(upn, "kassor.20@lerpz.com");
     }
 
@@ -186,7 +196,7 @@ mod tests {
     fn two_letter_names() {
         let user_info = UserInfo::new("bo", vec!["Bi"], 1995, "lerpz.com");
 
-        let upn = generate_upn(user_info).unwrap();
+        let upn = generate_upn(user_info).expect("user info has a surname and a valid year");
         assert_eq!(upn, "bobi.95@lerpz.com");
     }
 }

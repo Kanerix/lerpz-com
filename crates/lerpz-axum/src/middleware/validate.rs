@@ -94,7 +94,7 @@ fn validate<T: Validate>(data: T) -> HandlerResult<(), ErrorResponse> {
     })
 }
 
-/// Returns a `HandlerError` for a unparseable requests.
+/// Returns a [`Problem`] for a unparseable requests.
 #[inline]
 fn unparseable<T: std::error::Error>(_: T) -> Problem<ErrorResponse> {
     Problem::new(
