@@ -4,7 +4,7 @@
 //! [Problem Details for HTTP APIs](https://datatracker.ietf.org/doc/html/rfc9457)
 //! specification.
 
-use std::borrow::Cow;
+use std::{borrow::Cow, panic::Location};
 
 use axum::{
     Json,
@@ -99,7 +99,9 @@ where
     /// An extension member (in the sense of [RFC 9457 §3.2]) that is not part
     /// of the standard fields. It is sent to the client in place of the actual
     /// source error so that support requests can be correlated with server
-    /// logs without leaking sensitive details. Omitted from the body when [`None`].
+    /// logs without leaking sensitive details. Set on every server error, and
+    /// on client errors that carry a source error. Omitted from the body when
+    /// [`None`].
     ///
     /// [RFC 9457 §3.2]: https://datatracker.ietf.org/doc/html/rfc9457#section-3.2
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -112,6 +114,15 @@ where
     /// the client indirectly through [`Self::log_id`].
     #[serde(skip)]
     inner: Option<anyhow::Error>,
+    /// Where in the source this problem was constructed.
+    ///
+    /// Not part of RFC 9457 and never serialized. Captured by the constructors
+    /// via `#[track_caller]` and logged alongside the source error, so a log
+    /// line points at the code that produced it. It is [`None`] for problems
+    /// built by the [`From`] impl, since the `?` operator reaches it through
+    /// [`std::ops::FromResidual`], which does not forward the caller location.
+    #[serde(skip)]
+    location: Option<&'static Location<'static>>,
 }
 
 impl<D> Problem<D>
@@ -122,6 +133,7 @@ where
     ///
     /// All optional fields are [`None`] by default. These can be set using
     /// methods found on the struct.
+    #[track_caller]
     pub fn new(
         status: StatusCode,
         title: impl Into<Cow<'static, str>>,
@@ -137,6 +149,7 @@ where
                 extension: None,
                 log_id: None,
                 inner: None,
+                location: Some(Location::caller()),
             }),
         }
     }
@@ -147,6 +160,7 @@ where
     /// This is a convenience method to create an error that is specific to a
     /// request, so that the client can see which endpoint the problem occurred
     /// on in the error data.
+    #[track_caller]
     pub fn new_with_parts(
         status: StatusCode,
         title: impl Into<Cow<'static, str>>,
@@ -160,6 +174,7 @@ where
     ///
     /// This is a generic response for someone that tries to access an
     /// authorized resource without proper authorization.
+    #[track_caller]
     pub fn unauthorized() -> Self {
         Self::new(
             StatusCode::UNAUTHORIZED,
@@ -172,6 +187,7 @@ where
     ///
     /// This is a generic response for someone that tries to access a forbidden
     /// resource, even though they are authorized.
+    #[track_caller]
     pub fn forbidden() -> Self {
         Self::new(
             StatusCode::FORBIDDEN,
@@ -232,8 +248,8 @@ where
     ///
     /// Sent to the client in place of the actual source error, so that
     /// sensitive error details are never leaked. Use [`Self::with_log_id`] to
-    /// set a custom value, otherwise one is generated automatically when a
-    /// source error is present.
+    /// set a custom value, otherwise one is generated automatically when the
+    /// problem is turned into a response.
     pub fn log_id(&self) -> Option<&str> {
         self.problem.log_id.as_deref()
     }
@@ -284,8 +300,8 @@ where
 
     /// Set the log ID for the [`Problem`].
     ///
-    /// The log ID is automatically set when a source error is present (i.e.
-    /// when [`.with_error()`](Self::with_error) was called) and no log ID has
+    /// The log ID is set automatically when turned into a response, for every
+    /// server error and for any problem carrying a source error, unless one has
     /// been set manually. Changing this might make it hard or impossible to
     /// track the error, or in other ways break how the error is logged.
     ///
@@ -300,6 +316,60 @@ where
         self.problem.log_id = Some(log_id.into());
         self
     }
+
+    /// Where in the source this problem was constructed.
+    ///
+    /// [`None`] for a problem produced by the `?` operator, which reaches the
+    /// [`From`] impl through [`std::ops::FromResidual`] and so cannot forward
+    /// the caller location.
+    pub fn location(&self) -> Option<&'static Location<'static>> {
+        self.problem.location
+    }
+}
+
+impl<D> ProblemInner<D>
+where
+    D: Serialize + Send + Sync,
+{
+    /// Assigns a log ID and writes the log line for this occurrence.
+    ///
+    /// Every server error is recorded, whether or not a source error was
+    /// attached, so that any 5xx a client receives can be found again by its
+    /// log ID. Client errors are recorded only when they carry a source error,
+    /// since the rest are expected and already described by their own fields.
+    fn record(&mut self) {
+        let is_server_error = self.status.is_server_error();
+        if !is_server_error && self.inner.is_none() {
+            return;
+        }
+
+        let log_id = self
+            .log_id
+            .get_or_insert_with(|| Uuid::new_v4().to_string());
+
+        if is_server_error {
+            // The alternate form walks the whole cause chain, where the default
+            // one stops at the outermost error.
+            let source = self.inner.as_ref().map(|err| format!("{err:#}"));
+            tracing::error!(
+                instance = self.instance.as_deref(),
+                log_id = %log_id,
+                location = self.location.map(|location| location.to_string()),
+                title = %self.title,
+                detail = %self.detail,
+                server_error = source,
+                "responding with a server error"
+            );
+        } else {
+            tracing::info!(
+                instance = self.instance.as_deref(),
+                log_id = %log_id,
+                client_error = %self.title,
+                message = %self.detail,
+                "responding with a client error"
+            );
+        }
+    }
 }
 
 impl<D> IntoResponse for Problem<D>
@@ -308,8 +378,8 @@ where
 {
     /// Converts a [`Problem`] into a [`Response`].
     ///
-    /// This automatically logs errors using [`tracing`] and sets the
-    /// log ID so that the error can be tracked.
+    /// Logs the problem and assigns its log ID on the way out, as described on
+    /// [`ProblemInner::record`].
     fn into_response(mut self) -> Response {
         let problem = self.problem.as_mut();
 
@@ -319,28 +389,7 @@ where
             });
         }
 
-        if let Some(err) = problem.inner.as_ref() {
-            let log_id = problem
-                .log_id
-                .get_or_insert_with(|| Uuid::new_v4().to_string());
-
-            if problem.status.is_server_error() {
-                tracing::error!(
-                    instance = ?&problem.instance.as_deref(),
-                    log_id = %log_id,
-                    server_error = %err,
-                    "responding with a server error"
-                );
-            } else {
-                tracing::info!(
-                    instance = ?&problem.instance.as_deref(),
-                    log_id = %log_id,
-                    client_error = %problem.title,
-                    message = %problem.detail,
-                    "responding with a client error"
-                );
-            }
-        }
+        problem.record();
 
         (
             problem.status,
@@ -377,6 +426,7 @@ where
             extension: None,
             log_id: None,
             inner: None,
+            location: None,
         }
     }
 }
@@ -452,7 +502,7 @@ where
     /// A server-side log reference for this error occurrence.
     ///
     /// When present, include this ID in any support request so the error
-    /// can be located in server logs. Only set for unexpected server errors.
+    /// can be located in server logs. Always set on a server error.
     #[schema(nullable, example = "01948a62-f94e-7d36-b5ef-70a9b764b2e0")]
     log_id: Option<String>,
 }
@@ -530,5 +580,50 @@ mod test {
         assert!(handler_error_two.log_id().is_some());
         assert!(handler_error_three.log_id().is_none()); // `log_id` is set when turned into a response.
         assert_eq!(handler_error_one.log_id(), handler_error_two.log_id())
+    }
+
+    #[test]
+    fn server_error_is_recorded_without_a_source() {
+        let mut problem = Problem::<()>::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            "Something went wrong",
+        );
+
+        assert!(problem.log_id().is_none());
+
+        problem.problem.record();
+
+        assert!(
+            problem.log_id().is_some(),
+            "a 5xx must be traceable even when no source error was attached"
+        );
+    }
+
+    #[test]
+    fn client_error_is_not_recorded_without_a_source() {
+        let mut problem = Problem::<()>::new(StatusCode::NOT_FOUND, "Not Found", "No such thing.");
+
+        problem.problem.record();
+
+        assert!(problem.log_id().is_none());
+    }
+
+    #[test]
+    fn constructor_captures_the_call_site() {
+        let problem = Problem::<()>::unauthorized();
+        let location = problem
+            .location()
+            .expect("constructors capture the caller location");
+
+        assert!(location.file().ends_with("problem.rs"));
+    }
+
+    #[test]
+    fn question_mark_operator_captures_no_call_site() {
+        let example_handler = || -> HandlerResult<i32> { Ok("abc".parse::<i32>()?) };
+        let problem = example_handler().expect_err("\"abc\" is not a valid i32");
+
+        assert!(problem.location().is_none());
     }
 }

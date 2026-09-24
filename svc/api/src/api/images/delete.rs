@@ -66,8 +66,9 @@ pub async fn handler(
             err => Problem::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
-                err.to_string(),
-            ),
+                "Could not read the image metadata.",
+            )
+            .with_error(err),
         })?;
 
     let (bucket, key) = match metadata {
