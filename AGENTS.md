@@ -63,9 +63,10 @@ Drafting the message is a different matter, and it is welcome and encouraged.
 When you finish a change, offer a commit message the user can take or edit. A
 good draft saves them the work of reconstructing what you did.
 
-Keep commit messages short and plain. No emoji. Most commits are a subject line
-and nothing else. Add a body only when the subject cannot carry the reason on
-its own. If one message needs a paragraph to cover everything, the commit is
+Keep commit messages short and plain. No emoji. Write a subject line and stop
+there. A body is the exception, not the default. Add one only when the change is
+unusable without a reason the subject cannot hold, and keep it to a sentence or
+two. If one message needs a paragraph to cover everything, the commit is
 probably two commits.
 
 ## Comments
