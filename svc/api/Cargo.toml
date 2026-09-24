@@ -16,7 +16,7 @@ lerpz-utils = { workspace = true }
 aws-sdk-s3 = { workspace = true }
 bb8 = { workspace = true }
 bb8-redis = { workspace = true }
-redis = { workspace = true }
+redis = { workspace = true, features = ["tokio-comp"] }
 sqlx = { workspace = true, features = [
     "chrono",
     "json",

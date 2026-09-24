@@ -21,12 +21,12 @@ lerpz-utils = { path = "crates/lerpz-utils" }
 # Services
 aws-sdk-s3 = "1.132"
 bb8 = "0.9"
-bb8-redis = "0.24"
+bb8-redis = "0.26"
 qdrant-client = "1.17"
 # Kubernetes
 k8s-openapi = "0.28"
 kube = "4.2"
-redis = "0.32"
+redis = "1"
 sqlx = "0.8"
 # Axum, Tokio and Tower
 async-stream = "0.3"
