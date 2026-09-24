@@ -73,7 +73,7 @@ pub async fn handler(
     let (bucket, key) = match metadata {
         lerpz_metadata::Metadata::Image { storage, .. } => match storage {
             StorageMetadata::S3 { bucket, key } => (bucket, key),
-            StorageMetadata::ABS { .. } => {
+            StorageMetadata::AzureBlob { .. } => {
                 return Err(Problem::new(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal Server Error",

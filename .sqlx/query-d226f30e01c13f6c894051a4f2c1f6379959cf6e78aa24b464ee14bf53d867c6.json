@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE audio_metadata\n                     SET prompt = COALESCE($2, prompt),\n                         model = COALESCE($3, model),\n                         title = CASE WHEN $4 THEN $5 ELSE title END,\n                         tags = CASE WHEN $4 THEN $6 ELSE tags END,\n                         storage_provider = COALESCE($7, storage_provider),\n                         storage_bucket = COALESCE($8, storage_bucket),\n                         storage_key = COALESCE($9, storage_key)\n                     WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Varchar",
+        "Bool",
+        "Varchar",
+        "TextArray",
+        {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d226f30e01c13f6c894051a4f2c1f6379959cf6e78aa24b464ee14bf53d867c6"
+}

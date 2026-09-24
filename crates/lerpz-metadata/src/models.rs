@@ -41,7 +41,7 @@ pub enum StorageMetadata {
     /// AWS S3.
     S3 { bucket: String, key: String },
     /// Azure Blob Storage.
-    ABS { container: String, blob: String },
+    AzureBlob { container: String, blob: String },
 }
 
 /// Metadata for a generic content type.
@@ -86,4 +86,27 @@ pub enum Metadata {
         format: String,
         duration: u32,
     },
+}
+
+/// Metadata updates.
+///
+/// A partial [`Metadata`], used to overwrite part of an existing record without
+/// reading it first. Each field is a group that gets written together, so a
+/// `None` leaves every column in that group as it is.
+///
+/// The fields describing the stored bytes are absent on purpose. Changing a
+/// format or a dimension without rewriting the content would leave the record
+/// disagreeing with the object it points at.
+#[derive(Default, Serialize, Deserialize)]
+pub struct MetadataUpdates {
+    /// Prompt and model are written together.
+    pub generation: Option<GenerationMetadata>,
+    /// Analysis is the only nullable group, so it needs the extra layer to tell
+    /// "leave it alone" from "clear it". `None` leaves, `Some(None)` clears and
+    /// `Some(Some(_))` overwrites.
+    pub analysis: Option<Option<AnalysisMetadata>>,
+    /// Repointing a record at a new location does not move the object. Copy it
+    /// across and remove the old one separately, or the record will point at
+    /// nothing.
+    pub storage: Option<StorageMetadata>,
 }

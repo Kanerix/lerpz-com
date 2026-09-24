@@ -7,7 +7,9 @@ use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
 };
-use lerpz_metadata::{Metadata, MetadataClient, MetadataKind, models::StorageMetadata};
+use lerpz_metadata::{
+    Metadata, MetadataClient, MetadataKind, MetadataUpdates, models::StorageMetadata,
+};
 use uuid::Uuid;
 
 use crate::{
@@ -86,13 +88,7 @@ pub async fn handler(
         })?;
 
     let Metadata::Image {
-        general,
-        generation,
-        storage,
-        format,
-        width,
-        height,
-        ..
+        storage, format, ..
     } = metadata
     else {
         tracing::error!(%id, "unexpected metadata kind returned for image");
@@ -108,7 +104,7 @@ pub async fn handler(
     // them as a base64 data URL.
     let (bucket, key) = match &storage {
         StorageMetadata::S3 { bucket, key } => (bucket, key),
-        StorageMetadata::ABS { .. } => {
+        StorageMetadata::AzureBlob { .. } => {
             tracing::error!(%id, "unsupported storage backend for image analysis");
             return Err(Problem::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -155,14 +151,10 @@ pub async fn handler(
     meta_client
         .update(
             id,
-            Metadata::Image {
-                general,
-                generation,
-                storage,
-                analysis: Some(analysis),
-                format,
-                width,
-                height,
+            MetadataKind::Image,
+            MetadataUpdates {
+                analysis: Some(Some(analysis)),
+                ..Default::default()
             },
         )
         .await
