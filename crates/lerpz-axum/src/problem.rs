@@ -14,6 +14,27 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+#[cfg(feature = "sse")]
+use axum::response::sse::Event;
+
+/// The body sent when a [`Problem`] cannot be serialized into an SSE event.
+///
+/// Only a custom extension can fail to serialize, so this keeps every field
+/// that does not depend on one. The [`log_id`](ProblemInner::log_id) matters
+/// most, since it is what ties the event to its log line.
+#[cfg(feature = "sse")]
+#[derive(Serialize)]
+struct ProblemWithoutExtension<'a> {
+    #[serde(rename = "type")]
+    kind: &'a str,
+    title: &'a str,
+    detail: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    instance: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    log_id: Option<&'a str>,
+}
+
 tokio::task_local! {
     /// The path of the request currently being handled.
     ///
@@ -325,12 +346,76 @@ where
     pub fn location(&self) -> Option<&'static Location<'static>> {
         self.problem.location
     }
+
+    /// Turns the [`Problem`] into a Server-Sent Events `error` event.
+    ///
+    /// Use this for a failure that happens once the response has already
+    /// started, where the status line is long gone and a [`Response`] is no
+    /// longer an option. The event carries the same JSON body that
+    /// [`Problem::into_response`] would have sent, so a client can render it
+    /// the same way.
+    ///
+    /// The problem is logged and assigned its log ID here, as described on
+    /// [`ProblemInner::record`].
+    ///
+    /// ### Note
+    ///
+    /// Two fields do not survive the trip. The
+    /// [`status`](Problem::status) is never part of the body, and an event has
+    /// no status line to carry it, so a client has to tell the failures apart
+    /// by their [`title`](Problem::title). The
+    /// [`instance`](Problem::instance) is usually empty, because a stream body
+    /// is polled after the handler has returned, by which point the task local
+    /// holding the request path is out of scope. The log ID is what ties the
+    /// event to its log line.
+    #[cfg(feature = "sse")]
+    pub fn into_event(mut self) -> Event {
+        self.problem.fill_instance_from_request();
+        self.problem.record();
+
+        let problem = self.problem.as_ref();
+
+        Event::default()
+            .event("error")
+            .json_data(problem)
+            .unwrap_or_else(|err| {
+                tracing::error!(
+                    error = %err,
+                    log_id = problem.log_id.as_deref(),
+                    "cannot serialize a problem into an sse event"
+                );
+                Event::default()
+                    .event("error")
+                    .json_data(ProblemWithoutExtension {
+                        kind: &problem.kind,
+                        title: &problem.title,
+                        detail: &problem.detail,
+                        instance: problem.instance.as_deref(),
+                        log_id: problem.log_id.as_deref(),
+                    })
+                    .expect("a problem without its extension always serializes")
+            })
+    }
 }
 
 impl<D> ProblemInner<D>
 where
     D: Serialize + Send + Sync,
 {
+    /// Fills [`Self::instance`] with the path of the request being handled.
+    ///
+    /// Does nothing when an instance is already set, or when the task local is
+    /// out of scope because the problem is built outside the handler.
+    fn fill_instance_from_request(&mut self) {
+        if self.instance.is_some() {
+            return;
+        }
+
+        let _ = REQUEST_INSTANCE.try_with(|path| {
+            self.instance = Some(Cow::Owned(path.clone()));
+        });
+    }
+
     /// Assigns a log ID and writes the log line for this occurrence.
     ///
     /// Every server error is recorded, whether or not a source error was
@@ -383,12 +468,7 @@ where
     fn into_response(mut self) -> Response {
         let problem = self.problem.as_mut();
 
-        if problem.instance.is_none() {
-            let _ = REQUEST_INSTANCE.try_with(|path| {
-                problem.instance = Some(Cow::Owned(path.clone()));
-            });
-        }
-
+        problem.fill_instance_from_request();
         problem.record();
 
         (
@@ -625,5 +705,26 @@ mod test {
         let problem = example_handler().expect_err("\"abc\" is not a valid i32");
 
         assert!(problem.location().is_none());
+    }
+
+    #[test]
+    #[cfg(feature = "sse")]
+    fn event_carries_the_problem_and_its_log_id() {
+        let problem = Problem::<()>::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            "Something went wrong",
+        )
+        .with_error(Error::Random);
+
+        let event = format!("{:?}", problem.into_event());
+
+        assert!(event.contains("event: error"));
+        assert!(event.contains(r#"\"title\":\"Internal Server Error\""#));
+        assert!(event.contains("log_id"));
+        assert!(
+            !event.contains("random error"),
+            "the source error must never reach the client"
+        );
     }
 }
