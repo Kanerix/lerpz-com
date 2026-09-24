@@ -1,15 +1,22 @@
-//! Working with content metadata in a postgres database.
+//! Working with content metadata.
+//!
+//! The models and the [`MetadataClient`] trait are always available. Enable the
+//! `postgres` feature for the [`postgres`] module, which implements the trait
+//! against a database.
 
 pub mod error;
 pub mod models;
-pub mod postgres;
 pub mod utils;
 
-pub use self::MetadataClient as MetadataClientExt;
+#[cfg(feature = "postgres")]
+pub mod postgres;
+
 pub use error::Result;
 pub use models::{Metadata, MetadataUpdates};
-pub use postgres::Client;
 pub use utils::save_to_s3;
+
+#[cfg(feature = "postgres")]
+pub use postgres::Client;
 
 use uuid::Uuid;
 

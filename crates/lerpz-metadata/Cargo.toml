@@ -3,17 +3,22 @@ name = "lerpz-metadata"
 edition = "2024"
 version.workspace = true
 
+[features]
+# Provides the `postgres` module: a `MetadataClient` backed by a `PgPool`.
+postgres = [
+    "dep:sqlx",
+    "sqlx/chrono",
+    "sqlx/macros",
+    "sqlx/postgres",
+    "sqlx/runtime-tokio-native-tls",
+    "sqlx/uuid",
+]
+
 [dependencies]
 aws-sdk-s3 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
-sqlx = { workspace = true, features = [
-    "chrono",
-    "macros",
-    "postgres",
-    "runtime-tokio-native-tls",
-    "uuid",
-] }
+sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
 

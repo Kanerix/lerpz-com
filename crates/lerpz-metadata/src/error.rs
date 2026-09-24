@@ -9,6 +9,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// A database error from sqlx.
+    #[cfg(feature = "postgres")]
     #[error(transparent)]
     Sqlx(#[from] sqlx::Error),
 
