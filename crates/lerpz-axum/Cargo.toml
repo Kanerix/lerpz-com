@@ -13,7 +13,7 @@ tokio = { workspace = true, features = ["rt", "signal"] }
 tower = { workspace = true }
 tracing = { workspace = true }
 regex = { workspace = true, optional = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 utoipa = { workspace = true, features = ["macros"], optional = true }
 serde_json = { workspace = true, optional = true }
 uuid = { workspace = true, features = ["v4"] }
