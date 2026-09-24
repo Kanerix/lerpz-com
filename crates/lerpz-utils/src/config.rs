@@ -9,20 +9,26 @@
 ///
 /// Usage together with the [`crate::env`] module and a [`std::sync::LazyLock`].
 ///
-/// ```ignore
-/// use std::sync::LazyLock;
+/// ```
 /// use lerpz_utils::{
+///     env::{get_env, get_env_parse},
 ///     generate_config,
-///     env::{get_env, get_env_parse}
 /// };
+/// use std::sync::LazyLock;
 ///
-/// pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-///     Config::from_env().expect("every configured environment variable is set")
-/// });
+/// unsafe {
+///     std::env::set_var("ENV", "test");
+/// }
+/// unsafe {
+///     std::env::set_var("SOME_INTEGER", "42");
+/// }
+///
+/// pub static CONFIG: LazyLock<Config> =
+///     LazyLock::new(|| Config::from_env().expect("every configured environment variable is set"));
 ///
 /// generate_config! {
 ///     ENV: String = get_env,
-///     SOME_INTEGER: u32 = get_env_parse,
+///     SOME_INTEGER: u32 = get_env_parse
 /// };
 /// ```
 #[macro_export]

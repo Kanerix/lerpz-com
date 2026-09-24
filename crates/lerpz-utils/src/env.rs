@@ -5,14 +5,16 @@
 //!
 //! # Examples
 //!
-//! ```ignore
+//! ```
 //! use lerpz_utils::env::{get_env, get_env_parse};
 //!
 //! // Get a simple string value
 //! let path = get_env("PATH").expect("PATH should be set");
 //!
 //! // Parse into a specific type
-//! std::env::set_var("PORT", "8080");
+//! unsafe {
+//!     std::env::set_var("PORT", "8080");
+//! }
 //! let port: u16 = get_env_parse("PORT").expect("PORT should be a valid u16");
 //! ```
 
@@ -40,11 +42,13 @@ pub enum Error {
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```
 /// use lerpz_utils::env::get_env;
 ///
 /// // Set a variable for this example
-/// std::env::set_var("MY_VAR", "hello");
+/// unsafe {
+///     std::env::set_var("MY_VAR", "hello");
+/// }
 ///
 /// let value = get_env("MY_VAR").expect("the MY_VAR variable is set above");
 /// assert_eq!(value, "hello");
@@ -69,21 +73,29 @@ where
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```
 /// use lerpz_utils::env::get_env_parse;
 ///
 /// // Parse a number
-/// std::env::set_var("PORT", "8080");
-/// let port: u16 = get_env_parse("PORT").expect("the PORT variable is set above and parses as u16");
+/// unsafe {
+///     std::env::set_var("PORT", "8080");
+/// }
+/// let port: u16 =
+///     get_env_parse("PORT").expect("the PORT variable is set above and parses as u16");
 /// assert_eq!(port, 8080);
 ///
 /// // Parse a boolean
-/// std::env::set_var("DEBUG", "true");
-/// let debug: bool = get_env_parse("DEBUG").expect("the DEBUG variable is set above and parses as bool");
+/// unsafe {
+///     std::env::set_var("DEBUG", "true");
+/// }
+/// let debug: bool =
+///     get_env_parse("DEBUG").expect("the DEBUG variable is set above and parses as bool");
 /// assert!(debug);
 ///
 /// // Invalid value returns ParseError
-/// std::env::set_var("INVALID", "not_a_number");
+/// unsafe {
+///     std::env::set_var("INVALID", "not_a_number");
+/// }
 /// let result: Result<i32, _> = get_env_parse("INVALID");
 /// assert!(result.is_err());
 /// ```
@@ -113,12 +125,14 @@ where
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```
 /// use std::path::PathBuf;
 ///
 /// use lerpz_utils::env::get_env_from;
 ///
-/// std::env::set_var("CONFIG_PATH", "/etc/config");
+/// unsafe {
+///     std::env::set_var("CONFIG_PATH", "/etc/config");
+/// }
 /// let path: PathBuf = get_env_from("CONFIG_PATH").expect("the CONFIG_PATH variable is set above");
 /// assert_eq!(path, PathBuf::from("/etc/config"));
 ///
@@ -130,7 +144,9 @@ where
 ///     }
 /// }
 ///
-/// std::env::set_var("API_KEY", "secret123");
+/// unsafe {
+///     std::env::set_var("API_KEY", "secret123");
+/// }
 /// let key: ApiKey = get_env_from("API_KEY").expect("the API_KEY variable is set above");
 /// ```
 pub fn get_env_from<K, T>(key: K) -> Result<T>
