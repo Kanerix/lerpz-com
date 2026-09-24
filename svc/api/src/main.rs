@@ -28,6 +28,7 @@ mod api;
 mod config;
 mod oapi;
 mod state;
+mod version;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -47,6 +48,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    tracing::info!(
+        version = version::VERSION,
+        commit = version::COMMIT_HASH,
+        "starting api"
+    );
 
     let azure_config = AzureConfig::new(
         CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
