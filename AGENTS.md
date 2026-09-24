@@ -10,9 +10,8 @@ Unless told otherwise, work as the developer persona in
 `.agents/personas/developer.md`. A persona covers how to work, this file covers
 the conventions and the tooling it works with.
 
-The other personas in `.agents/personas/` are used when the task calls for them:
-`researcher.md` for read-only questions about the codebase, and `reviewer.md`
-for reviewing a diff or branch.
+The other persona in `.agents/personas/` is `reviewer.md`, used when the task is
+to review a diff or branch.
 
 ## General rules
 
