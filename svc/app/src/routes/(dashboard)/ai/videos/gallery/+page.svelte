@@ -115,10 +115,10 @@ const skeletonHeights = [180, 384, 180, 384, 240, 180, 384, 180];
   </header>
 
   {#if query.isLoading}
-    <div class="flex flex-wrap justify-center gap-4">
+    <div class="columns-1 gap-4 sm:columns-2 lg:columns-3">
       {#each skeletonHeights as height, i (i)}
         <Skeleton
-          class="w-80 max-w-full rounded-2xl"
+          class="mb-4 w-full break-inside-avoid rounded-2xl"
           style="height: {height}px"
         />
       {/each}
@@ -148,12 +148,12 @@ const skeletonHeights = [180, 384, 180, 384, 240, 180, 384, 180];
       </Button>
     </div>
   {:else}
-    <!-- Centered flex-wrap grid: rows always fill and centre, whatever the
-         item count, so clips never cluster to one side. -->
-    <div class="flex flex-wrap justify-center gap-4">
+    <!-- Multi-column masonry: flexbox would align each row to its tallest
+         item and leave gaps under the shorter ones. -->
+    <div class="columns-1 gap-4 sm:columns-2 lg:columns-3">
       {#each videos as video, i (video.id)}
         <div
-          class="group relative w-80 max-w-full"
+          class="group relative mb-4 break-inside-avoid"
           in:fly|global={{ y: 16, duration: 350, delay: (i % PAGE_SIZE) * 25 }}
           out:fade|global={{ duration: 200 }}
         >
