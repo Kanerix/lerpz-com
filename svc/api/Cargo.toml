@@ -8,7 +8,7 @@ authors.workspace = true
 
 [dependencies]
 # Internal
-lerpz-axum = { workspace = true, features = ["azure", "oapi"] }
+lerpz-axum = { workspace = true, features = ["azure", "oapi", "sse"] }
 lerpz-metadata = { workspace = true, features = ["postgres"] }
 lerpz-ai = { workspace = true, features = ["portkey", "async-openai", "generation"] }
 lerpz-utils = { workspace = true }
@@ -54,6 +54,7 @@ chrono = { workspace = true }
 dotenvy = { workspace = true }
 secrecy = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
 uuid = { workspace = true, features = ["v7"] }
 
 [dev-dependencies]

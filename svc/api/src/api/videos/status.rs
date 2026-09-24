@@ -124,7 +124,14 @@ pub async fn handler(
 
     let record = job_store::read(&redis, id)
         .await
-        .map_err(|err| Problem::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to read job", err))?
+        .map_err(|err| {
+            Problem::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to read job",
+                "The video generation job status could not be read.",
+            )
+            .with_error(err)
+        })?
         .ok_or_else(not_found)?;
 
     // Don't leak another user's jobs; an ownership mismatch is a "not found".

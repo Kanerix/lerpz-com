@@ -1,5 +1,6 @@
 import { getCreateImageUrl } from "$lib/api/images/images.js";
 import type { ImageRequest } from "$lib/api/models";
+import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
 import { createSseConnection } from "$lib/http/sse.js";
 
 export type UseImageOptions = {
@@ -37,11 +38,15 @@ function parseImageFrame(data: string): string | null {
 
 /**
  * Unwraps the message from an `error` event payload.
+ *
+ * The server sends an `application/problem+json` document, whose `detail`
+ * describes the failure in terms the user can act on. Anything else falls
+ * back to a generic message.
  */
 function parseErrorMessage(data: string): string {
     try {
-        const parsed = JSON.parse(data);
-        if (typeof parsed === "string") return parsed;
+        const parsed: unknown = JSON.parse(data);
+        if (isProblemSchema(parsed)) return parsed.detail;
     } catch {
         // Fall through to the generic message.
     }

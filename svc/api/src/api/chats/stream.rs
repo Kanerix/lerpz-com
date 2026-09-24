@@ -9,9 +9,9 @@
 use std::convert::Infallible;
 
 use async_openai::types::chat::CreateChatCompletionRequest;
-use axum::response::sse::Event;
+use axum::{http::StatusCode, response::sse::Event};
 use lerpz_ai::generation::{ChatEvent, ChatStream, Family};
-use lerpz_axum::problem::HandlerResult;
+use lerpz_axum::problem::{HandlerResult, Problem};
 use tokio_stream::{Stream, StreamExt as _};
 use uuid::Uuid;
 
@@ -22,7 +22,7 @@ use crate::state::{DatabasePool, OpenAI};
 /// The returned stream emits the following events:
 /// - `reasoning`: incremental reasoning token chunk,
 /// - `message`: incremental answer token chunk,
-/// - `error`: an error message,
+/// - `error`: a problem document describing why the reply stopped,
 /// - `saved`: the conversation UUID, sent once the reply has been persisted.
 ///
 /// The assistant message (answer plus any accumulated reasoning) is persisted
@@ -55,12 +55,20 @@ fn completion_sse(
         while let Some(event) = stream.next().await {
             match event {
                 Err(upstream) => {
-                    if upstream.is_user() {
-                        tracing::warn!(%conv_id, reason = %upstream.message, "provider rejects chat completion");
+                    let problem: Problem = if upstream.is_user() {
+                        Problem::new(
+                            StatusCode::BAD_REQUEST,
+                            "Chat completion rejected",
+                            upstream.message.clone(),
+                        )
                     } else {
-                        tracing::error!(%conv_id, reason = %upstream.message, "chat completion failed");
-                    }
-                    yield Ok(Event::default().event("error").data(upstream.message));
+                        Problem::new(
+                            StatusCode::BAD_GATEWAY,
+                            "Chat completion failed",
+                            "The model provider could not complete this reply.",
+                        )
+                    };
+                    yield Ok(problem.with_error(upstream).into_event());
                     break;
                 }
                 Ok(ChatEvent::Reasoning(reasoning)) => {
@@ -73,9 +81,12 @@ fn completion_sse(
                 }
                 Ok(ChatEvent::Filtered) => {
                     tracing::warn!(%conv_id, "provider filters model output");
-                    yield Ok(Event::default()
-                        .event("error")
-                        .data("content filter triggered"));
+                    let problem: Problem = Problem::new(
+                        StatusCode::BAD_REQUEST,
+                        "Content filter triggered",
+                        "The model provider blocked this reply.",
+                    );
+                    yield Ok(problem.into_event());
                 }
             }
         }
@@ -108,10 +119,12 @@ fn completion_sse(
                 yield Ok(Event::default().event("saved").data(conv_id.to_string()));
             }
             Err(err) => {
-                tracing::error!("failed to save assistant message: {err}");
-                yield Ok(Event::default()
-                    .event("error")
-                    .data(format!("failed to save message: {err}")));
+                let problem: Problem = Problem::new(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Reply not saved",
+                    "The reply was generated but could not be stored.",
+                );
+                yield Ok(problem.with_error(err).into_event());
             }
         }
     }

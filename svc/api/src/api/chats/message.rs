@@ -48,10 +48,12 @@ pub struct MessageRequest {
     summary = "Send a message in an existing chat",
     description = "Appends a new user message to the conversation and streams the \
         AI reply via Server-Sent Events. Requires the conversation to belong to \
-        the authenticated user. Events: `reasoning` (chain-of-thought chunk, \
-        reasoning models only), `message` (answer token chunk), `saved` \
-        (conversation UUID confirming persistence, sent last), `error` (error \
-        message).",
+        the authenticated user.\n\n\
+        Events:\n\
+        - `reasoning`: chain-of-thought chunk, reasoning models only\n\
+        - `message`: answer token chunk\n\
+        - `saved`: conversation UUID confirming persistence, sent last\n\
+        - `error`: problem document describing the failure",
     params(
         ("id" = Uuid, Path, description = "Conversation ID"),
     ),

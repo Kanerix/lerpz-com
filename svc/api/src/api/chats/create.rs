@@ -44,10 +44,13 @@ pub struct ChatRequest {
     tag = CHATS_TAG,
     summary = "Create a new chat",
     description = "Creates a new conversation and streams the AI reply via \
-        Server-Sent Events. Events: `conversation_created` (new conversation \
-        UUID, sent first), `reasoning` (chain-of-thought chunk, reasoning models \
-        only), `message` (answer token chunk), `saved` (conversation UUID \
-        confirming persistence, sent last), `error` (error message).",
+        Server-Sent Events.\n\n\
+        Events:\n\
+        - `conversation_created`: new conversation UUID, sent first\n\
+        - `reasoning`: chain-of-thought chunk, reasoning models only\n\
+        - `message`: answer token chunk\n\
+        - `saved`: conversation UUID confirming persistence, sent last\n\
+        - `error`: problem document describing the failure",
     request_body(
         content = ChatRequest,
         description = "Chat creation parameters",

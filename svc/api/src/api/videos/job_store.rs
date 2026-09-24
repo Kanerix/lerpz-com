@@ -11,6 +11,23 @@ use uuid::Uuid;
 
 use crate::state::RedisPool;
 
+/// A type alias for handling results from this module.
+pub(super) type Result<T> = std::result::Result<T, Error>;
+
+/// Errors that can occur while reading or writing a job record.
+///
+/// The messages are deliberately coarse. They name the step that failed and
+/// leave the detail to the source error, which is only ever logged.
+#[derive(Debug, thiserror::Error)]
+pub(super) enum Error {
+    #[error("no redis connection available")]
+    Connection(#[from] bb8::RunError<redis::RedisError>),
+    #[error("redis command failed")]
+    Command(#[from] redis::RedisError),
+    #[error("job record is not valid json")]
+    Payload(#[from] serde_json::Error),
+}
+
 /// How long (in seconds) a job record lives before Redis expires it. Long
 /// enough for a client to finish polling a completed render, short enough that
 /// dead jobs don't linger.
@@ -36,31 +53,28 @@ fn job_key(id: Uuid) -> String {
 }
 
 /// Write (or overwrite) a job record, refreshing its TTL.
-pub(super) async fn write(redis: &RedisPool, id: Uuid, record: &JobRecord) -> Result<(), String> {
-    let payload = serde_json::to_string(record).map_err(|err| err.to_string())?;
-    let mut conn = redis.get().await.map_err(|err| err.to_string())?;
+pub(super) async fn write(redis: &RedisPool, id: Uuid, record: &JobRecord) -> Result<()> {
+    let payload = serde_json::to_string(record)?;
+    let mut conn = redis.get().await?;
     redis::cmd("SET")
         .arg(job_key(id))
         .arg(payload)
         .arg("EX")
         .arg(JOB_TTL_SECS)
         .query_async::<()>(&mut *conn)
-        .await
-        .map_err(|err| err.to_string())
+        .await?;
+    Ok(())
 }
 
 /// Read a job record, returning `None` if it does not exist or has expired.
-pub(super) async fn read(redis: &RedisPool, id: Uuid) -> Result<Option<JobRecord>, String> {
-    let mut conn = redis.get().await.map_err(|err| err.to_string())?;
+pub(super) async fn read(redis: &RedisPool, id: Uuid) -> Result<Option<JobRecord>> {
+    let mut conn = redis.get().await?;
     let payload: Option<String> = redis::cmd("GET")
         .arg(job_key(id))
         .query_async(&mut *conn)
-        .await
-        .map_err(|err| err.to_string())?;
+        .await?;
     match payload {
-        Some(payload) => serde_json::from_str(&payload)
-            .map(Some)
-            .map_err(|err| err.to_string()),
+        Some(payload) => Ok(Some(serde_json::from_str(&payload)?)),
         None => Ok(None),
     }
 }
@@ -77,6 +91,6 @@ pub(super) async fn fail(redis: &RedisPool, id: Uuid, oid: &str, message: &str) 
         video_id: None,
     };
     if let Err(err) = write(redis, id, &record).await {
-        tracing::error!(%id, "failed to persist job failure: {err}");
+        tracing::error!(%id, ?err, "failed to persist job failure");
     }
 }

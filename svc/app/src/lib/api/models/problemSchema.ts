@@ -40,7 +40,7 @@ export interface ProblemSchema {
      * A server-side log reference for this error occurrence.
      *
      * When present, include this ID in any support request so the error
-     * can be located in server logs. Only set for unexpected server errors.
+     * can be located in server logs. Always set on a server error.
      * @nullable
      */
   log_id?: string | null;

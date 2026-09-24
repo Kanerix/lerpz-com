@@ -50,10 +50,12 @@ pub struct EditLatestMessageRequest {
         message, discards the assistant reply (and any later turns) that followed \
         it, then regenerates and streams a fresh reply via Server-Sent Events. \
         Only the latest message can be edited, since editing an earlier one would \
-        require regenerating everything after it. Events: `reasoning` \
-        (chain-of-thought chunk, reasoning models only), `message` (answer token \
-        chunk), `saved` (conversation UUID confirming persistence, sent last), \
-        `error` (error message).",
+        require regenerating everything after it.\n\n\
+        Events:\n\
+        - `reasoning`: chain-of-thought chunk, reasoning models only\n\
+        - `message`: answer token chunk\n\
+        - `saved`: conversation UUID confirming persistence, sent last\n\
+        - `error`: problem document describing the failure",
     params(
         ("id" = Uuid, Path, description = "Conversation ID"),
     ),

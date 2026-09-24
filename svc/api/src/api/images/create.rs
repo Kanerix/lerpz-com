@@ -30,6 +30,12 @@ use crate::{
     state::{AppState, DatabasePool, OpenAI, S3Client},
 };
 
+/// Detail for the three ways a generated image can turn out to be unusable:
+/// base64 that won't decode, bytes with no recognisable format, and a format we
+/// can't measure. The client can do nothing different about any of them.
+const UNREADABLE_IMAGE_DETAIL: &str =
+    "The model provider returned an image that could not be read.";
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ImageRequest {
     /// Prompt that is sent to the model.
@@ -61,11 +67,12 @@ pub struct ImageRequest {
     responses(
         (
             status = OK,
-            description = "SSE stream of image generation events. Events: \
-                partial_image ({ b64, format } partial render), \
-                completed_image ({ b64, format } final image), \
-                saved ({ id } persisted metadata), \
-                error (error message)",
+            description = "SSE stream of image generation events.\n\n\
+                Events:\n\
+                - `partial_image`: `{ b64, format }` partial render\n\
+                - `completed_image`: `{ b64, format }` final image\n\
+                - `saved`: `{ id }` persisted metadata\n\
+                - `error`: problem document describing the failure",
             content_type = "text/event-stream"
         ),
         (
@@ -144,15 +151,20 @@ pub async fn handler(
             let event = match event {
                 Ok(event) => event,
                 Err(upstream) => {
-                    if upstream.is_user() {
-                        tracing::warn!(reason = %upstream.message, "provider rejects image generation");
+                    let problem: Problem = if upstream.is_user() {
+                        Problem::new(
+                            StatusCode::BAD_REQUEST,
+                            "Image generation rejected",
+                            upstream.message.clone(),
+                        )
                     } else {
-                        tracing::error!(reason = %upstream.message, "image generation failed");
-                    }
-                    yield Ok(Event::default()
-                        .event("error")
-                        .json_data(&upstream.message)
-                        .expect("failed to serialize error event"));
+                        Problem::new(
+                            StatusCode::BAD_GATEWAY,
+                            "Image generation failed",
+                            "The model provider could not generate this image.",
+                        )
+                    };
+                    yield Ok(problem.with_error(upstream).into_event());
                     break;
                 }
             };
@@ -174,11 +186,12 @@ pub async fn handler(
                     let image_bytes: Vec<u8> = match BASE64.decode(&b64) {
                         Ok(bytes) => bytes,
                         Err(err) => {
-                            tracing::error!(%err, "failed to decode generated image");
-                            yield Ok(Event::default()
-                                .event("error")
-                                .json_data(err.to_string())
-                                .expect("failed to serialize error event"));
+                            let problem: Problem = Problem::new(
+                                StatusCode::BAD_GATEWAY,
+                                "Image generation failed",
+                                UNREADABLE_IMAGE_DETAIL,
+                            );
+                            yield Ok(problem.with_error(err).into_event());
                             continue;
                         }
                     };
@@ -190,20 +203,22 @@ pub async fn handler(
                             Ok(reader) => match reader.into_dimensions() {
                                 Ok(dims) => dims,
                                 Err(err) => {
-                                    tracing::error!(%err, "failed to read image dimensions");
-                                    yield Ok(Event::default()
-                                        .event("error")
-                                        .json_data(err.to_string())
-                                        .expect("failed to serialize error event"));
+                                    let problem: Problem = Problem::new(
+                                        StatusCode::BAD_GATEWAY,
+                                        "Image generation failed",
+                                        UNREADABLE_IMAGE_DETAIL,
+                                    );
+                                    yield Ok(problem.with_error(err).into_event());
                                     continue;
                                 }
                             },
                             Err(err) => {
-                                tracing::error!("failed to read image: {err}");
-                                yield Ok(Event::default()
-                                    .event("error")
-                                    .json_data(err.to_string())
-                                    .expect("failed to serialize error event"));
+                                let problem: Problem = Problem::new(
+                                    StatusCode::BAD_GATEWAY,
+                                    "Image generation failed",
+                                    UNREADABLE_IMAGE_DETAIL,
+                                );
+                                yield Ok(problem.with_error(err).into_event());
                                 continue;
                             }
                         }
@@ -236,11 +251,12 @@ pub async fn handler(
                     };
 
                     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &image_bytes).await {
-                        tracing::error!(%err, "failed to save image to storage");
-                        yield Ok(Event::default()
-                            .event("error")
-                            .json_data(err.to_string())
-                            .expect("failed to serialize error event"));
+                        let problem: Problem = Problem::new(
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Image not saved",
+                            "The image was generated but could not be stored.",
+                        );
+                        yield Ok(problem.with_error(err).into_event());
                         continue;
                     }
 
@@ -253,11 +269,12 @@ pub async fn handler(
                                 .expect("failed to serialize saved event"));
                         }
                         Err(err) => {
-                            tracing::error!(%err, "failed to persist image metadata");
-                            yield Ok(Event::default()
-                                .event("error")
-                                .json_data(err.to_string())
-                                .expect("failed to serialize error event"));
+                            let problem: Problem = Problem::new(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                "Image not saved",
+                                "The image was generated but its details could not be stored.",
+                            );
+                            yield Ok(problem.with_error(err).into_event());
                         }
                     }
                 }

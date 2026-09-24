@@ -108,6 +108,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "strum",
+ "thiserror 2.0.21",
  "tokio",
  "tokio-stream",
  "tower-http 0.7.1",

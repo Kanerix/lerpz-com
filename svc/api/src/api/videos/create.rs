@@ -191,8 +191,9 @@ pub async fn handler(
         Problem::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to create job",
-            err,
+            "The video generation job could not be tracked.",
         )
+        .with_error(err)
     })?;
 
     tracing::debug!(%job_id, %operation_name, model = %model_name, "tracking video generation job");
@@ -254,12 +255,14 @@ async fn run_job(
 
     let (video_bytes, format, width, height, duration) = match event {
         Err(upstream) => {
-            if upstream.is_user() {
+            let reason = if upstream.is_user() {
                 tracing::warn!(%operation_name, reason = %upstream.message, "provider rejects video generation");
+                upstream.message.as_str()
             } else {
                 tracing::error!(%operation_name, reason = %upstream.message, "video generation failed");
-            }
-            job_store::fail(&redis, job_id, &oid, &upstream.message).await;
+                "The video could not be generated."
+            };
+            job_store::fail(&redis, job_id, &oid, reason).await;
             return;
         }
         Ok(VideoEvent::Link { url }) => {
@@ -317,7 +320,7 @@ async fn run_job(
 
     if let Err(err) = lerpz_metadata::save_to_s3(&s3, &metadata, &video_bytes).await {
         tracing::error!(%operation_name, %err, "failed to save video to storage");
-        job_store::fail(&redis, job_id, &oid, &err.to_string()).await;
+        job_store::fail(&redis, job_id, &oid, "The video could not be stored.").await;
         return;
     }
 
@@ -325,7 +328,13 @@ async fn run_job(
     let meta_client = lerpz_metadata::Client::from_pool(database);
     if let Err(err) = meta_client.insert(metadata).await {
         tracing::error!(%operation_name, %err, "failed to persist video metadata");
-        job_store::fail(&redis, job_id, &oid, &err.to_string()).await;
+        job_store::fail(
+            &redis,
+            job_id,
+            &oid,
+            "The video was stored but its details could not be saved.",
+        )
+        .await;
         return;
     }
 
@@ -341,7 +350,7 @@ async fn run_job(
     )
     .await
     {
-        tracing::error!(%job_id, "failed to mark job completed: {err}");
+        tracing::error!(%job_id, ?err, "failed to mark job completed");
         return;
     }
 
