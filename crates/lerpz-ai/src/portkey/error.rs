@@ -108,8 +108,10 @@ pub fn humanize_error(raw: &str) -> String {
 ///
 /// `async-openai` additionally prefixes the body with text such as `Invalid
 /// response received from <provider>: `, so we locate the embedded JSON object
-/// before parsing. Anything we can't confidently parse is returned unchanged and
-/// treated as a provider-side error.
+/// before parsing. Plain text and malformed JSON are returned unchanged and
+/// treated as a provider-side error. A JSON object in a shape we don't
+/// recognise is logged and replaced with a generic message, since it could hold
+/// anything.
 pub fn classify_error(raw: &str) -> UpstreamError {
     let Some(start) = raw.find('{') else {
         return UpstreamError::new_provider(raw);
@@ -134,7 +136,8 @@ pub fn classify_error(raw: &str) -> UpstreamError {
         return UpstreamError::new_provider(summarize_html_error(html));
     }
 
-    UpstreamError::new_provider(raw)
+    tracing::error!(%raw, "cannot classify upstream provider error");
+    UpstreamError::new_provider("The provider returned an unexpected error.")
 }
 
 /// Decides whether a parsed error payload was caused by the user's input.
@@ -242,6 +245,14 @@ mod tests {
     fn returns_input_when_json_is_malformed() {
         let raw = "unexpected: {not valid json";
         assert_eq!(humanize_error(raw), raw);
+    }
+
+    #[test]
+    fn replaces_json_in_an_unrecognised_shape() {
+        let raw = r#"{"weird":{"nested":"payload"}}"#;
+        let err = classify_error(raw);
+        assert_eq!(err.message, "The provider returned an unexpected error.");
+        assert_eq!(err.kind, ErrorKind::Provider);
     }
 
     #[test]

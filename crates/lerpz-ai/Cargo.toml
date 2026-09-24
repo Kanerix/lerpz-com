@@ -5,7 +5,7 @@ version.workspace = true
 
 [features]
 # Provides the `portkey` module with helpers for the Portkey AI gateway.
-portkey = ["dep:serde_json", "dep:thiserror"]
+portkey = ["dep:serde_json", "dep:thiserror", "dep:tracing"]
 # Provides `portkey::PortkeyConfig`, an `async-openai` `Config` for the Portkey gateway.
 async-openai = ["portkey", "dep:async-openai", "dep:http", "dep:secrecy"]
 # Provides `portkey::build_client`, a `rig-core` client pointed at the Portkey gateway.
