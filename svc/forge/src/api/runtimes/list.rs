@@ -47,6 +47,12 @@ pub struct ListRuntimesQuery {
             content_type = "application/problem+json"
         ),
         (
+            status = FORBIDDEN,
+            description = "Missing required delegated user permission, or cluster access was refused",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
             status = INTERNAL_SERVER_ERROR,
             description = "Unexpected server error",
             body = ProblemSchema,

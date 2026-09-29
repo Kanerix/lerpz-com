@@ -106,6 +106,12 @@ pub struct CreateRuntimeRequest {
             content_type = "application/problem+json"
         ),
         (
+            status = FORBIDDEN,
+            description = "Missing required delegated user permission, or cluster access was refused",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
             status = NOT_FOUND,
             description = "The memory volume does not exist or is not accessible to the caller",
             body = ProblemSchema,

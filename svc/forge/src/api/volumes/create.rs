@@ -70,6 +70,12 @@ pub struct CreateVolumeRequest {
             content_type = "application/problem+json"
         ),
         (
+            status = FORBIDDEN,
+            description = "Missing required delegated user permission, or cluster access was refused",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
             status = CONFLICT,
             description = "The agent already has a memory volume",
             body = ProblemSchema,

@@ -107,8 +107,17 @@ pub(crate) fn labels(agent: &str, component: &str) -> BTreeMap<String, String> {
     ])
 }
 
-/// The object and tenant IDs required for private resource access.
+/// The delegated user identity required for private resource access.
 pub(crate) fn caller_identity(token: &AzureAccessToken) -> Result<(&str, &str), Problem> {
+    let scope = CONFIG.ENTRA_ID_SCOPE.rsplit('/').next().unwrap_or_default();
+    if scope.is_empty() || !token.has_scope(scope) {
+        return Err(Problem::new(
+            StatusCode::FORBIDDEN,
+            "Delegated permission required",
+            "The token must grant the configured delegated user permission.",
+        ));
+    }
+
     let object_id = token.oid.as_deref().unwrap_or_default();
     if object_id.is_empty() || token.tid.is_empty() {
         return Err(Problem::new(
