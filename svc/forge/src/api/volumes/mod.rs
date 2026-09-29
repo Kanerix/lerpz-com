@@ -37,6 +37,16 @@ pub struct MemoryVolumeResponse {
     pub storage_class: Option<String>,
     /// When the claim was created
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    /// Entra object ID of the caller that created the volume, if recorded
+    pub created_by_oid: Option<String>,
+    /// Entra tenant ID of the creator, if recorded
+    pub created_by_tenant_id: Option<String>,
+    /// Ownership kind, currently `user`, if recorded
+    pub owner_type: Option<String>,
+    /// Entra object ID of the owner, if recorded
+    pub owner_id: Option<String>,
+    /// Entra tenant ID of the owner, if recorded
+    pub owner_tenant_id: Option<String>,
 }
 
 impl From<PersistentVolumeClaim> for MemoryVolumeResponse {
@@ -44,6 +54,15 @@ impl From<PersistentVolumeClaim> for MemoryVolumeResponse {
         let name = pvc.name_any();
         let agent = resources::agent_of(pvc.metadata.labels.as_ref());
         let created_at = resources::timestamp(pvc.metadata.creation_timestamp.as_ref());
+        let created_by_oid = pvc.labels().get(resources::CREATED_BY_OID_LABEL).cloned();
+        let created_by_tenant_id = pvc
+            .labels()
+            .get(resources::CREATED_BY_TENANT_ID_LABEL)
+            .cloned();
+
+        let owner_type = pvc.labels().get(resources::OWNER_TYPE_LABEL).cloned();
+        let owner_id = pvc.labels().get(resources::OWNER_ID_LABEL).cloned();
+        let owner_tenant_id = pvc.labels().get(resources::OWNER_TENANT_ID_LABEL).cloned();
 
         let spec = pvc.spec.as_ref();
         let size = spec
@@ -61,6 +80,11 @@ impl From<PersistentVolumeClaim> for MemoryVolumeResponse {
             size,
             storage_class,
             created_at,
+            created_by_oid,
+            created_by_tenant_id,
+            owner_type,
+            owner_id,
+            owner_tenant_id,
         }
     }
 }

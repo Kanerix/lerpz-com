@@ -2,10 +2,11 @@
 
 use std::{
     net::SocketAddr,
+    num::NonZeroU16,
     sync::{Arc, LazyLock},
 };
 
-use axum::http::HeaderValue;
+use axum::http::{HeaderValue, Uri};
 use lerpz_utils::{
     env::{get_env_from, get_env_parse},
     generate_config,
@@ -47,8 +48,36 @@ generate_config!(
     // ServiceAccount Forge itself uses, so a compromised agent container cannot
     // reach the Kubernetes API.
     AGENT_RUNTIME_SERVICE_ACCOUNT: Arc<str> = get_env_from,
+    AGENT_RUNTIME_ORIGIN: Uri = get_runtime_origin,
+    AGENT_RUNTIME_PORT: NonZeroU16 = get_env_parse,
+    AGENT_RUNTIME_TLS_SECRET: Arc<str> = get_env_from,
     // StorageClass backing agent memory volumes.
     AGENT_MEMORY_STORAGE_CLASS: Arc<str> = get_env_from,
     // Default size requested for a memory volume when the request omits one.
     AGENT_MEMORY_DEFAULT_SIZE: Arc<str> = get_env_from
 );
+
+fn get_runtime_origin(key: &str) -> lerpz_utils::env::Result<Uri> {
+    let origin: Uri = get_env_parse(key)?;
+    let valid_host = origin.host().is_some_and(|host| {
+        !host.is_empty()
+            && host
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-'))
+    });
+    if origin.scheme_str() != Some("https")
+        || !valid_host
+        || origin.path() != "/"
+        || origin.query().is_some()
+        || origin
+            .authority()
+            .is_some_and(|authority| authority.as_str().contains('@'))
+    {
+        return Err(lerpz_utils::env::Error::ParseError(
+            key.to_owned(),
+            "an HTTPS origin with a DNS host, optional port and no path, query or credentials"
+                .to_owned(),
+        ));
+    }
+    Ok(origin)
+}

@@ -2,10 +2,9 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
-use kube::api::DeleteParams;
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
-    problem::{HandlerResult, ProblemSchema},
+    problem::{HandlerResult, Problem, ProblemSchema},
 };
 
 use crate::{
@@ -20,8 +19,12 @@ use crate::{
     operation_id = "delete_runtime",
     tag = RUNTIMES_TAG,
     summary = "Tear down an agent's runtime",
-    description = "Deletes the agent's `Deployment` and the pods it owns. The \
-        agent's memory volume is left intact so the runtime can be re-created \
+    description = "Deletes the agent's `Deployment` and the pods it owns only when \
+        it is managed by Forge, has owner type `user`, and its owner ID and tenant ID \
+        match the caller. Inaccessible resources, including those without ownership \
+        labels, return 404. Creator labels do not grant access. \
+        The runtime's Service and Traefik routing resources are garbage-collected. \
+        The agent's memory volume is left intact so the runtime can be re-created \
         against the same memory.",
     params(
         ("agent" = String, Path, description = "Identifier of the agent"),
@@ -39,13 +42,19 @@ use crate::{
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing or empty oid or tid claims",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = NOT_FOUND,
-            description = "The agent has no runtime",
+            description = "The agent has no runtime accessible to the caller",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = CONFLICT,
+            description = "Resource changed while the deletion was being authorised. Retry the request.",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -59,32 +68,44 @@ use crate::{
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     Path(agent): Path<String>,
     State(kube): State<KubeClient>,
 ) -> HandlerResult<StatusCode> {
+    let (object_id, tenant_id) = resources::caller_identity(&token)?;
     resources::validate_agent(&agent)?;
 
     let name = resources::runtime_name(&agent);
     let api = resources::runtime_api(kube);
 
-    // Read before deleting so an unlabelled deployment that happens to match the
-    // derived name is never removed by Forge.
     let deployment = api
         .get_opt(&name)
         .await
         .map_err(|err| resources::kube_problem(err, "agent runtime"))?
         .ok_or_else(|| resources::not_found("agent runtime", &name))?;
 
-    if resources::agent_of(deployment.metadata.labels.as_ref()).as_deref() != Some(agent.as_str()) {
+    if !resources::is_owned_by(
+        deployment.metadata.labels.as_ref(),
+        &agent,
+        object_id,
+        tenant_id,
+    ) {
         return Err(resources::not_found("agent runtime", &name));
     }
 
+    let params = resources::delete_params(&deployment.metadata)?;
+
     tracing::info!(%agent, %name, "tearing down agent runtime");
 
-    api.delete(&name, &DeleteParams::default())
-        .await
-        .map_err(|err| resources::kube_problem(err, "agent runtime"))?;
+    api.delete(&name, &params).await.map_err(|err| match &err {
+        kube::Error::Api(response) if response.code == 409 => Problem::new(
+            StatusCode::CONFLICT,
+            "Resource changed",
+            "Resource changed while the deletion was being authorised. Retry the request.",
+        )
+        .with_error(err),
+        _ => resources::kube_problem(err, "agent runtime"),
+    })?;
 
     Ok(StatusCode::NO_CONTENT)
 }

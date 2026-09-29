@@ -42,7 +42,10 @@ pub struct CreateVolumeRequest {
     description = "Creates the `PersistentVolumeClaim` backing an agent's \
         persistent memory. The claim is named `agent-{agent}-memory`, so an \
         agent has exactly one memory volume and repeat calls are rejected with \
-        a `409` rather than silently provisioning a second volume.",
+        a `409` rather than silently provisioning a second volume. The claim records \
+        the authenticated caller's Entra object and tenant IDs as creator labels. \
+        Separate owner labels set `owner-type=user` and identify the caller as \
+        the owner. Ownership is taken from the token, not the request body.",
     request_body(
         content = CreateVolumeRequest,
         description = "Memory volume parameters",
@@ -62,7 +65,7 @@ pub struct CreateVolumeRequest {
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing caller identity",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -82,11 +85,14 @@ pub struct CreateVolumeRequest {
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     State(kube): State<KubeClient>,
     Json(body): Json<CreateVolumeRequest>,
 ) -> HandlerResult<(StatusCode, Json<MemoryVolumeResponse>)> {
     resources::validate_agent(&body.agent)?;
+
+    let mut labels = resources::labels(&body.agent, COMPONENT);
+    labels.extend(resources::creation_labels(&token)?);
 
     let name = resources::memory_volume_name(&body.agent);
     let size = body
@@ -102,7 +108,7 @@ pub async fn handler(
         metadata: ObjectMeta {
             name: Some(name),
             namespace: Some(CONFIG.KUBE_NAMESPACE.to_string()),
-            labels: Some(resources::labels(&body.agent, COMPONENT)),
+            labels: Some(labels),
             ..Default::default()
         },
         spec: Some(PersistentVolumeClaimSpec {

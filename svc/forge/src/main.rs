@@ -17,6 +17,7 @@ use utoipa_axum::router::OpenApiRouter;
 
 mod api;
 mod config;
+mod networking;
 mod oapi;
 mod resources;
 mod state;

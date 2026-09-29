@@ -14,8 +14,8 @@ pub(crate) const HEALTH_TAG: &str = "health";
         description = "The internal provisioning API for agent infrastructure. \
             Forge turns a request for agent capacity into the Kubernetes objects \
             that back it: persistent memory volumes and the container runtimes \
-            that mount them. It is not exposed publicly, `artoo` and `api` are \
-            its only callers.",
+            that mount them. The management API remains internal. Traefik calls \
+            Forge to authorise browser requests to each runtime's HTTPS route.",
         contact(
             name = "Kasper Jønsson",
             email = "kas@lerpz.com",

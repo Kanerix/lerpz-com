@@ -20,7 +20,7 @@ use crate::{
 #[derive(Debug, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct ListRuntimesQuery {
-    /// Only return the runtime belonging to this agent
+    /// Only return the caller's runtime for this agent
     agent: Option<String>,
 }
 
@@ -30,18 +30,19 @@ pub struct ListRuntimesQuery {
     operation_id = "list_runtimes",
     tag = RUNTIMES_TAG,
     summary = "List agent runtimes",
-    description = "Lists the agent runtimes Forge manages in its namespace. \
-        Deployments created by anything other than Forge are never returned.",
+    description = "Lists only Forge-managed agent runtimes with owner type `user` \
+        whose owner ID and tenant ID match the caller. Resources without ownership \
+        labels or with unsupported owner types are omitted. Creator labels do not grant access.",
     params(ListRuntimesQuery),
     responses(
         (
             status = OK,
-            description = "The managed agent runtimes",
+            description = "The caller's managed agent runtimes",
             body = Vec<AgentRuntimeResponse>
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing or empty oid or tid claims",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -55,17 +56,11 @@ pub struct ListRuntimesQuery {
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     Query(query): Query<ListRuntimesQuery>,
     State(kube): State<KubeClient>,
 ) -> HandlerResult<Json<Vec<AgentRuntimeResponse>>> {
-    let selector = match query.agent.as_deref() {
-        Some(agent) => {
-            resources::validate_agent(agent)?;
-            resources::agent_selector(agent)
-        }
-        None => resources::managed_selector(),
-    };
+    let selector = resources::owned_selector(query.agent.as_deref(), &token)?;
 
     let deployments = resources::runtime_api(kube)
         .list(&ListParams::default().labels(&selector))

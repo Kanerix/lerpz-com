@@ -189,6 +189,71 @@ a kind/minikube kubeconfig points at `127.0.0.1`, which inside the container is
 the container itself, running `forge` in the kind cluster under [`k8s/`](k8s)
 is usually the better path. See [k8s/README.md](k8s/README.md).
 
+New deployments, runtime pods and persistent volume claims carry separate
+creator and owner labels:
+
+| Label | Value on creation |
+|---|---|
+| `lerpz.com/created-by-oid` | Caller's Entra object ID |
+| `lerpz.com/created-by-tenant-id` | Caller's Entra tenant ID |
+| `lerpz.com/owner-type` | `user` |
+| `lerpz.com/owner-id` | Caller's Entra object ID |
+| `lerpz.com/owner-tenant-id` | Caller's Entra tenant ID |
+
+All identity values come from the validated token, not the request body. Every
+runtime and volume endpoint requires non-empty `oid` and `tid` claims. For
+app-only tokens, `user` ownership identifies the service principal rather than
+a person. The API exposes `created_by_oid`, `created_by_tenant_id`, `owner_type`,
+`owner_id` and `owner_tenant_id` separately.
+
+Creator labels record attribution and do not grant access. Lists only return
+Forge-managed resources with owner type `user` and owner IDs matching the caller.
+Reads and deletes enforce the same checks plus the agent label, returning `404`
+for inaccessible resources. Before provisioning a runtime, Forge checks that
+its memory volume is user-owned by the caller. Deletes use UID and
+resource-version preconditions to protect against changes after authorisation.
+
+Team ownership and ownership-transfer endpoints are not implemented. Resources
+labelled `owner-type=team`, with unknown owner types or without all three owner
+labels are inaccessible. There is no fallback to creator-based access. Existing
+resources are not backfilled. A cluster administrator must assign the owner
+labels to existing deployments, their pod templates and memory volume claims.
+For creator-only resources, the creator IDs can supply the owner IDs after
+confirming that the creator is still the intended owner. Keep the creator labels
+unchanged when assigning ownership.
+
+Agent names remain unique across the Forge namespace, not per owner. Kubernetes
+mounts volumes by name, so the ownership check cannot prevent a volume being
+replaced by another owner's volume between authorisation and mounting. Strict
+isolation against cross-owner name reuse requires stable resource IDs that are
+never reused, or owner-scoped resource names.
+Cluster access that can change these labels must also be restricted; the labels
+are not an immutable audit trail.
+
+New runtimes also get a ClusterIP Service and a Traefik HTTPS route. Configure
+`AGENT_RUNTIME_ORIGIN` with the public HTTPS origin, `AGENT_RUNTIME_PORT` with the
+default internal HTTP port and `AGENT_RUNTIME_TLS_SECRET` with a TLS secret in
+Forge's namespace. The local Kubernetes manifest supplies example values; set
+these variables when running Forge outside that deployment. Traefik's CRDs and
+`websecure` entrypoint must be installed.
+
+Runtime responses include `runtime_id`, `base_url` and `port`. The optional
+creation field `port` overrides the configured internal port. The image must
+listen on that port on `0.0.0.0`; Forge does not change the image's configuration.
+All runtimes share the public HTTPS port. For example,
+`https://container.lerpz.local/<runtime_id>/api/messages` reaches `/api/messages`
+inside that runtime. The UUID and recorded URL survive pod restarts but change
+when the runtime is recreated.
+
+The browser sends its Forge-audience Entra access token. Traefik checks ownership
+with Forge on each request, then strips the UUID prefix and credentials before
+forwarding. CORS preflight is handled separately using `ALLOWED_ORIGINS`. The
+runtime Service and route resources are garbage-collected with their deployment;
+a networking failure triggers deployment rollback. Old runtimes without network
+metadata must be recreated to receive a URL. See [k8s/README.md](k8s/README.md)
+for TLS, RBAC, frontend examples and the NetworkPolicy-enforcing CNI requirement
+for blocking direct connections that bypass ingress.
+
 ## Database
 
 The project uses PostgreSQL with migrations managed by

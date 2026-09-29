@@ -20,7 +20,7 @@ use crate::{
 #[derive(Debug, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct ListVolumesQuery {
-    /// Only return the volume belonging to this agent
+    /// Only return the caller's volume for this agent
     agent: Option<String>,
 }
 
@@ -30,18 +30,19 @@ pub struct ListVolumesQuery {
     operation_id = "list_volumes",
     tag = VOLUMES_TAG,
     summary = "List memory volumes",
-    description = "Lists the memory volumes Forge manages in its namespace. \
-        Claims created by anything other than Forge are never returned.",
+    description = "Lists only Forge-managed memory volumes with owner type `user` \
+        whose owner ID and tenant ID match the caller. Resources without ownership \
+        labels or with unsupported owner types are omitted. Creator labels do not grant access.",
     params(ListVolumesQuery),
     responses(
         (
             status = OK,
-            description = "The managed memory volumes",
+            description = "The caller's managed memory volumes",
             body = Vec<MemoryVolumeResponse>
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing or empty oid or tid claims",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -55,17 +56,11 @@ pub struct ListVolumesQuery {
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     Query(query): Query<ListVolumesQuery>,
     State(kube): State<KubeClient>,
 ) -> HandlerResult<Json<Vec<MemoryVolumeResponse>>> {
-    let selector = match query.agent.as_deref() {
-        Some(agent) => {
-            resources::validate_agent(agent)?;
-            resources::agent_selector(agent)
-        }
-        None => resources::managed_selector(),
-    };
+    let selector = resources::owned_selector(query.agent.as_deref(), &token)?;
 
     let claims = resources::volume_api(kube)
         .list(&ListParams::default().labels(&selector))

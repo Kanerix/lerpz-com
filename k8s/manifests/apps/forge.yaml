@@ -2,7 +2,7 @@
 # the other services it needs an identity in the cluster and explicit RBAC.
 #
 # The permissions below are deliberately a namespaced Role rather than a
-# ClusterRole: forge can only touch the namespace it runs in, and only the two
+# ClusterRole: forge can only touch the namespace it runs in, and only the
 # resource types it actually manages.
 apiVersion: v1
 kind: ServiceAccount
@@ -25,9 +25,15 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "create", "delete"]
+  - apiGroups: ["traefik.io"]
+    resources: ["ingressroutes", "middlewares"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -81,9 +87,39 @@ spec:
           envFrom:
             - secretRef:
                 name: forge-env
+          env:
+            - name: AGENT_RUNTIME_ORIGIN
+              value: https://container.lerpz.local
+            - name: AGENT_RUNTIME_PORT
+              value: "8080"
+            - name: AGENT_RUNTIME_TLS_SECRET
+              value: lerpz-tls
           readinessProbe:
             httpGet:
               path: /api/v1/health
               port: 5000
             initialDelaySeconds: 5
             periodSeconds: 10
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-runtime-ingress
+  namespace: lerpz
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/managed-by: forge
+      app.kubernetes.io/component: runtime
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: http

@@ -1,19 +1,21 @@
 //! Shared conventions for the Kubernetes objects Forge manages.
 //!
-//! Every object Forge creates carries the [`MANAGED_BY_LABEL`], and every read
-//! path filters on it via [`managed_selector`]. That is what keeps Forge from
-//! listing, or worse deleting, a `PersistentVolumeClaim` or `Deployment`
-//! that some other tool owns in the same namespace.
+//! Resource access requires Forge's management label, user ownership and owner
+//! IDs matching the caller's Entra object and tenant IDs. Named access also
+//! checks the agent label. Creator labels record attribution, not permissions.
 
 use std::collections::BTreeMap;
 
 use axum::http::StatusCode;
 use k8s_openapi::{
     api::{apps::v1::Deployment, core::v1::PersistentVolumeClaim},
-    apimachinery::pkg::apis::meta::v1::Time,
+    apimachinery::pkg::apis::meta::v1::{ObjectMeta, Time},
 };
-use kube::Api;
-use lerpz_axum::problem::Problem;
+use kube::{
+    Api,
+    api::{DeleteParams, Preconditions},
+};
+use lerpz_axum::{middleware::azure::AzureAccessToken, problem::Problem};
 
 use crate::{config::CONFIG, state::KubeClient};
 
@@ -22,6 +24,13 @@ pub(crate) const NAME_LABEL: &str = "app.kubernetes.io/name";
 pub(crate) const PART_OF_LABEL: &str = "app.kubernetes.io/part-of";
 pub(crate) const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 pub(crate) const AGENT_LABEL: &str = "lerpz.com/agent";
+pub(crate) const CREATED_BY_OID_LABEL: &str = "lerpz.com/created-by-oid";
+pub(crate) const CREATED_BY_TENANT_ID_LABEL: &str = "lerpz.com/created-by-tenant-id";
+pub(crate) const OWNER_TYPE_LABEL: &str = "lerpz.com/owner-type";
+pub(crate) const OWNER_ID_LABEL: &str = "lerpz.com/owner-id";
+pub(crate) const OWNER_TENANT_ID_LABEL: &str = "lerpz.com/owner-tenant-id";
+
+const USER_OWNER_TYPE: &str = "user";
 
 /// Value of [`MANAGED_BY_LABEL`] on every object Forge creates.
 pub(crate) const MANAGED_BY: &str = "forge";
@@ -38,9 +47,43 @@ pub(crate) fn managed_selector() -> String {
     format!("{MANAGED_BY_LABEL}={MANAGED_BY}")
 }
 
-/// Label selector matching the objects Forge owns for a single agent.
-pub(crate) fn agent_selector(agent: &str) -> String {
-    format!("{MANAGED_BY_LABEL}={MANAGED_BY},{AGENT_LABEL}={agent}")
+/// Label selector matching Forge resources belonging to the authenticated caller.
+pub(crate) fn owned_selector(
+    agent: Option<&str>,
+    token: &AzureAccessToken,
+) -> Result<String, Problem> {
+    let (object_id, tenant_id) = caller_identity(token)?;
+    let mut selector = format!(
+        "{},{OWNER_TYPE_LABEL}={USER_OWNER_TYPE},{OWNER_ID_LABEL}={object_id},{OWNER_TENANT_ID_LABEL}={tenant_id}",
+        managed_selector(),
+    );
+    if let Some(agent) = agent {
+        validate_agent(agent)?;
+        selector.push_str(&format!(",{AGENT_LABEL}={agent}"));
+    }
+    Ok(selector)
+}
+
+/// Checks management, agent and user ownership before named resource access.
+pub(crate) fn is_owned_by(
+    labels: Option<&BTreeMap<String, String>>,
+    agent: &str,
+    object_id: &str,
+    tenant_id: &str,
+) -> bool {
+    !object_id.is_empty()
+        && !tenant_id.is_empty()
+        && labels.is_some_and(|labels| {
+            [
+                (MANAGED_BY_LABEL, MANAGED_BY),
+                (AGENT_LABEL, agent),
+                (OWNER_TYPE_LABEL, USER_OWNER_TYPE),
+                (OWNER_ID_LABEL, object_id),
+                (OWNER_TENANT_ID_LABEL, tenant_id),
+            ]
+            .into_iter()
+            .all(|(key, value)| labels.get(key).map(String::as_str) == Some(value))
+        })
 }
 
 /// Name of the memory volume backing `agent`.
@@ -62,6 +105,36 @@ pub(crate) fn labels(agent: &str, component: &str) -> BTreeMap<String, String> {
         (MANAGED_BY_LABEL.to_owned(), MANAGED_BY.to_owned()),
         (AGENT_LABEL.to_owned(), agent.to_owned()),
     ])
+}
+
+/// The object and tenant IDs required for private resource access.
+pub(crate) fn caller_identity(token: &AzureAccessToken) -> Result<(&str, &str), Problem> {
+    let object_id = token.oid.as_deref().unwrap_or_default();
+    if object_id.is_empty() || token.tid.is_empty() {
+        return Err(Problem::new(
+            StatusCode::UNAUTHORIZED,
+            "Missing caller identity",
+            "The authentication token must contain non-empty oid and tid claims.",
+        ));
+    }
+
+    Ok((object_id, token.tid.as_str()))
+}
+
+/// Records the creator and initial user ownership from a validated Entra token.
+///
+/// Keep these labels out of deployment selectors, which are immutable.
+pub(crate) fn creation_labels(
+    token: &AzureAccessToken,
+) -> Result<BTreeMap<String, String>, Problem> {
+    let (object_id, tenant_id) = caller_identity(token)?;
+    Ok(BTreeMap::from([
+        (CREATED_BY_OID_LABEL.to_owned(), object_id.to_owned()),
+        (CREATED_BY_TENANT_ID_LABEL.to_owned(), tenant_id.to_owned()),
+        (OWNER_TYPE_LABEL.to_owned(), USER_OWNER_TYPE.to_owned()),
+        (OWNER_ID_LABEL.to_owned(), object_id.to_owned()),
+        (OWNER_TENANT_ID_LABEL.to_owned(), tenant_id.to_owned()),
+    ]))
 }
 
 /// Reads the `lerpz.com/agent` label off an object's metadata.
@@ -130,12 +203,31 @@ pub(crate) fn runtime_api(client: KubeClient) -> Api<Deployment> {
     Api::namespaced(client, &CONFIG.KUBE_NAMESPACE)
 }
 
-/// The problem returned when a named resource does not exist.
+/// Prevents deleting a resource replaced or modified after authorisation.
+pub(crate) fn delete_params(metadata: &ObjectMeta) -> Result<DeleteParams, Problem> {
+    let (Some(uid), Some(resource_version)) = (&metadata.uid, &metadata.resource_version) else {
+        return Err(Problem::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Missing resource metadata",
+            "The cluster did not provide the metadata required to safely delete the resource.",
+        ));
+    };
+
+    Ok(DeleteParams {
+        preconditions: Some(Preconditions {
+            uid: Some(uid.clone()),
+            resource_version: Some(resource_version.clone()),
+        }),
+        ..Default::default()
+    })
+}
+
+/// The problem returned when a named resource is absent or inaccessible.
 pub(crate) fn not_found(resource: &str, name: &str) -> Problem {
     Problem::new(
         StatusCode::NOT_FOUND,
         "Resource not found",
-        format!("No {resource} named '{name}' is managed by forge."),
+        format!("No accessible {resource} named '{name}' was found."),
     )
 }
 

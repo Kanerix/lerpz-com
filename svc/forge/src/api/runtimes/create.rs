@@ -5,26 +5,29 @@ use k8s_openapi::{
     api::{
         apps::v1::{Deployment, DeploymentSpec},
         core::v1::{
-            Container, EnvVar, PersistentVolumeClaimVolumeSource, PodSpec, PodTemplateSpec,
-            ResourceRequirements, Volume, VolumeMount,
+            Container, ContainerPort, EnvVar, PersistentVolumeClaimVolumeSource, PodSpec,
+            PodTemplateSpec, Probe, ResourceRequirements, TCPSocketAction, Volume, VolumeMount,
         },
     },
     apimachinery::pkg::{
         api::resource::Quantity,
         apis::meta::v1::{LabelSelector, ObjectMeta},
+        util::intstr::IntOrString,
     },
 };
-use kube::api::PostParams;
+use kube::api::{DeleteParams, PostParams, Preconditions};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
-    problem::{HandlerResult, ProblemSchema},
+    problem::{HandlerResult, Problem, ProblemSchema},
 };
 use serde::Deserialize;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 use crate::{
     api::runtimes::{AgentRuntimeResponse, COMPONENT},
     config::CONFIG,
+    networking,
     oapi::RUNTIMES_TAG,
     resources,
     state::{AppState, KubeClient},
@@ -44,10 +47,14 @@ pub struct CreateRuntimeRequest {
     /// Container image to run. Falls back to the configured default image when
     /// omitted.
     image: Option<String>,
+    /// HTTP port the application listens on. Defaults to AGENT_RUNTIME_PORT.
+    /// The application must bind this port on 0.0.0.0; declaring it does not configure the image.
+    #[schema(minimum = 1, maximum = 65535)]
+    port: Option<u16>,
     /// Number of replicas. Defaults to `1`.
     replicas: Option<i32>,
     /// Mount the agent's memory volume. Defaults to `true`; the volume must
-    /// already have been provisioned.
+    /// already have been provisioned by the caller.
     mount_memory: Option<bool>,
     /// CPU limit as a Kubernetes quantity, e.g. `500m`.
     cpu_limit: Option<String>,
@@ -67,7 +74,14 @@ pub struct CreateRuntimeRequest {
     description = "Creates the `Deployment` that executes an agent, optionally \
         mounting the agent's memory volume at `/var/lib/lerpz/memory`. The \
         deployment is named `agent-{agent}-runtime`, so repeat calls are \
-        rejected with a `409` rather than starting a second runtime.",
+        rejected with a `409` rather than starting a second runtime. The deployment \
+        and its pods record the authenticated caller's Entra object and tenant IDs \
+        as creator labels and set separate owner labels with `owner-type=user`. \
+        Ownership is taken from the token, not the request body. If memory is \
+        mounted, its volume must also be user-owned by the caller. A ClusterIP Service \
+        and authenticated HTTPS ingress expose the runtime at the returned base_url. \
+        The UUID path prefix is stripped before forwarding. Network resources are \
+        garbage-collected with the deployment.",
     request_body(
         content = CreateRuntimeRequest,
         description = "Runtime parameters",
@@ -81,13 +95,19 @@ pub struct CreateRuntimeRequest {
         ),
         (
             status = BAD_REQUEST,
-            description = "Invalid agent identifier or resource quantity",
+            description = "Invalid agent identifier, HTTP port or resource quantity",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing caller identity",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = NOT_FOUND,
+            description = "The memory volume does not exist or is not accessible to the caller",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -107,23 +127,52 @@ pub struct CreateRuntimeRequest {
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     State(kube): State<KubeClient>,
     Json(body): Json<CreateRuntimeRequest>,
 ) -> HandlerResult<(StatusCode, Json<AgentRuntimeResponse>)> {
     resources::validate_agent(&body.agent)?;
+    let (object_id, tenant_id) = resources::caller_identity(&token)?;
+
+    let port = body.port.unwrap_or(CONFIG.AGENT_RUNTIME_PORT.get());
+    if port == 0 {
+        return Err(Problem::new(
+            StatusCode::BAD_REQUEST,
+            "Invalid runtime port",
+            "The runtime HTTP port must be between 1 and 65535.",
+        ));
+    }
+    let runtime_id = Uuid::new_v4().to_string();
+    let mut selector_labels = resources::labels(&body.agent, COMPONENT);
+    selector_labels.insert(networking::RUNTIME_ID_LABEL.to_owned(), runtime_id.clone());
+    let mut labels = selector_labels.clone();
+    labels.extend(resources::creation_labels(&token)?);
 
     let name = resources::runtime_name(&body.agent);
     let image = body
         .image
         .unwrap_or_else(|| CONFIG.AGENT_RUNTIME_IMAGE.to_string());
     let replicas = body.replicas.unwrap_or(1);
-    let labels = resources::labels(&body.agent, COMPONENT);
 
     let mount_memory = body.mount_memory.unwrap_or(true);
     let claim_name = resources::memory_volume_name(&body.agent);
 
     let (volumes, volume_mounts) = if mount_memory {
+        let claim = resources::volume_api(kube.clone())
+            .get_opt(&claim_name)
+            .await
+            .map_err(|err| resources::kube_problem(err, "memory volume"))?
+            .ok_or_else(|| resources::not_found("memory volume", &claim_name))?;
+
+        if !resources::is_owned_by(
+            claim.metadata.labels.as_ref(),
+            &body.agent,
+            object_id,
+            tenant_id,
+        ) {
+            return Err(resources::not_found("memory volume", &claim_name));
+        }
+
         (
             Some(vec![Volume {
                 name: MEMORY_VOLUME_NAME.to_owned(),
@@ -161,19 +210,23 @@ pub async fn handler(
         limits.insert("memory".to_owned(), Quantity(memory));
     }
 
-    tracing::info!(agent = %body.agent, %name, %image, %replicas, "provisioning agent runtime");
+    tracing::info!(agent = %body.agent, %name, %runtime_id, %image, %replicas, %port, "provisioning agent runtime");
 
     let deployment = Deployment {
         metadata: ObjectMeta {
             name: Some(name.clone()),
             namespace: Some(CONFIG.KUBE_NAMESPACE.to_string()),
             labels: Some(labels.clone()),
+            annotations: Some(BTreeMap::from([(
+                networking::BASE_URL_ANNOTATION.to_owned(),
+                networking::base_url(&runtime_id),
+            )])),
             ..Default::default()
         },
         spec: Some(DeploymentSpec {
             replicas: Some(replicas),
             selector: LabelSelector {
-                match_labels: Some(labels.clone()),
+                match_labels: Some(selector_labels),
                 ..Default::default()
             },
             template: PodTemplateSpec {
@@ -190,6 +243,18 @@ pub async fn handler(
                     containers: vec![Container {
                         name: COMPONENT.to_owned(),
                         image: Some(image),
+                        ports: Some(vec![ContainerPort {
+                            name: Some("http".to_owned()),
+                            container_port: i32::from(port),
+                            ..Default::default()
+                        }]),
+                        readiness_probe: Some(Probe {
+                            tcp_socket: Some(TCPSocketAction {
+                                port: IntOrString::String("http".to_owned()),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        }),
                         env: (!env.is_empty()).then_some(env),
                         volume_mounts,
                         resources: (!limits.is_empty()).then(|| ResourceRequirements {
@@ -207,10 +272,33 @@ pub async fn handler(
         ..Default::default()
     };
 
-    let created = resources::runtime_api(kube)
+    let api = resources::runtime_api(kube.clone());
+    let created = api
         .create(&PostParams::default(), &deployment)
         .await
         .map_err(|err| resources::kube_problem(err, "agent runtime"))?;
+
+    if let Err(problem) = networking::provision(kube, &created, &runtime_id).await {
+        if let Some(uid) = &created.metadata.uid {
+            // Status updates must not prevent rollback of the deployment we just created.
+            let params = DeleteParams {
+                preconditions: Some(Preconditions {
+                    uid: Some(uid.clone()),
+                    resource_version: None,
+                }),
+                ..Default::default()
+            };
+            if let Err(err) = api.delete(&name, &params).await {
+                tracing::error!(%name, %runtime_id, error = %err, "rolling back runtime networking failed");
+                return Err(Problem::new(
+                    StatusCode::BAD_GATEWAY,
+                    "Runtime cleanup failed",
+                    "Networking could not be provisioned and cleanup failed. Delete the runtime before retrying.",
+                ).with_error(err));
+            }
+        }
+        return Err(problem);
+    }
 
     Ok((StatusCode::CREATED, Json(created.into())))
 }

@@ -20,6 +20,10 @@ use crate::{
     operation_id = "read_runtime",
     tag = RUNTIMES_TAG,
     summary = "Get an agent's runtime",
+    description = "Returns the agent's runtime only when it is managed by Forge, \
+        has owner type `user`, and its owner ID and tenant ID match the caller. \
+        Inaccessible resources, including those without ownership labels, return 404. \
+        Creator labels do not grant access.",
     params(
         ("agent" = String, Path, description = "Identifier of the agent"),
     ),
@@ -37,13 +41,13 @@ use crate::{
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing or empty oid or tid claims",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = NOT_FOUND,
-            description = "The agent has no runtime",
+            description = "The agent has no runtime accessible to the caller",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -57,10 +61,11 @@ use crate::{
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     Path(agent): Path<String>,
     State(kube): State<KubeClient>,
 ) -> HandlerResult<Json<AgentRuntimeResponse>> {
+    let (object_id, tenant_id) = resources::caller_identity(&token)?;
     resources::validate_agent(&agent)?;
 
     let name = resources::runtime_name(&agent);
@@ -71,7 +76,12 @@ pub async fn handler(
         .map_err(|err| resources::kube_problem(err, "agent runtime"))?
         .ok_or_else(|| resources::not_found("agent runtime", &name))?;
 
-    if resources::agent_of(deployment.metadata.labels.as_ref()).as_deref() != Some(agent.as_str()) {
+    if !resources::is_owned_by(
+        deployment.metadata.labels.as_ref(),
+        &agent,
+        object_id,
+        tenant_id,
+    ) {
         return Err(resources::not_found("agent runtime", &name));
     }
 

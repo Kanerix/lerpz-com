@@ -5,9 +5,9 @@
 #   kubectl -n lerpz create secret tls lerpz-tls \
 #     --cert=certs/cert.pem --key=certs/key.pem
 #
-# `forge` is deliberately absent: it provisions cluster infrastructure and is
-# only ever called in-cluster by `api` and `artoo`, so it stays on its
-# ClusterIP Service with no route in from outside.
+# `forge` stays on its ClusterIP Service with no public management ingress.
+# Traefik calls its internal runtime authorisation endpoint through ForwardAuth;
+# Forge creates the public runtime routes dynamically, not in this file.
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute

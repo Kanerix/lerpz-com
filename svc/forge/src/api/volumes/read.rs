@@ -20,6 +20,10 @@ use crate::{
     operation_id = "read_volume",
     tag = VOLUMES_TAG,
     summary = "Get an agent's memory volume",
+    description = "Returns the agent's memory volume only when it is managed by Forge, \
+        has owner type `user`, and its owner ID and tenant ID match the caller. \
+        Inaccessible resources, including those without ownership labels, return 404. \
+        Creator labels do not grant access.",
     params(
         ("agent" = String, Path, description = "Identifier of the agent"),
     ),
@@ -37,13 +41,13 @@ use crate::{
         ),
         (
             status = UNAUTHORIZED,
-            description = "Missing or invalid authentication token",
+            description = "Missing or invalid authentication token, or missing or empty oid or tid claims",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
         (
             status = NOT_FOUND,
-            description = "The agent has no memory volume",
+            description = "The agent has no memory volume accessible to the caller",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -57,10 +61,11 @@ use crate::{
 )]
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
-    _token: AzureAccessToken,
+    token: AzureAccessToken,
     Path(agent): Path<String>,
     State(kube): State<KubeClient>,
 ) -> HandlerResult<Json<MemoryVolumeResponse>> {
+    let (object_id, tenant_id) = resources::caller_identity(&token)?;
     resources::validate_agent(&agent)?;
 
     let name = resources::memory_volume_name(&agent);
@@ -71,10 +76,7 @@ pub async fn handler(
         .map_err(|err| resources::kube_problem(err, "memory volume"))?
         .ok_or_else(|| resources::not_found("memory volume", &name))?;
 
-    // A claim that exists but is not ours must not be readable through Forge,
-    // otherwise the name-mangling scheme becomes a way to inspect unrelated
-    // claims in the namespace.
-    if resources::agent_of(claim.metadata.labels.as_ref()).as_deref() != Some(agent.as_str()) {
+    if !resources::is_owned_by(claim.metadata.labels.as_ref(), &agent, object_id, tenant_id) {
         return Err(resources::not_found("memory volume", &name));
     }
 
