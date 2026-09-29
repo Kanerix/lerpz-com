@@ -10,6 +10,7 @@ use lerpz_utils::{
     env::{get_env_from, get_env_parse},
     generate_config,
 };
+use reqwest::Url;
 use secrecy::SecretString;
 
 /// The environment the server is running in.
@@ -37,6 +38,7 @@ generate_config!(
     ENTRA_ID_TENANT_ID: Arc<str> = get_env_from,
     ENTRA_ID_CLIENT_ID: Arc<str> = get_env_from,
     ENTRA_ID_SCOPE: Arc<str> = get_env_from,
+    FORGE_URL: Url = get_env_parse,
     PORTKEY_BASE_URL: Arc<str> = get_env_from,
     PORTKEY_API_KEY: SecretString = get_env_from,
     VERTEX_BASE_URL: Arc<str> = get_env_from,

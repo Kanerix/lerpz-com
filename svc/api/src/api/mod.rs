@@ -16,7 +16,7 @@ mod videos;
 #[cfg(debug_assertions)]
 mod failure;
 
-pub fn router(state: AppState) -> OpenApiRouter<AppState> {
+pub fn router() -> OpenApiRouter<AppState> {
     let router = OpenApiRouter::new()
         .nest("/groups", groups::router())
         .nest("/chats", chats::router())
@@ -25,10 +25,10 @@ pub fn router(state: AppState) -> OpenApiRouter<AppState> {
         .nest("/enhance", enhance::router())
         .nest("/models", models::router())
         .nest("/agents", agents::router())
+        .nest("/agent-memory", agents::memory::router())
         .nest("/sessions", sessions::router())
         .nest("/settings", settings::router())
-        .routes(routes!(health::handler))
-        .with_state(state);
+        .routes(routes!(health::handler));
 
     #[cfg(debug_assertions)]
     let router = OpenApiRouter::new()

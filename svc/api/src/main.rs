@@ -1,4 +1,5 @@
 use crate::config::CONFIG;
+use crate::forge::ForgeClient;
 use crate::oapi::api_doc;
 use crate::state::AppState;
 
@@ -14,6 +15,7 @@ use bb8_redis::RedisConnectionManager;
 use lerpz_ai::portkey::PortkeyConfig;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::middleware::instance::CaptureInstanceLayer;
+use lerpz_axum::oapi::EntraAuth;
 use lerpz_axum::shutdown_signal;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
@@ -22,10 +24,12 @@ use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use utoipa::Modify;
 use utoipa_axum::router::OpenApiRouter;
 
 mod api;
 mod config;
+mod forge;
 mod oapi;
 mod state;
 mod version;
@@ -55,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "starting api"
     );
 
+    let forge = ForgeClient::new(CONFIG.FORGE_URL.clone())?;
     let azure_config = AzureConfig::new(
         CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
         CONFIG.ENTRA_ID_CLIENT_ID.as_ref(),
@@ -99,6 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = AppState {
         azure_config,
+        forge,
         openai,
         database,
         redis,
@@ -116,8 +122,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .allow_headers(Any);
 
-    let (router, api) = OpenApiRouter::with_openapi(api_doc())
-        .nest("/api/v1", api::router(state.clone()))
+    let mut openapi = api_doc();
+    EntraAuth::new(
+        CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
+        CONFIG.ENTRA_ID_SCOPE.as_ref(),
+    )
+    .modify(&mut openapi);
+
+    let (router, api) = OpenApiRouter::with_openapi(openapi)
+        .nest("/api/v1", api::router())
         .with_state(state)
         .layer(CaptureInstanceLayer)
         .layer(cors)
@@ -145,7 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let html = scalar_html(&scalar_config, None).replace(
         "<title>Scalar API Reference</title>",
-        "<title>Lerpz AI API references</title>",
+        "<title>Lerpz AI — API References</title>",
     );
 
     let app = router
