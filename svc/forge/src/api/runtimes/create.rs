@@ -47,10 +47,7 @@ pub struct CreateRuntimeRequest {
     /// Container image to run. Falls back to the configured default image when
     /// omitted.
     image: Option<String>,
-    /// HTTP port the application listens on. Defaults to AGENT_RUNTIME_PORT.
-    /// The application must bind this port on 0.0.0.0; declaring it does not configure the image.
-    #[schema(minimum = 1, maximum = 65535)]
-    port: Option<u16>,
+
     /// Number of replicas. Defaults to `1`.
     replicas: Option<i32>,
     /// Mount the agent's memory volume. Defaults to `true`; the volume must
@@ -80,6 +77,7 @@ pub struct CreateRuntimeRequest {
         Ownership is taken from the token, not the request body. If memory is \
         mounted, its volume must also be user-owned by the caller. A ClusterIP Service \
         and authenticated HTTPS ingress expose the runtime at the returned base_url. \
+        The application must listen on 0.0.0.0 at the configured AGENT_RUNTIME_PORT. \
         The UUID path prefix is stripped before forwarding. Network resources are \
         garbage-collected with the deployment.",
     request_body(
@@ -95,7 +93,7 @@ pub struct CreateRuntimeRequest {
         ),
         (
             status = BAD_REQUEST,
-            description = "Invalid agent identifier, HTTP port or resource quantity",
+            description = "Invalid agent identifier or resource quantity",
             body = ProblemSchema,
             content_type = "application/problem+json"
         ),
@@ -140,14 +138,7 @@ pub async fn handler(
     resources::validate_agent(&body.agent)?;
     let (object_id, tenant_id) = resources::caller_identity(&token)?;
 
-    let port = body.port.unwrap_or(CONFIG.AGENT_RUNTIME_PORT.get());
-    if port == 0 {
-        return Err(Problem::new(
-            StatusCode::BAD_REQUEST,
-            "Invalid runtime port",
-            "The runtime HTTP port must be between 1 and 65535.",
-        ));
-    }
+    let port = CONFIG.AGENT_RUNTIME_PORT.get();
     let runtime_id = Uuid::new_v4().to_string();
     let mut selector_labels = resources::labels(&body.agent, COMPONENT);
     selector_labels.insert(networking::RUNTIME_ID_LABEL.to_owned(), runtime_id.clone());
@@ -241,9 +232,6 @@ pub async fn handler(
                     ..Default::default()
                 }),
                 spec: Some(PodSpec {
-                    // Agent containers run arbitrary workloads, so they get a
-                    // ServiceAccount of their own rather than inheriting the one
-                    // Forge uses to talk to the API server.
                     service_account_name: Some(CONFIG.AGENT_RUNTIME_SERVICE_ACCOUNT.to_string()),
                     automount_service_account_token: Some(false),
                     containers: vec![Container {
