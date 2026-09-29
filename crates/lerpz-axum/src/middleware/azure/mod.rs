@@ -35,10 +35,11 @@
 
 use axum::{
     extract::{FromRef, FromRequestParts},
-    http::request::Parts,
+    http::{HeaderMap, header::AUTHORIZATION, request::Parts},
 };
-use jsonwebtoken::{decode, decode_header};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Deserializer};
+use std::{ops::Deref, sync::Arc};
 
 use crate::problem::Problem;
 
@@ -55,6 +56,9 @@ mod validation;
 /// Documentation](https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
 ///
 /// This can be extracted in any handler by adding it as a parameter.
+/// Claims are shared through an [`Arc`]. Cloning a token does not copy its claims.
+/// Fields can be borrowed through [`Deref`]; clone individual fields when ownership
+/// is needed.
 ///
 /// ### Example
 ///
@@ -76,8 +80,27 @@ mod validation;
 /// ### Note:
 ///
 /// This does not support multi-tenant applications (yet).
+#[derive(Clone, Debug, Deserialize)]
+#[serde(from = "AzureAccessTokenClaims")]
+pub struct AzureAccessToken(Arc<AzureAccessTokenClaims>);
+
+impl From<AzureAccessTokenClaims> for AzureAccessToken {
+    fn from(claims: AzureAccessTokenClaims) -> Self {
+        Self(Arc::new(claims))
+    }
+}
+
+impl Deref for AzureAccessToken {
+    type Target = AzureAccessTokenClaims;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// Claims shared by an [`AzureAccessToken`].
 #[derive(Debug, Deserialize)]
-pub struct AzureAccessToken {
+pub struct AzureAccessTokenClaims {
     /// Version of the Microsoft JWT scheme.
     ///
     /// The versions and respective JSON scheme can be found in
@@ -222,6 +245,30 @@ impl AzureAccessToken {
     }
 }
 
+/// A validated Entra access token in its original encoded form, without `Bearer `.
+///
+/// Extract with `RawAzureToken(token): RawAzureToken`. The [`Arc`]-shared
+/// [`SecretString`] redacts debug output and zeroises its memory when the last
+/// owner is dropped. Scope, role and ownership checks remain the caller's
+/// responsibility.
+///
+/// Can be used alongside [`AzureAccessToken`] in either order. Both extractors
+/// require one Authorization header and reuse validation within the request.
+pub struct RawAzureToken(pub Arc<SecretString>);
+
+impl<S> FromRequestParts<S> for RawAzureToken
+where
+    AzureConfig: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Problem;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let config = AzureConfig::from_ref(state);
+        Ok(Self(extract_token(parts, &config).await?.raw))
+    }
+}
+
 impl<S> FromRequestParts<S> for AzureAccessToken
 where
     AzureConfig: FromRef<S>,
@@ -230,55 +277,219 @@ where
     type Rejection = Problem;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let token = parts
-            .headers
-            .get("Authorization")
-            .and_then(|h| h.to_str().ok())
-            .and_then(|h| h.strip_prefix("Bearer "))
-            .ok_or_else(Problem::unauthorized)?;
-
-        let header = match decode_header(token) {
-            Ok(header) => header,
-            Err(err) => {
-                tracing::debug!("failed to decode JWT token header: {err}");
-                return Err(Problem::unauthorized());
-            }
-        };
-        let kid = match header.kid {
-            Some(kid) => kid,
-            None => {
-                tracing::debug!("JWT token does not provide a 'kid' in header");
-                return Err(Problem::unauthorized());
-            }
-        };
-
         let config = AzureConfig::from_ref(state);
-        let decoding_key = match config.find_jwk(&kid).await {
-            Ok(Some(key)) => key,
-            Ok(None) => {
-                tracing::warn!("unknown key ID: {}", kid);
-                return Err(Problem::unauthorized());
-            }
-            Err(err) => {
-                tracing::error!("failed to find JWK: {err}");
-                return Err(Problem::from(err));
-            }
-        };
+        Ok(extract_token(parts, &config).await?.claims)
+    }
+}
 
-        let validation = get_token_validation(&config);
-        let token_data = match decode::<AzureAccessToken>(token, &decoding_key, &validation) {
-            Ok(token) => token,
-            Err(err) => {
-                tracing::trace!("failed to validate JWT claims: {err}");
-                return Err(Problem::unauthorized());
-            }
-        };
+#[derive(Clone)]
+struct ValidatedAzureToken {
+    raw: Arc<SecretString>,
+    claims: AzureAccessToken,
+}
 
-        if !config.validate_azure_claims(&token_data.claims) {
-            tracing::trace!("failed to validate azure claims");
-            return Err(Problem::unauthorized());
+async fn extract_token(
+    parts: &mut Parts,
+    config: &AzureConfig,
+) -> Result<ValidatedAzureToken, Problem> {
+    let token = bearer_token(&mut parts.headers)?;
+    if let Some(cached) = parts.extensions.get::<ValidatedAzureToken>()
+        && cached.raw.expose_secret() == token
+        && cached.claims.aud == config.aud()
+        && cached.claims.iss == config.iss()
+        && config.validate_azure_claims(&cached.claims)
+    {
+        return Ok(cached.clone());
+    }
+
+    let claims = validate_azure_token(token, config).await?;
+    let validated = ValidatedAzureToken {
+        raw: Arc::new(SecretString::from(token)),
+        claims,
+    };
+    parts.extensions.insert(validated.clone());
+    Ok(validated)
+}
+
+fn bearer_token(headers: &mut HeaderMap) -> Result<&str, Problem> {
+    if headers.get_all(AUTHORIZATION).iter().count() != 1 {
+        return Err(Problem::unauthorized());
+    }
+    let authorization = headers
+        .get_mut(AUTHORIZATION)
+        .ok_or_else(Problem::unauthorized)?;
+    authorization.set_sensitive(true);
+    authorization
+        .to_str()
+        .ok()
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .filter(|token| !token.is_empty())
+        .ok_or_else(Problem::unauthorized)
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::{HeaderValue, Request};
+    use jsonwebtoken::jwk::JwkSet;
+    use serde_json::{Value, json};
+    use std::borrow::Cow;
+
+    use super::{config::JwksCache, *};
+
+    fn azure_config() -> AzureConfig {
+        AzureConfig {
+            inner: Arc::new(AzureConfigInner {
+                tenant_id: Cow::Borrowed("tenant"),
+                client_id: Cow::Borrowed("client"),
+                issuer: Cow::Borrowed("https://login.microsoftonline.com/tenant/v2.0"),
+                jwks_url: String::new(),
+                jwks_cache: JwksCache::new(JwkSet { keys: Vec::new() }, 3600),
+                http_client: reqwest::Client::new(),
+            }),
         }
+    }
 
-        Ok(token_data.claims)
+    fn claims_json() -> Value {
+        json!({
+            "ver": "2.0",
+            "tid": "tenant",
+            "iss": "https://login.microsoftonline.com/tenant/v2.0",
+            "aud": "client",
+            "exp": 4_000_000_000_u64,
+            "nbf": 0,
+            "iat": 0,
+            "sub": "subject",
+            "scp": "read write",
+            "roles": ["reader"],
+            "groups": ["group"]
+        })
+    }
+
+    fn cached_request(claims: Value) -> (Parts, ValidatedAzureToken) {
+        let cached = ValidatedAzureToken {
+            raw: Arc::new(SecretString::from("cached-token")),
+            claims: serde_json::from_value(claims).expect("valid test claims"),
+        };
+        let (mut parts, ()) = Request::builder()
+            .header(AUTHORIZATION, "Bearer cached-token")
+            .body(())
+            .expect("valid test request")
+            .into_parts();
+        parts.extensions.insert(cached.clone());
+        (parts, cached)
+    }
+
+    #[test]
+    fn token_clone_shares_claims() {
+        let token: AzureAccessToken =
+            serde_json::from_value(claims_json()).expect("valid test claims");
+        let cloned = token.clone();
+
+        assert!(Arc::ptr_eq(&token.0, &cloned.0));
+        assert_eq!(cloned.sub, "subject");
+        assert!(cloned.has_scope("read"));
+        assert!(cloned.has_scope("write"));
+        assert!(cloned.has_role("reader"));
+        assert_eq!(cloned.groups, ["group"]);
+    }
+
+    #[test]
+    fn missing_and_null_scopes_remain_empty() {
+        for scopes in [None, Some(Value::Null)] {
+            let mut claims = claims_json();
+            claims.as_object_mut().expect("claims object").remove("scp");
+            if let Some(scopes) = scopes {
+                claims["scp"] = scopes;
+            }
+            let token: AzureAccessToken =
+                serde_json::from_value(claims).expect("valid test claims");
+            assert!(token.scp.is_empty());
+        }
+    }
+
+    #[tokio::test]
+    async fn extractors_share_cached_data_in_either_order() {
+        let config = azure_config();
+        for raw_first in [false, true] {
+            let (mut parts, cached) = cached_request(claims_json());
+            if raw_first {
+                let raw = RawAzureToken::from_request_parts(&mut parts, &config)
+                    .await
+                    .expect("cached raw token");
+                assert!(Arc::ptr_eq(&raw.0, &cached.raw));
+            }
+
+            let claims = AzureAccessToken::from_request_parts(&mut parts, &config)
+                .await
+                .expect("cached claims");
+            let raw = RawAzureToken::from_request_parts(&mut parts, &config)
+                .await
+                .expect("cached raw token");
+            let repeated = AzureAccessToken::from_request_parts(&mut parts, &config)
+                .await
+                .expect("repeated cached claims");
+
+            assert!(Arc::ptr_eq(&claims.0, &cached.claims.0));
+            assert!(Arc::ptr_eq(&repeated.0, &claims.0));
+            assert!(Arc::ptr_eq(&raw.0, &cached.raw));
+            assert_eq!(raw.0.expose_secret(), "cached-token");
+            assert!(parts.headers[AUTHORIZATION].is_sensitive());
+        }
+    }
+
+    #[tokio::test]
+    async fn cached_token_requires_the_same_single_header() {
+        let config = azure_config();
+        for headers in [
+            vec![],
+            vec!["Bearer other-token"],
+            vec!["Bearer cached-token", "Bearer cached-token"],
+        ] {
+            let (mut parts, _) = cached_request(claims_json());
+            parts.headers.remove(AUTHORIZATION);
+            for header in headers {
+                parts
+                    .headers
+                    .append(AUTHORIZATION, HeaderValue::from_static(header));
+            }
+
+            assert!(
+                AzureAccessToken::from_request_parts(&mut parts, &config)
+                    .await
+                    .is_err()
+            );
+            assert!(
+                RawAzureToken::from_request_parts(&mut parts, &config)
+                    .await
+                    .is_err()
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn cached_token_rechecks_claims_and_config() {
+        let config = azure_config();
+        for (field, value) in [
+            ("aud", "other-client"),
+            ("iss", "other-issuer"),
+            ("tid", "other-tenant"),
+            ("ver", "1.0"),
+            ("sub", ""),
+        ] {
+            let mut claims = claims_json();
+            claims[field] = Value::from(value);
+            let (mut parts, _) = cached_request(claims);
+
+            assert!(
+                AzureAccessToken::from_request_parts(&mut parts, &config)
+                    .await
+                    .is_err()
+            );
+            assert!(
+                RawAzureToken::from_request_parts(&mut parts, &config)
+                    .await
+                    .is_err()
+            );
+        }
     }
 }

@@ -17,16 +17,16 @@ use super::error::Result;
 /// Azure configuration.
 #[derive(Clone)]
 pub struct AzureConfig {
-    inner: Arc<AzureConfigInner>,
+    pub(super) inner: Arc<AzureConfigInner>,
 }
 
 pub struct AzureConfigInner {
     pub tenant_id: Cow<'static, str>,
     pub client_id: Cow<'static, str>,
     pub issuer: Cow<'static, str>,
-    jwks_url: String,
-    jwks_cache: JwksCache,
-    http_client: reqwest::Client,
+    pub(super) jwks_url: String,
+    pub(super) jwks_cache: JwksCache,
+    pub(super) http_client: reqwest::Client,
 }
 
 /// A cache for JWKs (JSON Web Keys).
@@ -35,7 +35,7 @@ pub struct AzureConfigInner {
 /// endpoint. This is wrapped in an [`std::sync::Arc`] so it can be safely used
 /// in multithreaded environments.
 #[derive(Clone)]
-struct JwksCache {
+pub(super) struct JwksCache {
     inner: Arc<RwLock<JwksCacheInner>>,
 }
 
@@ -127,7 +127,7 @@ impl AzureConfigInner {
 }
 
 impl JwksCache {
-    fn new(jwks: JwkSet, cache_control: u64) -> JwksCache {
+    pub(super) fn new(jwks: JwkSet, cache_control: u64) -> JwksCache {
         let expires_at = Instant::now() + Duration::from_secs(cache_control);
         let cache = JwksCacheInner { jwks, expires_at };
         JwksCache {

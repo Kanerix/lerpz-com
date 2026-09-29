@@ -8,6 +8,7 @@ anyhow = { workspace = true }
 axum = { workspace = true }
 jsonwebtoken = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true, features = ["json"] }
+secrecy = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt", "signal"] }
 tower = { workspace = true }
@@ -19,8 +20,12 @@ serde_json = { workspace = true, optional = true }
 uuid = { workspace = true, features = ["v4"] }
 validator = { workspace = true, features = ["derive"] }
 
+[dev-dependencies]
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["macros"] }
+
 [features]
-azure = ["dep:jsonwebtoken", "dep:reqwest", "dep:regex"]
+azure = ["dep:jsonwebtoken", "dep:reqwest", "dep:regex", "dep:secrecy"]
 oapi  = ["dep:utoipa", "dep:serde_json"]
 sse   = ["axum/json"]
 
