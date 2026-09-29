@@ -104,7 +104,7 @@ pub async fn handler(
     State(database): State<DatabasePool>,
     Json(body): Json<MessageRequest>,
 ) -> HandlerResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
     let prompt = body.prompt;
     let reasoning = body.reasoning;
 
@@ -221,7 +221,7 @@ pub async fn handler(
         request_builder.reasoning_effort(super::parse_reasoning_effort(level));
     }
 
-    if let Some(upn) = token.upn {
+    if let Some(upn) = token.upn.as_deref() {
         request_builder.user(upn);
     }
 

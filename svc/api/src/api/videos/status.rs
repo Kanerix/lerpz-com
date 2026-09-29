@@ -108,7 +108,7 @@ pub async fn handler(
     State(database): State<DatabasePool>,
     State(redis): State<RedisPool>,
 ) -> HandlerResult<Json<VideoJobResponse>> {
-    let oid = token.oid.ok_or(Problem::new(
+    let oid = token.oid.as_deref().ok_or(Problem::new(
         StatusCode::INTERNAL_SERVER_ERROR,
         "Unkown token format",
         "Missing Object ID from token",

@@ -61,7 +61,7 @@ pub async fn handler(
     token: AzureAccessToken,
     State(database): State<DatabasePool>,
 ) -> HandlerResult<Json<Vec<ConversationResponse>>> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     let conversations = sqlx::query_as!(
         ConversationResponse,

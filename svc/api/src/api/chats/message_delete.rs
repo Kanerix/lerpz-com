@@ -57,7 +57,7 @@ pub async fn handler(
     Path((conv_id, message_id)): Path<(Uuid, Uuid)>,
     State(database): State<DatabasePool>,
 ) -> HandlerResult<StatusCode> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     tracing::trace!(%conv_id, %user_id, "loading conversation");
     let conversation = sqlx::query_scalar!(

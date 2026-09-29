@@ -55,7 +55,7 @@ pub async fn handler(
     Path(conv_id): Path<Uuid>,
     State(database): State<DatabasePool>,
 ) -> HandlerResult<StatusCode> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     // Messages are removed automatically via the `ON DELETE CASCADE` foreign key
     // on `messages.conversation_id`.

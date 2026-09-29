@@ -65,8 +65,14 @@ pub async fn handler(
     State(openai): State<OpenAI>,
     Json(body): Json<EnhanceRequest>,
 ) -> HandlerResult<Json<EnhanceResponse>> {
-    let prompt =
-        enhance_prompt(&openai, body.model, SYSTEM_PROMPT, &body.prompt, token.upn).await?;
+    let prompt = enhance_prompt(
+        &openai,
+        body.model,
+        SYSTEM_PROMPT,
+        &body.prompt,
+        token.upn.clone(),
+    )
+    .await?;
 
     Ok(Json(EnhanceResponse { prompt }))
 }

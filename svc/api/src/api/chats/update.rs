@@ -73,7 +73,7 @@ pub async fn handler(
     State(database): State<DatabasePool>,
     Json(body): Json<UpdateChatRequest>,
 ) -> HandlerResult<Json<ConversationResponse>> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     let updated = sqlx::query_as!(
         ConversationResponse,

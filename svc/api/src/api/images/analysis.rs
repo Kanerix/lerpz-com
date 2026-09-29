@@ -140,7 +140,8 @@ pub async fn handler(
     })?;
 
     tracing::trace!(%id, "requesting image analysis from model");
-    let analysis = super::analyze_bytes(&openai, &format, &bytes.into_bytes(), token.upn).await?;
+    let analysis =
+        super::analyze_bytes(&openai, &format, &bytes.into_bytes(), token.upn.clone()).await?;
 
     let response = ImageAnalysisResponse {
         title: analysis.title.clone(),

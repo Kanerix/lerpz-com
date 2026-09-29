@@ -97,7 +97,7 @@ pub async fn handler(
     Path(conv_id): Path<Uuid>,
     State(database): State<DatabasePool>,
 ) -> HandlerResult<Json<ConversationDetailResponse>> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     let conversation = sqlx::query!(
         "SELECT id, title, model, archived, created_at, updated_at

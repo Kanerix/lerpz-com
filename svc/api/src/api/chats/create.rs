@@ -95,7 +95,7 @@ pub async fn handler(
         .model
         .as_deref()
         .unwrap_or(&CONFIG.DEFAULT_COMPLETIONS_MODEL);
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
     let prompt = body.prompt;
     let reasoning = body.reasoning;
     let title = body.title.unwrap_or_else(|| truncate_title(&prompt, 100));
@@ -147,7 +147,7 @@ pub async fn handler(
         request_builder.reasoning_effort(reasoning_level);
     }
 
-    if let Some(upn) = token.upn {
+    if let Some(upn) = token.upn.as_deref() {
         request_builder.user(upn);
     }
 

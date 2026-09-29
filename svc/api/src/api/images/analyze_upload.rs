@@ -105,7 +105,7 @@ pub async fn handler(
         .unwrap_or("png");
 
     tracing::trace!("requesting analysis for uploaded image");
-    let analysis = super::analyze_bytes(&openai, subtype, &bytes, token.upn).await?;
+    let analysis = super::analyze_bytes(&openai, subtype, &bytes, token.upn.clone()).await?;
 
     Ok(Json(ImageAnalysisResponse {
         title: analysis.title,

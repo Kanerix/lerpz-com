@@ -44,7 +44,7 @@ pub async fn handler(
     token: AzureAccessToken,
     State(database): State<DatabasePool>,
 ) -> HandlerResult<Json<UserSettingsResponse>> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     let settings = sqlx::query_as!(
         UserSettingsResponse,

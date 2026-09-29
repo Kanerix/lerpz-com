@@ -118,7 +118,7 @@ pub async fn handler(
     State(s3): State<S3Client>,
     Json(body): Json<VideoRequest>,
 ) -> HandlerResult<CreateVideoResponse> {
-    let oid = token.oid.ok_or(Problem::new(
+    let oid = token.oid.clone().ok_or(Problem::new(
         StatusCode::INTERNAL_SERVER_ERROR,
         "Unkown token format",
         "Missing Object ID from token",

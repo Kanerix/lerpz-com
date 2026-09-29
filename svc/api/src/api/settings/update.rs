@@ -79,7 +79,7 @@ pub async fn handler(
     State(database): State<DatabasePool>,
     Json(body): Json<UpdateSettingsRequest>,
 ) -> HandlerResult<Json<UserSettingsResponse>> {
-    let user_id = token.sub;
+    let user_id = token.sub.as_str();
 
     let settings = sqlx::query_as!(
         UserSettingsResponse,
