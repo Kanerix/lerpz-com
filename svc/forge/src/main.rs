@@ -21,6 +21,7 @@ mod networking;
 mod oapi;
 mod resources;
 mod state;
+mod version;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,15 +42,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    tracing::info!(
+        version = version::VERSION,
+        commit = version::COMMIT_HASH,
+        "starting forge"
+    );
+
     let azure_config = AzureConfig::new(
         CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
         CONFIG.ENTRA_ID_CLIENT_ID.as_ref(),
     )
     .await?;
 
-    // Resolves the in-cluster ServiceAccount when running as a pod, and falls
-    // back to the current kubeconfig context locally. Failing fast here is
-    // deliberate: a Forge that cannot reach the API server has nothing to do.
     let kube = kube::Client::try_default()
         .await
         .unwrap_or_else(|err| panic!("can't connect to the kubernetes api: {err}"));
@@ -95,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let html = scalar_html(&scalar_config, None).replace(
         "<title>Scalar API Reference</title>",
-        "<title>Lerpz Forge API references</title>",
+        "<title>Lerpz Forge — API References</title>",
     );
 
     let app = router
