@@ -91,10 +91,13 @@ graph TD
 ```
 
 Each Rust service validates Entra ID tokens through `lerpz-axum`'s Azure
-middleware. For agent management, the browser calls the core API, which forwards
-the caller's bearer token to Forge over an internal connection. API and Forge
-must accept the same tenant and token audience. Forge validates that token and
-enforces ownership through Kubernetes resource labels.
+middleware. For agent management, the browser calls the core API with product
+parameters. The API constructs separate Forge requests and translates the results
+into public agent responses. It reuses the validated bearer token to authenticate
+internal requests. API and Forge must accept the same tenant and token audience.
+Forge validates that token and enforces ownership through Kubernetes resource
+labels. Frontend migration to this public contract is deferred; see the
+[agent management contract](../k8s/README.md#agent-management-through-the-core-api).
 
 `artoo` is the app's main agent. It answers questions and helps users navigate
 the product's features, grounding answers in a Qdrant collection rather than in
