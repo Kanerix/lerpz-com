@@ -37,23 +37,14 @@ generate_config!(
     ENTRA_ID_TENANT_ID: Arc<str> = get_env_from,
     ENTRA_ID_CLIENT_ID: Arc<str> = get_env_from,
     ENTRA_ID_SCOPE: Arc<str> = get_env_from,
-    // The namespace every agent workload is provisioned into. Forge is
-    // deliberately scoped to a single namespace so its RBAC can be a namespaced
-    // Role rather than a ClusterRole.
+
     KUBE_NAMESPACE: Arc<str> = get_env_from,
-    // Container image used for an agent runtime when the request does not pin
-    // one explicitly.
     AGENT_RUNTIME_IMAGE: Arc<str> = get_env_from,
-    // ServiceAccount the agent runtime pods run as. This should *not* be the
-    // ServiceAccount Forge itself uses, so a compromised agent container cannot
-    // reach the Kubernetes API.
     AGENT_RUNTIME_SERVICE_ACCOUNT: Arc<str> = get_env_from,
     AGENT_RUNTIME_ORIGIN: Uri = get_runtime_origin,
     AGENT_RUNTIME_PORT: NonZeroU16 = get_env_parse,
     AGENT_RUNTIME_TLS_SECRET: Arc<str> = get_env_from,
-    // StorageClass backing agent memory volumes.
     AGENT_MEMORY_STORAGE_CLASS: Arc<str> = get_env_from,
-    // Default size requested for a memory volume when the request omits one.
     AGENT_MEMORY_DEFAULT_SIZE: Arc<str> = get_env_from
 );
 
@@ -65,6 +56,7 @@ fn get_runtime_origin(key: &str) -> lerpz_utils::env::Result<Uri> {
                 .bytes()
                 .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-'))
     });
+
     if origin.scheme_str() != Some("https")
         || !valid_host
         || origin.path() != "/"
@@ -79,5 +71,6 @@ fn get_runtime_origin(key: &str) -> lerpz_utils::env::Result<Uri> {
                 .to_owned(),
         ));
     }
+
     Ok(origin)
 }

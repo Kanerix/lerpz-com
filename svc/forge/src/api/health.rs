@@ -9,22 +9,17 @@ use serde::Serialize;
 use tokio::time::timeout;
 use utoipa::ToSchema;
 
-use crate::config::CONFIG;
 use crate::oapi::HEALTH_TAG;
 use crate::resources;
 use crate::state::{AppState, KubeClient};
 
 /// Maximum time to wait for the cluster health ping before considering the
 /// Kubernetes API unreachable.
-const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
+const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct HealthCheckResponse {
-    /// Whether the Kubernetes API is reachable and Forge is authorised to list
-    /// the resources it manages
     cluster: bool,
-    /// The namespace Forge provisions agent infrastructure into
-    namespace: String,
 }
 
 #[utoipa::path(
@@ -58,8 +53,6 @@ pub struct HealthCheckResponse {
 pub async fn handler(
     State(kube): State<KubeClient>,
 ) -> HandlerResult<(StatusCode, Json<HealthCheckResponse>)> {
-    // A limited, label-filtered list is the cheapest call that exercises both
-    // connectivity and Forge's RBAC in the namespace it actually writes to.
     let params = ListParams::default()
         .labels(&resources::managed_selector())
         .limit(1);
@@ -81,7 +74,6 @@ pub async fn handler(
         status_code,
         Json(HealthCheckResponse {
             cluster: cluster_ok,
-            namespace: CONFIG.KUBE_NAMESPACE.to_string(),
         }),
     ))
 }
