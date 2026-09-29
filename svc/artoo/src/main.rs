@@ -33,6 +33,7 @@ mod oapi;
 mod state;
 mod stream;
 mod tools;
+mod version;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,12 +47,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::from(format!(
-                "{}=debug,lerpz=debug,none",
+                "off,{}=debug,lerpz=debug",
                 env!("CARGO_CRATE_NAME")
             ))
         }))
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    tracing::info!(
+        version = version::VERSION,
+        commit = version::COMMIT_HASH,
+        "starting artoo"
+    );
 
     let azure_config = AzureConfig::new(
         CONFIG.ENTRA_ID_TENANT_ID.as_ref(),
