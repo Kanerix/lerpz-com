@@ -1,28 +1,44 @@
 # Infrastructure
 
-This document describes the infrastructure used by the Lerpz platform.
+The target is Kubernetes for the whole Lerpz stack, as in [`k8s/`](../k8s),
+not Azure Kubernetes Service (AKS) or Azure Container Apps.
 
 ## Where each service runs
 
-| Service | Target               | Domain            |
-| ------- | -------------------- | ----------------- |
-| `www`   | GitHub Pages         | `lerpz.com`       |
-| `app`   | Azure Container Apps | `app.lerpz.com`   |
-| `api`   | Azure Container Apps | `api.lerpz.com`   |
-| `artoo` | Azure Container Apps | `agent.lerpz.com` |
-| `forge` | Kubernetes           | internal          |
+| Service | Target     | Production domain |
+| ------- | ---------- | ----------------- |
+| `www`   | Kubernetes | `lerpz.com`       |
+| `app`   | Kubernetes | `app.lerpz.com`   |
+| `api`   | Kubernetes | `api.lerpz.com`   |
+| `artoo` | Kubernetes | `agent.lerpz.com` |
+| `forge` | Kubernetes | internal          |
 
 > [!IMPORTANT]
-> Only `www` is deployed today. The `deploy-app`, `deploy-api`, `deploy-artoo`
-> and `deploy-forge` jobs in [`pipeline.yaml`](../.github/workflows/pipeline.yaml)
-> are commented out, so the rest of this document describes the intended shape
-> rather than what is running.
+> The production topology below is the target, not a claim about live deployments.
+> [`pipeline.yaml`](../.github/workflows/pipeline.yaml) still sends `www` to
+> GitHub Pages. Its `deploy-app`, `deploy-api`, `deploy-artoo` and `deploy-forge`
+> jobs are commented out. The existing
+> [`deploy-container.yaml`](../.github/workflows/deploy-container.yaml) targets
+> Azure Container Apps, not Kubernetes, and needs replacing before those jobs
+> are enabled. `www` also needs to move to the Kubernetes deployment path.
 
-`www` is fully static, so it is built by
-[`deploy-gh-page.yaml`](../.github/workflows/deploy-gh-page.yaml) and published
-to GitHub Pages rather than to a container. Everything else is built into an
-image and pushed to the shared registry by
-[`deploy-container.yaml`](../.github/workflows/deploy-container.yaml).
+All five services have container images, including the static `www` site.
+[`k8s/justfile`](../k8s/justfile) builds them and loads them directly into kind
+for local development, without a registry. Production and staging need an
+image registry and a Kubernetes deployment workflow.
+
+`api.lerpz.com` can set host-only cookies by omitting `Domain`. These cookies
+can accompany requests from the app to the API without being shared with the
+app's hostname. `Domain=lerpz.com` shares a cookie across the parent domain and
+all its subdomains; use it only when that broader scope is needed. The API
+cannot set `Domain=app.lerpz.com`, which is a sibling domain. Use `Secure` and,
+unless browser JavaScript needs to read the cookie, `HttpOnly`.
+
+The app and API are same-site over HTTPS, but still cross-origin. Cookie-based
+fetches need `credentials: "include"` and credential-enabled API CORS with an
+explicit app origin and allowed headers. The current API CORS configuration
+does not enable credentials. Agent management and runtime requests remain
+bearer-token based with cookies omitted.
 
 ## Production topology
 
@@ -30,36 +46,39 @@ image and pushed to the shared registry by
 graph TD
     User
 
-    subgraph pages[GitHub Pages]
+    subgraph k8s[Kubernetes]
+        Traefik[Traefik ingress]
         www[www · lerpz.com]
-    end
-
-    subgraph aca[Azure Container Apps]
         app[app · app.lerpz.com]
         api[api · api.lerpz.com]
         artoo[artoo · agent.lerpz.com]
-    end
+        forge[forge · internal]
+        Runtime[Agent runtimes]
+        KubeAPI[Kubernetes API]
 
-    subgraph data[Data]
-        Postgres[(PostgreSQL)]
-        Dragonfly[(Dragonfly)]
-        Qdrant[(Qdrant)]
-        Storage[(S3-compatible storage)]
-    end
-
-    subgraph k8s[Kubernetes]
-        forge[forge]
+        subgraph data[Data]
+            Postgres[(PostgreSQL)]
+            Dragonfly[(Dragonfly)]
+            Qdrant[(Qdrant)]
+            Storage[(MinIO · S3-compatible storage)]
+        end
     end
 
     EntraID[Entra ID]
     Graph[Microsoft Graph]
     Portkey[Portkey]
 
-    User --> www
-    User --> app
+    User -->|HTTPS| Traefik
+    Traefik --> www
+    Traefik --> app
+    Traefik --> api
+    Traefik --> artoo
+    Traefik -->|authenticated runtime routes| Runtime
+    Traefik -.->|internal ForwardAuth| forge
     User -->|OAuth2 / OIDC| EntraID
     app --> api
     app -.->|not wired yet| artoo
+    api -->|internal management, shared bearer token| forge
     api --> Postgres
     api --> Dragonfly
     api --> Storage
@@ -68,76 +87,56 @@ graph TD
     artoo --> Qdrant
     artoo --> Portkey
     artoo --> Graph
-    forge --> KubeAPI[Kubernetes API]
+    forge --> KubeAPI
 ```
 
-The three Rust services are independent. Each validates Entra ID tokens through
-`lerpz-axum`'s Azure middleware, and none of them call each other; the browser
-holds the token and addresses them directly.
+Each Rust service validates Entra ID tokens through `lerpz-axum`'s Azure
+middleware. For agent management, the browser calls the core API, which forwards
+the caller's bearer token to Forge over an internal connection. API and Forge
+must accept the same tenant and token audience. Forge validates that token and
+enforces ownership through Kubernetes resource labels.
 
 `artoo` is the app's main agent. It answers questions and helps users navigate
 the product's features, grounding answers in a Qdrant collection rather than in
-the model alone, and looking the signed-in user up through Microsoft Graph. The
-product UI does not call it yet. All model traffic, including chat, embeddings,
-image and video generation, is routed through [Portkey](https://portkey.ai) as a
-gateway rather than to a provider directly; `api` additionally holds Vertex AI
-configuration.
+the model alone, and looking the signed-in user up through Microsoft Graph. All
+model traffic, including chat, embeddings, image and video generation, is routed
+through [Portkey](https://portkey.ai) as a gateway rather than to a provider
+directly; `api` additionally holds Vertex AI configuration.
 
-## Azure resources
+## Kubernetes resources
 
-Terraform is split into two states. `terraform/shared` holds what every
-environment draws on:
+[`k8s/manifests/`](../k8s/manifests) is the local reference for the deployment
+layout. It places the application and data workloads in the `lerpz` namespace:
 
-- `azurerm_container_registry`: the shared ACR.
-- `azurerm_storage_account` / `azurerm_storage_container`: remote state.
-- `azurerm_user_assigned_identity.deployer` plus role assignments for state
-  access and ACR push, federated to GitHub Actions so no secrets are stored.
+- `apps/`: Deployments and internal Services for `www`, `app`, `api`, `artoo`
+  and `forge`.
+- `infra/`: StatefulSets, Services and persistent volume claims for PostgreSQL,
+  Dragonfly, Qdrant and MinIO, plus a MinIO initialisation Job.
+- `ingress/`: Traefik IngressRoutes for the public services, terminating TLS
+  with the `lerpz-tls` Secret. Forge creates authenticated runtime routes
+  dynamically and has no public management route.
+- Per-service environment Secrets for `app`, `api`, `artoo` and `forge`.
+  The static `www` site needs no environment configuration.
+- Forge's ServiceAccount, namespaced Role and RoleBinding for managing runtime
+  resources, plus NetworkPolicies restricting Forge and runtime ingress.
 
-`terraform/env` is applied once per environment:
+Traefik runs in its own namespace, installed with
+[`k8s/traefik/values.yaml`](../k8s/traefik/values.yaml). Entra ID, Microsoft Graph
+and Portkey remain external integrations, not workload hosting platforms.
 
-- `azurerm_resource_group`: `lerpz-<env>-rg`.
-- `azurerm_container_app_environment`: Consumption workload profile.
-- `azurerm_container_app`: the app, scaling from zero to one replica at
-  0.25 CPU / 0.5 Gi, with `template[0].container[0].image` ignored so
-  deployments do not fight Terraform.
-- `azurerm_container_app_custom_domain` and
-  `azurerm_container_app_environment_managed_certificate`: hostname binding
-  and the managed certificate.
-- `azurerm_user_assigned_identity.runtime` with `AcrPull`, used to pull images.
-
-Entra ID configuration and the public API URL are pushed into GitHub Actions
-environment variables from `github.tf`, so the workflows stay free of
-environment-specific values.
-
-## Environments
-
-|                | Prod                 | Staging              |
-| -------------- | -------------------- | -------------------- |
-| Domain         | `lerpz.com`          | `stag.lerpz.com`     |
-| API            | `api.lerpz.com`      | `api.stag.lerpz.com` |
-| Resource group | `lerpz-prod-rg`      | `lerpz-stag-rg`      |
-| Container app  | `lerpz-website-prod` | `lerpz-website-stag` |
-
-Both share one ACR and one Entra ID app registration.
-
-> [!NOTE]
-> `terraform/env` still describes a single container app bound to the apex
-> domain, from before `www` and `app` were separate services. The apex now
-> serves `www` from GitHub Pages, so the custom domain in `locals.tf` needs to
-> move to `app.lerpz.com`, and `api` needs a container app of its own.
-
-## Kubernetes
+## Local Kubernetes
 
 [`k8s/`](../k8s) runs the whole stack on a local [kind](https://kind.sigs.k8s.io/)
 cluster with Traefik as the ingress controller, the Kubernetes equivalent of
 the root `docker-compose.yml`.
 
-| Host                             | Service |
-| -------------------------------- | ------- |
-| `lerpz.local`, `www.lerpz.local` | `www`   |
-| `app.lerpz.local`                | `app`   |
-| `api.lerpz.local`                | `api`   |
-| `agent.lerpz.local`              | `artoo` |
+| Host                             | Service                              |
+| -------------------------------- | ------------------------------------ |
+| `lerpz.local`, `www.lerpz.local` | `www`                                |
+| `app.lerpz.local`                | `app`                                |
+| `api.lerpz.local`                | `api`                                |
+| `agent.lerpz.local`              | `artoo`                              |
+| `container.lerpz.local`          | Dynamic runtime Services, HTTPS only |
 
 This is also the practical way to run `forge`, which provisions agent
 infrastructure through the Kubernetes API and exits on startup if no cluster
@@ -145,9 +144,12 @@ answers. See [k8s/README.md](../k8s/README.md).
 
 ## Planned: user media delivery
 
-`api` requires an S3 endpoint and will not start without one, but no storage
-account, container or CDN is provisioned by Terraform yet, only the remote
-state account. Locally that endpoint is MinIO.
+`api` requires an S3 endpoint and will not start without one. MinIO supplies
+that endpoint inside Kubernetes, at `http://minio:9000` in the local setup.
+The manifests include its persistent storage and initialisation Job, but no
+CDN or signed-cookie delivery configuration. The flow below remains planned.
+API-only cookies do not cover `cdn.lerpz.com`; this flow needs a compatible
+cookie scope or a separate cookie-setting design.
 
 ```mermaid
 sequenceDiagram
