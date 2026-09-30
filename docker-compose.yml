@@ -211,7 +211,7 @@ services:
   # Note that a kind/minikube kubeconfig points at 127.0.0.1, which resolves to
   # the container itself. Point `KUBECONFIG`'s server at
   # `https://host.docker.internal:<port>` (and add it to the cert SANs), or run
-  # forge against the kind cluster in k8s/ instead — see k8s/README.md.
+  # Forge against the kind cluster in k8s/ instead.
   forge:
     container_name: forge
     restart: on-failure

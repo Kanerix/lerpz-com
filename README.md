@@ -303,8 +303,6 @@ data. Only run trusted code. The Svelte applications continue to use their norma
 local development servers or deployed images; the mirrord recipes cover the Rust
 services only.
 
-See [`k8s/README.md`](k8s/README.md) for the manifest layout, detailed networking,
-Forge RBAC, runtime routing and mirrord credential handling.
 
 ## Running the stack
 
@@ -349,7 +347,7 @@ docker compose --profile k8s up forge   # in a container
 It mounts `~/.kube` read-only and exits on startup if no cluster answers. Because
 a kind/minikube kubeconfig points at `127.0.0.1`, which inside the container is
 the container itself, running `forge` in the kind cluster under [`k8s/`](k8s)
-is usually the better path. See [k8s/README.md](k8s/README.md).
+is usually the better path.
 
 New deployments, runtime pods and persistent volume claims carry separate
 creator and owner labels:
@@ -412,9 +410,8 @@ with Forge on each request, then strips the UUID prefix and credentials before
 forwarding. CORS preflight is handled separately using `ALLOWED_ORIGINS`. The
 runtime Service and route resources are garbage-collected with their deployment;
 a networking failure triggers deployment rollback. Old runtimes without network
-metadata must be recreated to receive a URL. See [k8s/README.md](k8s/README.md)
-for TLS, RBAC, frontend examples and the NetworkPolicy-enforcing CNI requirement
-for blocking direct connections that bypass ingress.
+metadata must be recreated to receive a URL. Use a NetworkPolicy-enforcing CNI
+when direct connections that bypass ingress must be blocked.
 
 ## Database
 

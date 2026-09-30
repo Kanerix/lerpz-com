@@ -101,8 +101,7 @@ labels. The frontend uses `POST /api/v1/agents` to create an agent with `name`,
 (`cpu_millicores`, `memory_mib`). It lists, reads and deletes agents through
 `/api/v1/agents` and retained memory through `/api/v1/agent-memory`, using
 `/{name}` for individual resources. There is no standalone public memory
-creation endpoint. See the
-[agent management contract](../k8s/README.md#agent-management-through-the-core-api).
+creation endpoint.
 
 `artoo` is the app's main agent. It answers questions and helps users navigate
 the product's features, grounding answers in a Qdrant collection rather than in
@@ -200,7 +199,7 @@ the root `docker-compose.yml`.
 
 This is also the practical way to run `forge`, which provisions agent
 infrastructure through the Kubernetes API and exits on startup if no cluster
-answers. See [k8s/README.md](../k8s/README.md).
+answers. See [Local Kubernetes](../README.md#local-kubernetes).
 
 ## Planned: user media delivery
 
