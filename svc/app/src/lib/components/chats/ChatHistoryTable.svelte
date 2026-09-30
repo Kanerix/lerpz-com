@@ -9,10 +9,9 @@ import {
     type Header,
     type SortingState,
 } from "@tanstack/table-core";
-import { getListChatsUrl } from "$lib/api/chats/chats.js";
+import { getListChatsUrl, updateChat } from "$lib/api/chats/chats.js";
 import type { ConversationResponse } from "$lib/api/models";
 import { showError } from "$lib/components/error-dialog/index.js";
-import { updateChat } from "$lib/http/chat-archive.js";
 import { createSvelteTable } from "$lib/utils/table.svelte.js";
 
 let {
