@@ -1,14 +1,14 @@
 # Local kind cluster helpers for the Lerpz platform.
 # Run from the k8s/ directory:  just <recipe>
 
-cluster      := "lerpz"
-ns           := "lerpz"
-kind_config  := "kind-config.yaml"
-manifests    := "manifests"
-root         := ".."
+cluster := "lerpz"
+ns := "lerpz"
+kind_config := "kind-config.yaml"
+manifests := "manifests"
+root := ".."
 
 # Tag used for the locally-built app images loaded into kind.
-tag          := "dev"
+tag := "dev"
 
 _default:
     @just --list
@@ -18,7 +18,7 @@ all: cluster traefik build load tls secrets deploy
 
 # Create the kind cluster
 cluster:
-    kind create cluster --name {{cluster}} --config {{kind_config}}
+    kind create cluster --name {{ cluster }} --config {{ kind_config }}
 
 # Install the Traefik ingress controller via Helm
 traefik:
@@ -39,57 +39,56 @@ build:
     # needs no config at all.
     export DOCKER_BUILDKIT=1
 
-    docker build -f {{root}}/svc/www/Dockerfile   -t lerpz/www:{{tag}}   {{root}}
-    docker build -f {{root}}/svc/app/Dockerfile   -t lerpz/app:{{tag}}   {{root}}
-    docker build -f {{root}}/svc/api/Dockerfile   -t lerpz/api:{{tag}}   {{root}}
-    docker build -f {{root}}/svc/artoo/Dockerfile -t lerpz/artoo:{{tag}} {{root}}
-    docker build -f {{root}}/svc/forge/Dockerfile -t lerpz/forge:{{tag}} {{root}}
+    docker build -f {{ root }}/svc/www/Dockerfile   -t lerpz/www:{{ tag }}   {{ root }}
+    docker build -f {{ root }}/svc/app/Dockerfile   -t lerpz/app:{{ tag }}   {{ root }}
+    docker build -f {{ root }}/svc/api/Dockerfile   -t lerpz/api:{{ tag }}   {{ root }}
+    docker build -f {{ root }}/svc/artoo/Dockerfile -t lerpz/artoo:{{ tag }} {{ root }}
+    docker build -f {{ root }}/svc/forge/Dockerfile -t lerpz/forge:{{ tag }} {{ root }}
 
 # Load the app images into the kind cluster
 load:
-    kind load docker-image lerpz/www:{{tag}} lerpz/app:{{tag}} lerpz/api:{{tag}} lerpz/artoo:{{tag}} lerpz/forge:{{tag}} --name {{cluster}}
+    kind load docker-image lerpz/www:{{ tag }} lerpz/app:{{ tag }} lerpz/api:{{ tag }} lerpz/artoo:{{ tag }} lerpz/forge:{{ tag }} --name {{ cluster }}
 
-# Create the TLS secret from ../certs (run mkcert first)
+# Create the TLS secret from ../certs (include container.lerpz.local; see README.md)
 tls:
-    kubectl create namespace {{ns}} --dry-run=client -o yaml | kubectl apply -f -
-    kubectl -n {{ns}} create secret tls lerpz-tls \
-        --cert={{root}}/certs/cert.pem --key={{root}}/certs/key.pem \
+    kubectl create namespace {{ ns }} --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ ns }} create secret tls lerpz-tls \
+        --cert={{ root }}/certs/cert.pem --key={{ root }}/certs/key.pem \
         --dry-run=client -o yaml | kubectl apply -f -
 
 # Create per-app env secrets from svc/*/.env.docker
-# www has no secret. The company site is fully static.
 secrets:
-    kubectl create namespace {{ns}} --dry-run=client -o yaml | kubectl apply -f -
-    kubectl -n {{ns}} create secret generic app-env \
-        --from-env-file={{root}}/svc/app/.env.docker --dry-run=client -o yaml | kubectl apply -f -
-    kubectl -n {{ns}} create secret generic api-env \
-        --from-env-file={{root}}/svc/api/.env.docker --dry-run=client -o yaml | kubectl apply -f -
-    kubectl -n {{ns}} create secret generic artoo-env \
-        --from-env-file={{root}}/svc/artoo/.env.docker --dry-run=client -o yaml | kubectl apply -f -
-    kubectl -n {{ns}} create secret generic forge-env \
-        --from-env-file={{root}}/svc/forge/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create namespace {{ ns }} --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ ns }} create secret generic app-env \
+        --from-env-file={{ root }}/svc/app/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ ns }} create secret generic api-env \
+        --from-env-file={{ root }}/svc/api/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ ns }} create secret generic artoo-env \
+        --from-env-file={{ root }}/svc/artoo/.env.docker --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n {{ ns }} create secret generic forge-env \
+        --from-env-file={{ root }}/svc/forge/.env.docker --dry-run=client -o yaml | kubectl apply -f -
 
 # Apply all declarative manifests
 deploy:
-    kubectl apply -k {{manifests}}
+    kubectl apply -k {{ manifests }}
 
 # Run sqlx migrations against the in-cluster postgres (needs a free :6432)
 migrate:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Port-forwarding postgres:6432 -> 5432 and running migrations..."
-    kubectl -n {{ns}} port-forward svc/postgres 6432:5432 &
+    kubectl -n {{ ns }} port-forward svc/postgres 6432:5432 &
     PF_PID=$!
     trap 'kill $PF_PID' EXIT
     sleep 3
     DATABASE_URL=postgres://lerpz:Password123@localhost:6432/primary \
-        cargo sqlx migrate run --source {{root}}/migrations
+        cargo sqlx migrate run --source {{ root }}/migrations
 
 # Show pods, services and ingressroutes
 status:
-    kubectl -n {{ns}} get pods,svc
-    kubectl -n {{ns}} get ingressroute
+    kubectl -n {{ ns }} get pods,svc
+    kubectl -n {{ ns }} get ingressroute
 
 # Delete the kind cluster
 down:
-    kind delete cluster --name {{cluster}}
+    kind delete cluster --name {{ cluster }}
