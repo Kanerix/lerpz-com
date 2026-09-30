@@ -1,4 +1,20 @@
 // @ts-nocheck
+import {
+  createMutation,
+  createQuery
+} from '@tanstack/svelte-query';
+import type {
+  CreateMutationOptions,
+  CreateMutationResult,
+  CreateQueryOptions,
+  CreateQueryResult,
+  DataTag,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey
+} from '@tanstack/svelte-query';
+
 import type {
   AgentMemoryResponse,
   AgentResponse,
@@ -6,7 +22,8 @@ import type {
   ProblemSchema
 } from '../models';
 
-import { agentFetch } from '../../http/agent-mutator';
+import { customFetch } from '../../http/orval-mutator';
+import type { ErrorType } from '../../http/orval-mutator';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -76,7 +93,7 @@ export const getListAgentMemoryUrl = () => {
  */
 export const listAgentMemory = async ( options?: RequestInit): Promise<listAgentMemoryResponse> => {
 
-  return agentFetch<listAgentMemoryResponse>(getListAgentMemoryUrl(),
+  return customFetch<listAgentMemoryResponse>(getListAgentMemoryUrl(),
   {
     ...options,
     method: 'GET'
@@ -87,7 +104,52 @@ export const listAgentMemory = async ( options?: RequestInit): Promise<listAgent
 
 
 
-export type readAgentMemoryResponse200 = {
+
+export const getListAgentMemoryMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listAgentMemory>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof listAgentMemory>>, TError,void, TContext> => {
+
+const mutationKey = ['listAgentMemory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listAgentMemory>>, void> = () => {
+
+
+          return  listAgentMemory(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ListAgentMemoryMutationResult = NonNullable<Awaited<ReturnType<typeof listAgentMemory>>>
+
+    export type ListAgentMemoryMutationError = ErrorType<ProblemSchema>
+
+    /**
+ * @summary List agent memory
+ */
+export const createListAgentMemory = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listAgentMemory>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof listAgentMemory>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return createMutation(() => ({ ...getListAgentMemoryMutationOptions(options?.()) }), queryClient);
+    }
+    export type readAgentMemoryResponse200 = {
   data: AgentMemoryResponse
   status: 200
 }
@@ -150,7 +212,7 @@ export const getReadAgentMemoryUrl = (name: string,) => {
  */
 export const readAgentMemory = async (name: string, options?: RequestInit): Promise<readAgentMemoryResponse> => {
 
-  return agentFetch<readAgentMemoryResponse>(getReadAgentMemoryUrl(name),
+  return customFetch<readAgentMemoryResponse>(getReadAgentMemoryUrl(name),
   {
     ...options,
     method: 'GET'
@@ -161,7 +223,52 @@ export const readAgentMemory = async (name: string, options?: RequestInit): Prom
 
 
 
-export type deleteAgentMemoryResponse204 = {
+
+export const getReadAgentMemoryMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof readAgentMemory>>, TError,{name: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof readAgentMemory>>, TError,{name: string}, TContext> => {
+
+const mutationKey = ['readAgentMemory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof readAgentMemory>>, {name: string}> = (props) => {
+          const {name} = props ?? {};
+
+          return  readAgentMemory(name,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReadAgentMemoryMutationResult = NonNullable<Awaited<ReturnType<typeof readAgentMemory>>>
+
+    export type ReadAgentMemoryMutationError = ErrorType<ProblemSchema>
+
+    /**
+ * @summary Get agent memory
+ */
+export const createReadAgentMemory = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof readAgentMemory>>, TError,{name: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof readAgentMemory>>,
+        TError,
+        {name: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getReadAgentMemoryMutationOptions(options?.()) }), queryClient);
+    }
+    export type deleteAgentMemoryResponse204 = {
   data: void
   status: 204
 }
@@ -224,7 +331,7 @@ export const getDeleteAgentMemoryUrl = (name: string,) => {
  */
 export const deleteAgentMemory = async (name: string, options?: RequestInit): Promise<deleteAgentMemoryResponse> => {
 
-  return agentFetch<deleteAgentMemoryResponse>(getDeleteAgentMemoryUrl(name),
+  return customFetch<deleteAgentMemoryResponse>(getDeleteAgentMemoryUrl(name),
   {
     ...options,
     method: 'DELETE'
@@ -232,6 +339,58 @@ export const deleteAgentMemory = async (name: string, options?: RequestInit): Pr
 
   }
 );}
+
+
+
+
+
+export const getDeleteAgentMemoryQueryKey = (name: string,) => {
+    return [
+    'DELETE', `/api/v1/agent-memory/${name}`
+    ] as const;
+    }
+
+
+export const getDeleteAgentMemoryQueryOptions = <TData = Awaited<ReturnType<typeof deleteAgentMemory>>, TError = ErrorType<ProblemSchema>>(name: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteAgentMemory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDeleteAgentMemoryQueryKey(name);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteAgentMemory>>> = ({ signal }) => deleteAgentMemory(name, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: name !== null && name !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteAgentMemory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DeleteAgentMemoryQueryResult = NonNullable<Awaited<ReturnType<typeof deleteAgentMemory>>>
+export type DeleteAgentMemoryQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Remove agent memory
+ */
+
+export function createDeleteAgentMemory<TData = Awaited<ReturnType<typeof deleteAgentMemory>>, TError = ErrorType<ProblemSchema>>(
+ name: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteAgentMemory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getDeleteAgentMemoryQueryOptions(name(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
 
 
 
@@ -283,7 +442,7 @@ export const getListAgentsUrl = () => {
  */
 export const listAgents = async ( options?: RequestInit): Promise<listAgentsResponse> => {
 
-  return agentFetch<listAgentsResponse>(getListAgentsUrl(),
+  return customFetch<listAgentsResponse>(getListAgentsUrl(),
   {
     ...options,
     method: 'GET'
@@ -294,7 +453,52 @@ export const listAgents = async ( options?: RequestInit): Promise<listAgentsResp
 
 
 
-export type createAgentResponse201 = {
+
+export const getListAgentsMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listAgents>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof listAgents>>, TError,void, TContext> => {
+
+const mutationKey = ['listAgents'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listAgents>>, void> = () => {
+
+
+          return  listAgents(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ListAgentsMutationResult = NonNullable<Awaited<ReturnType<typeof listAgents>>>
+
+    export type ListAgentsMutationError = ErrorType<ProblemSchema>
+
+    /**
+ * @summary List private agents
+ */
+export const createListAgents = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listAgents>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof listAgents>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return createMutation(() => ({ ...getListAgentsMutationOptions(options?.()) }), queryClient);
+    }
+    export type createAgentResponse201 = {
   data: AgentResponse
   status: 201
 }
@@ -362,7 +566,7 @@ export const getCreateAgentUrl = () => {
  */
 export const createAgent = async (createAgentRequest: CreateAgentRequest, options?: RequestInit): Promise<createAgentResponse> => {
 
-  return agentFetch<createAgentResponse>(getCreateAgentUrl(),
+  return customFetch<createAgentResponse>(getCreateAgentUrl(),
   {
     ...options,
     method: 'POST',
@@ -370,6 +574,58 @@ export const createAgent = async (createAgentRequest: CreateAgentRequest, option
     body: JSON.stringify(createAgentRequest)
   }
 );}
+
+
+
+
+
+export const getCreateAgentQueryKey = (createAgentRequest?: CreateAgentRequest,) => {
+    return [
+    'POST', `/api/v1/agents`, createAgentRequest
+    ] as const;
+    }
+
+
+export const getCreateAgentQueryOptions = <TData = Awaited<ReturnType<typeof createAgent>>, TError = ErrorType<ProblemSchema>>(createAgentRequest: CreateAgentRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createAgent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCreateAgentQueryKey(createAgentRequest);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof createAgent>>> = ({ signal }) => createAgent(createAgentRequest, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof createAgent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CreateAgentQueryResult = NonNullable<Awaited<ReturnType<typeof createAgent>>>
+export type CreateAgentQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Create a private agent
+ */
+
+export function createCreateAgent<TData = Awaited<ReturnType<typeof createAgent>>, TError = ErrorType<ProblemSchema>>(
+ createAgentRequest: () =>  CreateAgentRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createAgent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getCreateAgentQueryOptions(createAgentRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
 
 
 
@@ -431,7 +687,7 @@ export const getReadAgentUrl = (name: string,) => {
  */
 export const readAgent = async (name: string, options?: RequestInit): Promise<readAgentResponse> => {
 
-  return agentFetch<readAgentResponse>(getReadAgentUrl(name),
+  return customFetch<readAgentResponse>(getReadAgentUrl(name),
   {
     ...options,
     method: 'GET'
@@ -442,7 +698,52 @@ export const readAgent = async (name: string, options?: RequestInit): Promise<re
 
 
 
-export type deleteAgentResponse204 = {
+
+export const getReadAgentMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof readAgent>>, TError,{name: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof readAgent>>, TError,{name: string}, TContext> => {
+
+const mutationKey = ['readAgent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof readAgent>>, {name: string}> = (props) => {
+          const {name} = props ?? {};
+
+          return  readAgent(name,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReadAgentMutationResult = NonNullable<Awaited<ReturnType<typeof readAgent>>>
+
+    export type ReadAgentMutationError = ErrorType<ProblemSchema>
+
+    /**
+ * @summary Read a private agent
+ */
+export const createReadAgent = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof readAgent>>, TError,{name: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof readAgent>>,
+        TError,
+        {name: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getReadAgentMutationOptions(options?.()) }), queryClient);
+    }
+    export type deleteAgentResponse204 = {
   data: void
   status: 204
 }
@@ -505,7 +806,7 @@ export const getDeleteAgentUrl = (name: string,) => {
  */
 export const deleteAgent = async (name: string, options?: RequestInit): Promise<deleteAgentResponse> => {
 
-  return agentFetch<deleteAgentResponse>(getDeleteAgentUrl(name),
+  return customFetch<deleteAgentResponse>(getDeleteAgentUrl(name),
   {
     ...options,
     method: 'DELETE'
@@ -513,6 +814,58 @@ export const deleteAgent = async (name: string, options?: RequestInit): Promise<
 
   }
 );}
+
+
+
+
+
+export const getDeleteAgentQueryKey = (name: string,) => {
+    return [
+    'DELETE', `/api/v1/agents/${name}`
+    ] as const;
+    }
+
+
+export const getDeleteAgentQueryOptions = <TData = Awaited<ReturnType<typeof deleteAgent>>, TError = ErrorType<ProblemSchema>>(name: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteAgent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDeleteAgentQueryKey(name);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteAgent>>> = ({ signal }) => deleteAgent(name, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: name !== null && name !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteAgent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DeleteAgentQueryResult = NonNullable<Awaited<ReturnType<typeof deleteAgent>>>
+export type DeleteAgentQueryError = ErrorType<ProblemSchema>
+
+
+/**
+ * @summary Delete a private agent
+ */
+
+export function createDeleteAgent<TData = Awaited<ReturnType<typeof deleteAgent>>, TError = ErrorType<ProblemSchema>>(
+ name: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteAgent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getDeleteAgentQueryOptions(name(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
 
 
 

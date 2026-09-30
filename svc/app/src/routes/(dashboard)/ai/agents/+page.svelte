@@ -4,25 +4,38 @@ import { Button, Input, ScrollArea } from "@lerpz/ui";
 import { createQuery, useQueryClient } from "@tanstack/svelte-query";
 import { onDestroy } from "svelte";
 import { toast } from "svelte-sonner";
+import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
-import { createAgent } from "$lib/api/agents/agents.js";
+import {
+    createAgent,
+    getListAgentMemoryUrl,
+    listAgentMemory,
+} from "$lib/api/agents/agents.js";
 import type {
     AgentMemoryChoice,
     CreateAgentRequest,
 } from "$lib/api/models/index.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
-import { agentAccountKey, agentsEnabled } from "$lib/http/agent-mutator.js";
-import {
-    agentMemoryQueryOptions,
-    agentsQueryKey,
-    memoryStatusLabel,
-} from "$lib/http/agents.js";
 import { optionCardVariants } from "./agents-variants.js";
 
 const queryClient = useQueryClient();
-const memoryQuery = createQuery(() => agentMemoryQueryOptions());
-const enabled = $derived(agentsEnabled());
+const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const memoryQuery = createQuery(() => ({
+    queryKey: [msalStore.accountKey, getListAgentMemoryUrl()],
+    enabled,
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        const response = await listAgentMemory({ signal });
+        if (response.status !== 200) throw response.data;
+        return response.data;
+    },
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    refetchInterval: 10_000,
+    meta: { skipGlobalErrorDialog: true },
+}));
 const agentPattern = "[a-z0-9]([a-z0-9\\-]{0,38}[a-z0-9])?";
 
 let name = $state("");
@@ -74,10 +87,10 @@ async function create(event: SubmitEvent) {
     event.preventDefault();
     if (disposed || !canCreate || creating) return;
 
-    const submissionAccount = agentAccountKey();
-    if (!agentsEnabled() || !submissionAccount) return;
+    const submissionAccount = msalStore.accountKey;
+    if (!enabled || !submissionAccount) return;
 
-    const queryKey = agentsQueryKey();
+    const queryKey = [submissionAccount];
     const request: CreateAgentRequest = {
         name,
         memory: memoryMode,
@@ -95,7 +108,7 @@ async function create(event: SubmitEvent) {
             : {}),
     };
     const isCurrentSubmission = () =>
-        !disposed && submissionAccount === agentAccountKey();
+        !disposed && submissionAccount === msalStore.accountKey;
 
     creating = true;
     try {
@@ -111,7 +124,7 @@ async function create(event: SubmitEvent) {
     } finally {
         // Keep invalidation on the submitting account, even if the page was replaced.
         const refetchType =
-            submissionAccount === agentAccountKey() ? "active" : "none";
+            submissionAccount === msalStore.accountKey ? "active" : "none";
         await queryClient.invalidateQueries({ queryKey, refetchType });
         if (isCurrentSubmission()) creating = false;
     }
@@ -271,7 +284,7 @@ async function create(event: SubmitEvent) {
             {:else if matchingMemory}
               <p class="break-all font-mono">{matchingMemory.agent_name}</p>
               <p class="text-xs text-muted-foreground">
-                Status: {memoryStatusLabel(matchingMemory.status)}
+                Status: <span class="capitalize">{matchingMemory.status.replaceAll("_", " ")}</span>
                 {#if matchingMemory.in_use} · In use{/if}
               </p>
               {#if matchingMemory.in_use}

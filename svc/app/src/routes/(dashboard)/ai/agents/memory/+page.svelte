@@ -13,21 +13,35 @@ import {
 import { createQuery, useQueryClient } from "@tanstack/svelte-query";
 import { onDestroy } from "svelte";
 import { toast } from "svelte-sonner";
-import { deleteAgentMemory, readAgentMemory } from "$lib/api/agents/agents.js";
+import { browser } from "$app/environment";
+import {
+    deleteAgentMemory,
+    getListAgentMemoryUrl,
+    listAgentMemory,
+    readAgentMemory,
+} from "$lib/api/agents/agents.js";
 import type { AgentMemoryResponse } from "$lib/api/models/index.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
-import { agentAccountKey, agentsEnabled } from "$lib/http/agent-mutator.js";
-import {
-    agentMemoryQueryOptions,
-    agentsQueryKey,
-    memoryStatusLabel,
-} from "$lib/http/agents.js";
 import { formatDate } from "$lib/utils/format.js";
 
 const queryClient = useQueryClient();
-const memoryQuery = createQuery(() => agentMemoryQueryOptions());
-const enabled = $derived(agentsEnabled());
+const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const memoryQuery = createQuery(() => ({
+    queryKey: [msalStore.accountKey, getListAgentMemoryUrl()],
+    enabled,
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        const response = await listAgentMemory({ signal });
+        if (response.status !== 200) throw response.data;
+        return response.data;
+    },
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    refetchInterval: 10_000,
+    meta: { skipGlobalErrorDialog: true },
+}));
 const memories = $derived(memoryQuery.data ?? []);
 
 let deleting = $state(false);
@@ -66,20 +80,20 @@ function cancelDelete() {
 
 async function confirmDelete() {
     const memory = pendingDelete;
-    const submissionAccount = agentAccountKey();
+    const submissionAccount = msalStore.accountKey;
     if (
         disposed ||
         !memory ||
-        !agentsEnabled() ||
+        !enabled ||
         !submissionAccount ||
         deleting ||
         deletionBlockReason(memory)
     )
         return;
 
-    const queryKey = agentsQueryKey();
+    const queryKey = [submissionAccount];
     const isCurrentSubmission = () =>
-        !disposed && submissionAccount === agentAccountKey();
+        !disposed && submissionAccount === msalStore.accountKey;
     deleting = true;
     try {
         const latest = await readAgentMemory(memory.agent_name);
@@ -104,7 +118,7 @@ async function confirmDelete() {
         showError(err);
     } finally {
         const refetchType =
-            submissionAccount === agentAccountKey() ? "active" : "none";
+            submissionAccount === msalStore.accountKey ? "active" : "none";
         await queryClient.invalidateQueries({ queryKey, refetchType });
         if (isCurrentSubmission()) deleting = false;
     }
@@ -160,7 +174,7 @@ async function confirmDelete() {
               <li class="flex min-w-0 flex-col gap-4 py-6">
                 <div class="flex flex-wrap items-center gap-2">
                   <h3 class="min-w-0 break-all text-sm font-semibold">{memory.agent_name}</h3>
-                  <Badge variant="outline">{memoryStatusLabel(memory.status)}</Badge>
+                  <Badge variant="outline" class="capitalize">{memory.status.replaceAll("_", " ")}</Badge>
                 </div>
                 <dl class="grid min-w-0 gap-3 text-sm sm:grid-cols-2">
                   <div class="flex min-w-0 flex-col gap-1">

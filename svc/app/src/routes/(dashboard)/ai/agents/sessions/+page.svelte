@@ -13,21 +13,34 @@ import {
 import { createQuery, useQueryClient } from "@tanstack/svelte-query";
 import { onDestroy } from "svelte";
 import { toast } from "svelte-sonner";
-import { deleteAgent } from "$lib/api/agents/agents.js";
+import { browser } from "$app/environment";
+import {
+    deleteAgent,
+    getListAgentsUrl,
+    listAgents,
+} from "$lib/api/agents/agents.js";
 import type { AgentResponse } from "$lib/api/models/index.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
-import { agentAccountKey, agentsEnabled } from "$lib/http/agent-mutator.js";
-import {
-    agentStatusLabel,
-    agentsQueryKey,
-    agentsQueryOptions,
-} from "$lib/http/agents.js";
 import { formatDate } from "$lib/utils/format.js";
 
 const queryClient = useQueryClient();
-const query = createQuery(() => agentsQueryOptions());
-const enabled = $derived(agentsEnabled());
+const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const query = createQuery(() => ({
+    queryKey: [msalStore.accountKey, getListAgentsUrl()],
+    enabled,
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        const response = await listAgents({ signal });
+        if (response.status !== 200) throw response.data;
+        return response.data;
+    },
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    refetchInterval: 10_000,
+    meta: { skipGlobalErrorDialog: true },
+}));
 const agents = $derived(query.data ?? []);
 
 let pendingDelete = $state<AgentResponse | null>(null);
@@ -49,20 +62,20 @@ function cancelDelete() {
 
 async function confirmDelete() {
     const agent = pendingDelete;
-    const submissionAccount = agentAccountKey();
+    const submissionAccount = msalStore.accountKey;
     if (
         disposed ||
         !agent?.name ||
-        !agentsEnabled() ||
+        !enabled ||
         !submissionAccount ||
         deleting ||
         query.isError
     )
         return;
 
-    const queryKey = agentsQueryKey();
+    const queryKey = [submissionAccount];
     const isCurrentSubmission = () =>
-        !disposed && submissionAccount === agentAccountKey();
+        !disposed && submissionAccount === msalStore.accountKey;
     deleting = true;
     try {
         const response = await deleteAgent(agent.name);
@@ -79,7 +92,7 @@ async function confirmDelete() {
         showError(err);
     } finally {
         const refetchType =
-            submissionAccount === agentAccountKey() ? "active" : "none";
+            submissionAccount === msalStore.accountKey ? "active" : "none";
         await queryClient.invalidateQueries({ queryKey, refetchType });
         if (isCurrentSubmission()) deleting = false;
     }
@@ -92,7 +105,7 @@ async function confirmDelete() {
       <div class="flex flex-col gap-1">
         <h1>Agents</h1>
         <p class="text-sm text-muted-foreground">
-          View your agents and connect to them.
+          View and manage your agents.
         </p>
       </div>
       <Button
@@ -132,7 +145,7 @@ async function confirmDelete() {
             <li class="flex min-w-0 flex-col gap-4 py-6">
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="min-w-0 break-all text-sm font-semibold">{agent.name}</h2>
-                <Badge variant="outline">{agentStatusLabel(agent.status)}</Badge>
+                <Badge variant="outline" class="capitalize">{agent.status.replaceAll("_", " ")}</Badge>
               </div>
               <dl class="grid min-w-0 gap-3 text-sm sm:grid-cols-2">
                 <div class="flex min-w-0 flex-col gap-1">
@@ -143,10 +156,7 @@ async function confirmDelete() {
                   <dt class="text-muted-foreground">Created</dt>
                   <dd>{agent.created_at ? formatDate(agent.created_at) : "Not reported"}</dd>
                 </div>
-                <div class="flex min-w-0 flex-col gap-1 sm:col-span-2">
-                  <dt class="text-muted-foreground">URL</dt>
-                  <dd class="break-all font-mono">{agent.url || "Not available"}</dd>
-                </div>
+
               </dl>
               <div class="flex flex-wrap items-center gap-2">
                 <Button href={`/ai/agents/sessions/${encodeURIComponent(agent.name)}`} variant="outline" size="sm">
@@ -182,7 +192,7 @@ async function confirmDelete() {
       <div class="flex flex-col gap-4 p-6">
         <DialogTitle>Delete agent?</DialogTitle>
         <DialogDescription class="break-words">
-          Delete {pendingDelete?.name}? You will no longer be able to connect to this agent.
+          Delete {pendingDelete?.name}? This removes the agent.
           Its saved memory is kept and can be reused by an agent with the same name.
         </DialogDescription>
         <div class="flex flex-wrap justify-end gap-2">

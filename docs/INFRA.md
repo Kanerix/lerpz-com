@@ -37,8 +37,8 @@ unless browser JavaScript needs to read the cookie, `HttpOnly`.
 The app and API are same-site over HTTPS, but still cross-origin. Cookie-based
 fetches need `credentials: "include"` and credential-enabled API CORS with an
 explicit app origin and allowed headers. The current API CORS configuration
-does not enable credentials. Agent management and runtime requests remain
-bearer-token based with cookies omitted.
+does not enable credentials. Agent management uses bearer tokens with cookies
+omitted. The isolated runtime transport follows the same policy.
 
 ## Production topology
 
@@ -131,12 +131,17 @@ proxies and retries disabled. Never expose this setting to the frontend.
 
 `PUBLIC_AGENT_RUNTIME_ORIGIN` is a separate HTTPS origin with no credentials,
 path, query or fragment. It must match Forge's `AGENT_RUNTIME_ORIGIN`, including
-any external port. Omit it to disable direct runtime requests while retaining
-agent management. A supplied invalid value fails environment validation.
+any external port. The isolated runtime transport requires it; agent management
+does not. A supplied invalid value fails environment validation.
 Before attaching the API bearer token, validate the returned agent `url`
 against this origin and require an application path. Keep requests
 within that prefix, reject redirects and omit cookies. The public response
 contains neither `base_url` nor a separate `runtime_id`.
+
+Direct runtime integration, its UI and an OpenAPI client are not wired yet.
+`fetch-agent.ts` is retained as an isolated transport helper. The runtime service
+and OpenAPI contract are not available yet; no runtime OpenAPI endpoint is exposed
+or consumed.
 
 API and Forge must use the same `ENTRA_ID_TENANT_ID` and `ENTRA_ID_CLIENT_ID`
 so both accept the API token's tenant and audience. Their `ENTRA_ID_SCOPE`

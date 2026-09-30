@@ -1,10 +1,10 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
-import { agentAccountKey } from "$lib/http/agent-mutator.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 
 let { children }: { children?: Snippet } = $props();
 </script>
 
-{#key agentAccountKey()}
+{#key msalStore.accountKey}
   {@render children?.()}
 {/key}

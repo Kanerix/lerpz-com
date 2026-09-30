@@ -13,18 +13,6 @@ export default defineConfig({
                     path: "./src/lib/http/orval-mutator.ts",
                     name: "customFetch",
                 },
-                tags: {
-                    agents: {
-                        mutator: {
-                            path: "./src/lib/http/agent-mutator.ts",
-                            name: "agentFetch",
-                        },
-                        query: {
-                            useQuery: false,
-                            useMutation: false,
-                        },
-                    },
-                },
                 query: {
                     useQuery: true,
                     useMutation: true,
