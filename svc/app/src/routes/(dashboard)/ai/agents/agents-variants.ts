@@ -1,8 +1,8 @@
 import { cva } from "class-variance-authority";
 
-/** Picker card used by the agent form, where one of a pair is chosen. */
+/** Memory option picker for the agent form. */
 export const optionCardVariants = cva(
-    "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors",
+    "flex h-auto items-start justify-start gap-3 whitespace-normal rounded-xl border p-4 text-left transition-colors",
     {
         variants: {
             selected: {
