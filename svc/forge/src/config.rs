@@ -37,7 +37,6 @@ generate_config!(
     ENTRA_ID_TENANT_ID: Arc<str> = get_env_from,
     ENTRA_ID_CLIENT_ID: Arc<str> = get_env_from,
     ENTRA_ID_SCOPE: Arc<str> = get_env_from,
-
     KUBE_NAMESPACE: Arc<str> = get_env_from,
     AGENT_RUNTIME_IMAGE: Arc<str> = get_env_from,
     AGENT_RUNTIME_SERVICE_ACCOUNT: Arc<str> = get_env_from,
