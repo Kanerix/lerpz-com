@@ -26,11 +26,13 @@ class MsalStore {
         return this.accounts.length > 0;
     }
 
-    /**
-     * App roles assigned to the active account, sourced from the `roles` claim
-     * on the ID token. Returns an empty array when there is no active account
-     * or the token carries no roles.
-     */
+    get accountKey(): string | null {
+        const account = this.activeAccount;
+        return account
+            ? `${account.homeAccountId}:${account.tenantId}:${account.localAccountId}`
+            : null;
+    }
+
     get roles(): string[] {
         const claims = this.activeAccount?.idTokenClaims as
             | { roles?: unknown }
@@ -55,9 +57,10 @@ class MsalStore {
         inst.addEventCallback((message: EventMessage) => {
             // Promote the account from a successful interactive/silent flow to
             // the active account so the rest of the app stays in sync.
+            const event = message.eventType;
             if (
-                (message.eventType === EventType.LOGIN_SUCCESS ||
-                    message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS) &&
+                (event === EventType.LOGIN_SUCCESS ||
+                    event === EventType.ACQUIRE_TOKEN_SUCCESS) &&
                 message.payload &&
                 "account" in message.payload &&
                 message.payload.account

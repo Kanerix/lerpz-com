@@ -13,7 +13,7 @@ import {
 import { createQuery } from "@tanstack/svelte-query";
 import { getHealthCheckUrl } from "$lib/api/health/health.js";
 import type { HealthCheckResponse } from "$lib/api/models";
-import { authenticatedFetch } from "$lib/http/fetch.js";
+import { publicEnv } from "$lib/env.js";
 
 type ServiceStatus = "operational" | "outage" | "unknown";
 
@@ -23,7 +23,10 @@ type ServiceStatus = "operational" | "outage" | "unknown";
 // failures are treated as real errors. We bypass the generated client here
 // because its shared fetch mutator throws away the body on any non-2xx status.
 async function fetchHealth(signal: AbortSignal): Promise<HealthCheckResponse> {
-    const response = await authenticatedFetch(getHealthCheckUrl(), { signal });
+    const response = await fetch(
+        `${publicEnv.PUBLIC_API_URL.replace(/\/$/, "")}${getHealthCheckUrl()}`,
+        { signal, credentials: "omit", cache: "no-store" },
+    );
     if (response.status === 200 || response.status === 503) {
         return (await response.json()) as HealthCheckResponse;
     }

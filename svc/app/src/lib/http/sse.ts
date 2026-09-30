@@ -1,6 +1,6 @@
 import type { ProblemSchema } from "$lib/api/models";
 import { isProblemSchema } from "$lib/components/error-dialog/problem.js";
-import { authenticatedFetch } from "./fetch.js";
+import { authenticatedFetch } from "./fetch-api.js";
 
 /**
  * An {@link Error} raised for an HTTP-level failure that carried an RFC 9457
