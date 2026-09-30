@@ -13,6 +13,7 @@ lerpz-utils = { workspace = true }
 # Kubernetes
 k8s-openapi = { workspace = true, features = ["latest"] }
 kube = { workspace = true, features = ["client", "rustls-tls"] }
+rustls = { workspace = true, features = ["ring"] }
 # Axum, Tokio and Tower
 axum = { workspace = true, features = ["macros", "tokio", "json", "tracing"] }
 tokio = { workspace = true, features = ["full"] }

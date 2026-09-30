@@ -25,6 +25,8 @@ mod version;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     #[cfg(debug_assertions)]
     {
         use std::path::PathBuf;

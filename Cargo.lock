@@ -1819,6 +1819,7 @@ dependencies = [
  "kube",
  "lerpz-axum",
  "lerpz-utils",
+ "rustls 0.23.45",
  "scalar_api_reference",
  "serde",
  "serde_json",
