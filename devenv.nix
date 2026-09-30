@@ -39,6 +39,7 @@ in
       kubectl
       kubernetes-helm
       kind
+      mirrord
       terraform
       gh
       nixfmt
