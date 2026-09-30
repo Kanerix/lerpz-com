@@ -22,6 +22,7 @@ pub fn router() -> OpenApiRouter<AppState> {
 pub struct AgentMemoryResponse {
     /// Name of the agent this memory belongs to, even after the agent is deleted.
     pub agent_name: String,
+    /// Current availability of the memory.
     pub status: AgentMemoryStatus,
     /// Whether the matching agent has this memory mounted.
     pub in_use: bool,

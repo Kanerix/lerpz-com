@@ -108,11 +108,13 @@ pub async fn handler(
             "Delete the agent before requesting removal of its memory.",
         ));
     }
+
     forge.delete_volume(&token, &name).await?;
     tracing::info!(
         status = 204,
         elapsed_ms = started.elapsed().as_millis(),
         "agent memory removal request succeeds"
     );
+
     Ok(StatusCode::NO_CONTENT)
 }

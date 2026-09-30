@@ -17,15 +17,43 @@ use crate::{forge::ForgeClient, oapi::AGENTS_TAG, state::AppState};
     summary = "List private agents",
     description = "Lists only agents owned by the authenticated user. Retained memory is listed separately.",
     responses(
-        (status = OK, description = "The user's agents", body = Vec<AgentResponse>),
-        (status = UNAUTHORIZED, description = "Missing or invalid authentication", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = FORBIDDEN, description = "Agent access denied", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = BAD_GATEWAY, description = "Agents could not be read", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = GATEWAY_TIMEOUT, description = "Agents could not be read in time", body = ProblemSchema, content_type = "application/problem+json"),
+        (
+            status = OK,
+            description = "The user's agents",
+            body = Vec<AgentResponse>
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = FORBIDDEN,
+            description = "Agent access denied",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = BAD_GATEWAY,
+            description = "Agents could not be read",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = GATEWAY_TIMEOUT,
+            description = "Agents could not be read in time",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
     ),
 )]
 #[axum::debug_handler(state = AppState)]
-#[tracing::instrument(name = "agents.list", skip_all, fields(user_id = claims.oid.as_deref(), tenant_id = %claims.tid))]
+#[tracing::instrument(
+    name = "agents.list",
+    skip_all,
+    fields(user_id = claims.oid.as_deref(), tenant_id = %claims.tid)
+)]
 pub async fn handler(
     claims: AzureAccessToken,
     RawAzureToken(token): RawAzureToken,

@@ -63,15 +63,59 @@ pub struct AgentResourceLimitsRequest {
         automatically. If startup fails, memory is kept; check the agent and memory before retrying.",
     request_body(content = CreateAgentRequest, content_type = "application/json"),
     responses(
-        (status = CREATED, description = "The agent was created", body = AgentResponse),
-        (status = BAD_REQUEST, description = "Invalid name or resource limits", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = UNAUTHORIZED, description = "Missing or invalid authentication", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = FORBIDDEN, description = "Agent access denied", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = NOT_FOUND, description = "Existing memory was not found or is inaccessible", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = CONFLICT, description = "The name or memory is already in use or has changed", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = UNPROCESSABLE_ENTITY, description = "Invalid request body", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = BAD_GATEWAY, description = "Agent creation could not be completed", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = GATEWAY_TIMEOUT, description = "Agent creation could not be confirmed in time", body = ProblemSchema, content_type = "application/problem+json"),
+        (
+            status = CREATED,
+            description = "The agent was created",
+            body = AgentResponse
+        ),
+        (
+            status = BAD_REQUEST,
+            description = "Invalid name or resource limits",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = FORBIDDEN,
+            description = "Agent access denied",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = NOT_FOUND,
+            description = "Existing memory was not found or is inaccessible",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = CONFLICT,
+            description = "The name or memory is already in use or has changed",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = UNPROCESSABLE_ENTITY,
+            description = "Invalid request body",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = BAD_GATEWAY,
+            description = "Agent creation could not be completed",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = GATEWAY_TIMEOUT,
+            description = "Agent creation could not be confirmed in time",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
     ),
 )]
 #[axum::debug_handler(state = AppState)]
@@ -115,6 +159,7 @@ pub async fn handler(
         memory_mib = limits.memory_mib,
         "applying agent resource limits"
     );
+
     if forge.read_runtime(&token, &body.name).await?.is_some() {
         tracing::warn!(
             status = 409,

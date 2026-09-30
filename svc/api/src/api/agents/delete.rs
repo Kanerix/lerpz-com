@@ -22,14 +22,52 @@ use crate::{forge::ForgeClient, oapi::AGENTS_TAG, state::AppState};
         memory is kept and can be reused by a new agent with the same name. Removal may take a moment.",
     params(("name" = String, Path, description = "Agent name")),
     responses(
-        (status = NO_CONTENT, description = "Agent removal requested; memory is kept"),
-        (status = BAD_REQUEST, description = "Invalid agent name", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = UNAUTHORIZED, description = "Missing or invalid authentication", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = FORBIDDEN, description = "Agent access denied", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = NOT_FOUND, description = "Agent not found or inaccessible", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = CONFLICT, description = "The agent changed during removal", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = BAD_GATEWAY, description = "Agent removal could not be confirmed", body = ProblemSchema, content_type = "application/problem+json"),
-        (status = GATEWAY_TIMEOUT, description = "Agent removal could not be confirmed in time", body = ProblemSchema, content_type = "application/problem+json"),
+        (
+            status = NO_CONTENT,
+            description = "Agent removal requested; memory is kept"
+        ),
+        (
+            status = BAD_REQUEST,
+            description = "Invalid agent name",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = UNAUTHORIZED,
+            description = "Missing or invalid authentication",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = FORBIDDEN,
+            description = "Agent access denied",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = NOT_FOUND,
+            description = "Agent not found or inaccessible",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = CONFLICT,
+            description = "The agent changed during removal",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = BAD_GATEWAY,
+            description = "Agent removal could not be confirmed",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = GATEWAY_TIMEOUT,
+            description = "Agent removal could not be confirmed in time",
+            body = ProblemSchema,
+            content_type = "application/problem+json"
+        ),
     ),
 )]
 #[axum::debug_handler(state = AppState)]

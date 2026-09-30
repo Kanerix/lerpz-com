@@ -68,7 +68,11 @@ use crate::{forge::ForgeClient, oapi::AGENTS_TAG, state::AppState};
     ),
 )]
 #[axum::debug_handler(state = AppState)]
-#[tracing::instrument(name = "agent_memory.list", skip_all, fields(user_id = claims.oid.as_deref(), tenant_id = %claims.tid))]
+#[tracing::instrument(
+    name = "agent_memory.list",
+    skip_all,
+    fields(user_id = claims.oid.as_deref(), tenant_id = %claims.tid)
+)]
 pub async fn handler(
     claims: AzureAccessToken,
     RawAzureToken(token): RawAzureToken,
@@ -79,6 +83,7 @@ pub async fn handler(
     tracing::debug!("listing agent memory");
     let (volumes, runtimes) =
         tokio::try_join!(forge.list_volumes(&token), forge.list_runtimes(&token))?;
+
     let memory = volumes
         .into_iter()
         .map(|volume| {
@@ -94,5 +99,6 @@ pub async fn handler(
         elapsed_ms = started.elapsed().as_millis(),
         "agent memory list succeeds"
     );
+
     Ok(Json(memory))
 }

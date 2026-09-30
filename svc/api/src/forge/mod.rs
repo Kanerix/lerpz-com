@@ -98,7 +98,15 @@ impl ForgeClient {
         Self::json(request, StatusCode::OK).await
     }
 
-    #[tracing::instrument(name = "forge.read_runtime", skip_all, fields(operation = "read", resource = "runtime", agent_name = tracing::field::Empty))]
+    #[tracing::instrument(
+        name = "forge.read_runtime",
+        skip_all,
+        fields(
+            operation = "read",
+            resource = "runtime",
+            agent_name = tracing::field::Empty
+        )
+    )]
     pub(crate) async fn read_runtime(
         &self,
         token: &SecretString,
@@ -107,7 +115,15 @@ impl ForgeClient {
         self.read(Resource::Runtime, token, agent).await
     }
 
-    #[tracing::instrument(name = "forge.create_runtime", skip_all, fields(operation = "create", resource = "runtime", agent_name = tracing::field::Empty))]
+    #[tracing::instrument(
+        name = "forge.create_runtime",
+        skip_all,
+        fields(
+            operation = "create",
+            resource = "runtime",
+            agent_name = tracing::field::Empty
+        )
+    )]
     pub(crate) async fn create_runtime(
         &self,
         token: &SecretString,
@@ -121,7 +137,15 @@ impl ForgeClient {
         Self::json(request, StatusCode::CREATED).await
     }
 
-    #[tracing::instrument(name = "forge.delete_runtime", skip_all, fields(operation = "delete", resource = "runtime", agent_name = tracing::field::Empty))]
+    #[tracing::instrument(
+        name = "forge.delete_runtime",
+        skip_all,
+        fields(
+            operation = "delete",
+            resource = "runtime",
+            agent_name = tracing::field::Empty
+        )
+    )]
     pub(crate) async fn delete_runtime(
         &self,
         token: &SecretString,
@@ -143,7 +167,15 @@ impl ForgeClient {
         Self::json(request, StatusCode::OK).await
     }
 
-    #[tracing::instrument(name = "forge.read_volume", skip_all, fields(operation = "read", resource = "volume", agent_name = tracing::field::Empty))]
+    #[tracing::instrument(
+        name = "forge.read_volume",
+        skip_all,
+        fields(
+            operation = "read",
+            resource = "volume",
+            agent_name = tracing::field::Empty
+        )
+    )]
     pub(crate) async fn read_volume(
         &self,
         token: &SecretString,
@@ -152,7 +184,15 @@ impl ForgeClient {
         self.read(Resource::Volume, token, agent).await
     }
 
-    #[tracing::instrument(name = "forge.create_volume", skip_all, fields(operation = "create", resource = "volume", agent_name = tracing::field::Empty))]
+    #[tracing::instrument(
+        name = "forge.create_volume",
+        skip_all,
+        fields(
+            operation = "create",
+            resource = "volume",
+            agent_name = tracing::field::Empty
+        )
+    )]
     pub(crate) async fn create_volume(
         &self,
         token: &SecretString,
@@ -166,7 +206,15 @@ impl ForgeClient {
         Self::json(request, StatusCode::CREATED).await
     }
 
-    #[tracing::instrument(name = "forge.delete_volume", skip_all, fields(operation = "delete", resource = "volume", agent_name = tracing::field::Empty))]
+    #[tracing::instrument(
+        name = "forge.delete_volume",
+        skip_all,
+        fields(
+            operation = "delete",
+            resource = "volume",
+            agent_name = tracing::field::Empty
+        )
+    )]
     pub(crate) async fn delete_volume(
         &self,
         token: &SecretString,
