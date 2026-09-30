@@ -14,7 +14,32 @@ _default:
     @just --list
 
 # Full bring-up (env secrets must exist first)
-all: cluster traefik build load tls secrets deploy
+all: cluster bootstrap
+
+# Build and deploy the stack into an existing cluster
+bootstrap: _check-env traefik build load tls secrets deploy
+
+# Verify the per-service environment files exist before doing expensive work
+[private]
+_check-env:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    missing=0
+    for path in \
+        {{ root }}/svc/app/.env.docker \
+        {{ root }}/svc/api/.env.docker \
+        {{ root }}/svc/artoo/.env.docker \
+        {{ root }}/svc/forge/.env.docker
+    do
+        if [[ ! -f "$path" ]]; then
+            echo "Missing $path" >&2
+            missing=1
+        fi
+    done
+    if (( missing )); then
+        echo "Create the files from the matching .env.example files and configure them for Kubernetes." >&2
+        exit 1
+    fi
 
 # Create the kind cluster
 cluster:
@@ -45,11 +70,23 @@ build:
     docker build -f {{ root }}/svc/artoo/Dockerfile -t lerpz/artoo:{{ tag }} {{ root }}
     docker build -f {{ root }}/svc/forge/Dockerfile -t lerpz/forge:{{ tag }} {{ root }}
 
+# Run api, artoo or forge locally with the deployed pod's traffic and environment
+local SERVICE:
+    @case {{ quote(SERVICE) }} in api|artoo|forge) ;; *) echo "Expected a Rust service: api, artoo or forge" >&2; exit 1 ;; esac
+    @command -v mirrord >/dev/null || { echo "Install mirrord or enter the devenv shell before running this recipe" >&2; exit 1; }
+    @kubectl --context kind-{{ cluster }} get namespace {{ ns }} >/dev/null 2>&1 || { echo "The {{ ns }} namespace is not deployed. Run 'just k8s bootstrap' first." >&2; exit 1; }
+    @kubectl --context kind-{{ cluster }} --namespace {{ ns }} get {{ quote("deployment/" + SERVICE) }} >/dev/null 2>&1 || { echo "The {{ SERVICE }} Deployment is not installed. Run 'just k8s bootstrap' first." >&2; exit 1; }
+    kubectl --context kind-{{ cluster }} --namespace {{ ns }} rollout status {{ quote("deployment/" + SERVICE) }} --timeout=60s
+    SQLX_OFFLINE=true cargo build --manifest-path {{ root }}/Cargo.toml --package {{ quote(SERVICE) }} --bin {{ quote(SERVICE) }} --target-dir {{ root }}/target
+    mirrord exec --context kind-{{ cluster }} --target-namespace {{ ns }} \
+        --target {{ quote("deployment/" + SERVICE + "/container/" + SERVICE) }} \
+        --config-file mirrord.json -- {{ quote(root + "/target/debug/" + SERVICE) }}
+
 # Load the app images into the kind cluster
 load:
     kind load docker-image lerpz/www:{{ tag }} lerpz/app:{{ tag }} lerpz/api:{{ tag }} lerpz/artoo:{{ tag }} lerpz/forge:{{ tag }} --name {{ cluster }}
 
-# Create the TLS secret from ../certs (include container.lerpz.local; see README.md)
+# Create the TLS secret from ../certs (include container.lerpz.local; see the root README)
 tls:
     kubectl create namespace {{ ns }} --dry-run=client -o yaml | kubectl apply -f -
     kubectl -n {{ ns }} create secret tls lerpz-tls \

@@ -1,0 +1,26 @@
+{
+    "operator": false,
+    "telemetry": false,
+    "feature": {
+        "env": {
+            "unset": [
+                "KUBECONFIG",
+                "KUBE_RS_DEBUG_OVERRIDE_URL",
+                "KUBE_RS_DEBUG_IMPERSONATE_USER",
+                "KUBE_RS_DEBUG_IMPERSONATE_GROUP"
+            ]
+        },
+        "fs": {
+            "mode": "localwithoverrides",
+            "read_only": [
+                "^/var/run/secrets/kubernetes\\.io/serviceaccount(/|$)"
+            ],
+            "not_found": ["(^|/)\\.kube(/|$)", "(^|/)\\.env($|\\.)"]
+        },
+        "network": {
+            "incoming": "steal",
+            "outgoing": true,
+            "dns": true
+        }
+    }
+}
