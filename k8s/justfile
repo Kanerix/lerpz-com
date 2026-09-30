@@ -126,6 +126,18 @@ status:
     kubectl -n {{ ns }} get pods,svc
     kubectl -n {{ ns }} get ingressroute
 
+# List all Forge-managed agent runtime Deployments
+agent-runtimes:
+    kubectl --context kind-{{ cluster }} --namespace {{ ns }} get deployments \
+        --selector app.kubernetes.io/managed-by=forge,app.kubernetes.io/component=runtime \
+        --label-columns lerpz.com/agent,lerpz.com/runtime-id
+
+# List all Forge-managed agent memory claims
+agent-memories:
+    kubectl --context kind-{{ cluster }} --namespace {{ ns }} get persistentvolumeclaims \
+        --selector app.kubernetes.io/managed-by=forge,app.kubernetes.io/component=memory \
+        --label-columns lerpz.com/agent
+
 # Delete the kind cluster
 down:
     kind delete cluster --name {{ cluster }}
