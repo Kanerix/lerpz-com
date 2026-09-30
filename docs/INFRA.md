@@ -96,7 +96,12 @@ parameters. The API constructs separate Forge requests and translates the result
 into public agent responses. It reuses the validated bearer token to authenticate
 internal requests. API and Forge must accept the same tenant and token audience.
 Forge validates that token and enforces ownership through Kubernetes resource
-labels. Frontend migration to this public contract is deferred; see the
+labels. The frontend uses `POST /api/v1/agents` to create an agent with `name`,
+`memory` (`new`, `existing` or `none`) and optional `resource_limits`
+(`cpu_millicores`, `memory_mib`). It lists, reads and deletes agents through
+`/api/v1/agents` and retained memory through `/api/v1/agent-memory`, using
+`/{name}` for individual resources. There is no standalone public memory
+creation endpoint. See the
 [agent management contract](../k8s/README.md#agent-management-through-the-core-api).
 
 `artoo` is the app's main agent. It answers questions and helps users navigate
@@ -105,6 +110,58 @@ the model alone, and looking the signed-in user up through Microsoft Graph. All
 model traffic, including chat, embeddings, image and video generation, is routed
 through [Portkey](https://portkey.ai) as a gateway rather than to a provider
 directly; `api` additionally holds Vertex AI configuration.
+
+## Agent management and runtime configuration
+
+The app reads public configuration at runtime through validated `publicEnv`,
+not Docker build arguments. In the local cluster, `just secrets` in `k8s/`
+loads `svc/app/.env.docker` into `app-env` and the API and Forge equivalents
+into `api-env` and `forge-env`.
+
+| Setting | Service | Local configuration |
+| ------- | ------- | ------------------- |
+| `PUBLIC_API_URL` | App | `https://api.lerpz.local` |
+| `PUBLIC_ENTRA_ID_SCOPE` | App | The full delegated API scope used for management and runtime access |
+| `PUBLIC_AGENT_RUNTIME_ORIGIN` | App | Optional; `https://container.lerpz.local` |
+| `FORGE_URL` | API | `http://forge:5000`, supplied through `api-env`, not by the API manifest |
+| `ALLOWED_ORIGINS` | API and Forge | `https://app.lerpz.local`, a single origin |
+
+`FORGE_URL` must be a trusted HTTP or HTTPS origin with no credentials, path,
+query or fragment. The API builds Forge requests itself, with redirects,
+proxies and retries disabled. Never expose this setting to the frontend.
+
+`PUBLIC_AGENT_RUNTIME_ORIGIN` is a separate HTTPS origin with no credentials,
+path, query or fragment. It must match Forge's `AGENT_RUNTIME_ORIGIN`, including
+any external port. Omit it to disable direct runtime requests while retaining
+agent management. A supplied invalid value fails environment validation.
+Before attaching the API bearer token, validate the returned agent `url`
+against this origin and require an application path. Keep requests
+within that prefix, reject redirects and omit cookies. The public response
+contains neither `base_url` nor a separate `runtime_id`.
+
+API and Forge must use the same `ENTRA_ID_TENANT_ID` and `ENTRA_ID_CLIENT_ID`
+so both accept the API token's tenant and audience. Their `ENTRA_ID_SCOPE`
+settings and the app's `PUBLIC_ENTRA_ID_SCOPE` must identify the same named
+delegated permission, not `.default`. Forge checks that permission in `scp`
+and requires `oid` and `tid` for ownership. App-only tokens are rejected.
+The app's `PUBLIC_ENTRA_ID_CLIENT_ID` identifies its browser registration;
+it is not the API audience setting. No separate browser Forge scope, client
+secret or on-behalf-of exchange is used.
+
+Forge's manifest supplies `AGENT_RUNTIME_ORIGIN`, `AGENT_RUNTIME_PORT` and
+`AGENT_RUNTIME_TLS_SECRET`. Its environment must also set `ADDR=0.0.0.0:5000`,
+`KUBE_NAMESPACE=lerpz`, `AGENT_RUNTIME_SERVICE_ACCOUNT=agent-runtime`, a suitable
+`AGENT_RUNTIME_IMAGE`, `AGENT_MEMORY_STORAGE_CLASS` (`standard` for local kind)
+and `AGENT_MEMORY_DEFAULT_SIZE` (a storage quantity such as `1Gi`). The image
+must listen on `0.0.0.0` at the configured runtime port without per-request
+environment variables. These infrastructure choices are not public API fields.
+
+After changing environment Secrets, restart the app, API and Forge pods.
+Changing runtime origin, port, image or CORS settings does not update existing
+runtimes. Recreate affected agents, reusing retained memory where needed.
+Forge remains internal for management, health and documentation; Traefik calls
+its ClusterIP Service for runtime ForwardAuth. Do not add a public Forge route
+or generate a browser client from its schema.
 
 ## Kubernetes resources
 
