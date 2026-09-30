@@ -184,8 +184,16 @@ pub async fn handler(
         if !new_memory {
             return problem;
         }
+
         let log_id = uuid::Uuid::new_v4().to_string();
-        tracing::error!(%log_id, status = problem.status().as_u16(), memory_kept = true, elapsed_ms = started.elapsed().as_millis(), "agent creation fails after creating memory");
+        tracing::error!(
+            %log_id,
+            status = problem.status().as_u16(),
+            memory_kept = true,
+            elapsed_ms = started.elapsed().as_millis(),
+            "agent creation fails after creating memory"
+        );
+
         Problem::new(
             problem.status(),
             "Agent creation incomplete",
