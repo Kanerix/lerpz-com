@@ -30,6 +30,7 @@ Terraform definitions they deploy to, and the migrations that back them.
 - [Repository layout](#repository-layout)
 - [Getting started](#getting-started)
 - [Configuration](#configuration)
+- [Local Kubernetes](#local-kubernetes)
 - [Running the stack](#running-the-stack)
 - [Database](#database)
 - [Development](#development)
@@ -62,12 +63,13 @@ naming rules and the conventions for adding a new service.
 `artoo` is the app's main agent: it answers questions and helps users find
 their way around the product's features. The product UI does not call it yet.
 
-`api`, `artoo` and `forge` each validate Entra ID tokens on their own and never
-call one another. The browser holds the token and talks to each directly.
-Model traffic goes through [Portkey](https://portkey.ai) rather than to a
-provider directly. `www` is fully static and depends on nothing. `forge` talks
-to a cluster rather than to the local infrastructure, which is why it sits
-behind its own compose profile.
+`api`, `artoo` and `forge` each validate Entra ID tokens. The browser sends its
+token to the public services, and `api` forwards agent management requests to
+the internal Forge service. Traefik also asks Forge to authorise runtime
+requests. Model traffic goes through [Portkey](https://portkey.ai) rather than
+to a provider directly. `www` is fully static and depends on nothing. Forge
+talks to a cluster rather than to the local infrastructure, which is why it
+sits behind its own Compose profile.
 
 See [docs/INFRA.md](docs/INFRA.md) for the topology diagram and where each
 service runs.
@@ -95,10 +97,44 @@ Shared TypeScript packages: `@lerpz/ui`, `@lerpz/biome-config`,
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) (edition 2024)
-- [Bun](https://bun.sh/) >= 1.4
-- [Docker](https://www.docker.com/) & Docker Compose
-- [just](https://github.com/casey/just) (optional, but every command below assumes it)
+Install [Git](https://git-scm.com/), a running [Docker](https://www.docker.com/)
+daemon, [Nix](https://nixos.org/download/) and
+[devenv](https://devenv.sh/getting-started/). Docker must have enough resources
+to run a single-node kind cluster and the complete application stack.
+
+Enter the development shell from the repository root:
+
+```sh
+devenv shell
+```
+
+The shell installs the Rust toolchain and Bun, then installs the workspace's Bun
+dependencies. It also provides every repository CLI:
+
+| CLI                                 | Use                                                     |
+| ----------------------------------- | ------------------------------------------------------- |
+| `git`                               | Source control, installed on the host                   |
+| `docker`, `docker compose`          | Containers and the kind node, installed on the host     |
+| `nix`, `devenv`                     | Reproducible development shell                          |
+| `rustc`, `cargo`                    | Rust compiler and package tooling                       |
+| `bun`                               | TypeScript dependencies, checks and development servers |
+| `just`                              | Project task recipes                                    |
+| `sqlx`                              | PostgreSQL migrations and offline query metadata        |
+| `cargo-expand`                      | Rust macro expansion                                    |
+| `mkcert`                            | Trusted local TLS certificates                          |
+| `kubectl`                           | Kubernetes resources and logs                           |
+| `helm`                              | Traefik installation                                    |
+| `kind`                              | Local Kubernetes cluster                                |
+| `mirrord`                           | Run a local Rust service against the cluster            |
+| `terraform`                         | Cloud infrastructure                                    |
+| `gh`                                | GitHub Actions, pull requests and issues                |
+| `nixfmt`                            | Nix formatting                                          |
+| `openssl`, `pkg-config`             | Native dependency discovery and TLS tooling             |
+| `rg`, `fd`, `sd`, `jaq`, `ast-grep` | Repository search and structured edits                  |
+
+Without devenv, install all of the tools above yourself, together with the Rust
+edition 2024 nightly toolchain and Bun 1.4 or newer. Docker and Git remain host
+prerequisites because the development shell does not provide them.
 
 ### Quick start
 
@@ -117,23 +153,29 @@ Run `just` on its own to list every recipe.
 
 ### 1. Configure Microsoft Entra ID
 
-- Register an app in Azure Entra ID.
-- Select **ID tokens (used for implicit and hybrid flows)**.
-- Add the following redirect URI:
+Register an application and expose a delegated API scope such as
+`api://ai.lerpz.com/access_as_user`. Configure the browser application to use the
+authorisation code flow with PKCE, then register these SPA redirect and logout
+URIs for local development:
 
-```bash
-http://localhost:3001/api/auth/callback/microsoft-entra-id
-# or
-https://app.lerpz.local/api/auth/callback/microsoft-entra-id
+```text
+http://localhost:3001
+https://app.lerpz.local
 ```
 
-### 2. Generate TLS certificates (for traefik)
+Use the same tenant ID, client ID and named delegated scope in `app`, `api`,
+`artoo` and `forge`. Do not use `.default`, an application permission or a client
+secret for browser requests.
+
+### 2. Generate TLS certificates
 
 Use mkcert to create local certificates:
 
 ```sh
+mkcert -install
 mkcert -cert-file certs/cert.pem -key-file certs/key.pem \
-  lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
+  lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local \
+  container.lerpz.local
 ```
 
 ### 3. Update your hosts file (for traefik)
@@ -141,8 +183,128 @@ mkcert -cert-file certs/cert.pem -key-file certs/key.pem \
 Add these entries to `/etc/hosts`:
 
 ```
-127.0.0.1 lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local
+127.0.0.1 lerpz.local www.lerpz.local app.lerpz.local api.lerpz.local agent.lerpz.local container.lerpz.local
 ```
+
+## Local Kubernetes
+
+The `k8s/` directory runs the complete stack in a local single-node kind cluster.
+Traefik accepts HTTPS traffic on the host, Kubernetes Services provide internal
+DNS, and persistent volume claims hold local development data. Forge runs under
+a namespaced service account with the RBAC needed to create agent runtimes and
+memory volumes.
+
+### Configure the services
+
+Create the environment files used to generate Kubernetes Secrets:
+
+```sh
+cp svc/app/.env.example svc/app/.env.docker
+cp svc/api/.env.example svc/api/.env.docker
+cp svc/artoo/.env.example svc/artoo/.env.docker
+cp svc/forge/.env.example svc/forge/.env.docker
+```
+
+Do not quote values in these files. Configure provider credentials, model names,
+Google Cloud project details and your Entra registration, then use these local
+cluster values:
+
+| Service                 | Setting                         | Value                                                |
+| ----------------------- | ------------------------------- | ---------------------------------------------------- |
+| `app`                   | `PUBLIC_API_URL`                | `https://api.lerpz.local`                            |
+| `app`                   | `PUBLIC_AGENT_RUNTIME_ORIGIN`   | `https://container.lerpz.local`                      |
+| `app`                   | redirect and logout URIs        | `https://app.lerpz.local`                            |
+| `api`, `artoo`, `forge` | `ALLOWED_ORIGINS`               | `https://app.lerpz.local`                            |
+| `api`                   | `ADDR`                          | `0.0.0.0:4000`                                       |
+| `artoo`                 | `ADDR`                          | `0.0.0.0:4001`                                       |
+| `forge`                 | `ADDR`                          | `0.0.0.0:5000`                                       |
+| `api`                   | `DATABASE_URL`                  | `postgres://lerpz:Password123@postgres:5432/primary` |
+| `artoo`                 | `DATABASE_URL`                  | `postgres://lerpz:Password123@postgres:5432/primary` |
+| `api`                   | `REDIS_URL`                     | `redis://dragonfly:6379`                             |
+| `artoo`                 | `QDRANT_URL_GRPC`               | `http://qdrant:6334`                                 |
+| `api`                   | `AWS_S3_ENDPOINT`               | `http://minio:9000`                                  |
+| `api`                   | MinIO access key and secret     | `minioadmin` and `Password123`                       |
+| `api`                   | `AWS_S3_BUCKET`                 | `lerpz`                                              |
+| `api`                   | `FORGE_URL`                     | `http://forge:5000`                                  |
+| `forge`                 | `KUBE_NAMESPACE`                | `lerpz`                                              |
+| `forge`                 | `AGENT_RUNTIME_SERVICE_ACCOUNT` | `agent-runtime`                                      |
+| `forge`                 | `AGENT_MEMORY_STORAGE_CLASS`    | `standard`                                           |
+| `forge`                 | `AGENT_MEMORY_DEFAULT_SIZE`     | `1Gi`                                                |
+| `forge`                 | temporary `AGENT_RUNTIME_IMAGE` | `nginxinc/nginx-unprivileged:alpine`                 |
+
+Use the same Entra tenant ID, client ID and delegated scope in every service.
+Prefix the browser variables with `PUBLIC_`. Remove `KUBECONFIG` from
+`svc/forge/.env.docker`; the Forge pod uses its mounted service-account token.
+The temporary Nginx runtime listens on port 8080 and proves provisioning and
+routing, but does not implement an agent API.
+
+### Create and deploy the cluster
+
+After creating the environment files, certificates and hosts entry, run from the
+repository root:
+
+```sh
+just k8s all
+just k8s status
+```
+
+`all` creates `kind-lerpz`, installs Traefik, builds and loads the application
+images, creates TLS and environment Secrets, and applies the manifests. Wait for
+PostgreSQL to become ready, then apply the migrations:
+
+```sh
+just k8s migrate
+```
+
+If `kind-lerpz` already exists but the application has not been deployed, use
+`just k8s bootstrap` instead of `all`. This keeps the cluster but performs the
+initial image builds and deployment.
+
+Open:
+
+- <https://lerpz.local> for the company site
+- <https://app.lerpz.local> for the product
+- <https://api.lerpz.local> for the API
+- <https://agent.lerpz.local> for Artoo
+- `https://container.lerpz.local/<runtime-id>` for a provisioned runtime
+
+Useful cluster commands:
+
+| Command                                                                            | Does                                               |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `just k8s status`                                                                  | Show application pods, Services and ingress routes |
+| `kubectl -n lerpz get all`                                                         | Inspect namespace resources                        |
+| `kubectl -n lerpz logs deploy/api -f`                                              | Follow API logs                                    |
+| `kubectl -n lerpz logs deploy/forge -f`                                            | Follow Forge logs                                  |
+| `just k8s secrets`                                                                 | Refresh Secrets after editing `.env.docker` files  |
+| `kubectl -n lerpz rollout restart deploy/app deploy/api deploy/artoo deploy/forge` | Restart services after environment changes         |
+| `just k8s down`                                                                    | Delete the cluster and all data stored in it       |
+
+### Run Rust services locally with mirrord
+
+Keep the cluster running, then replace one deployed Rust service with a locally
+compiled process:
+
+```sh
+just k8s local api
+just k8s local artoo
+just k8s local forge
+```
+
+The recipe builds the selected debug binary locally, imports the target pod's
+environment and steals its incoming traffic. Outgoing calls and DNS still use
+the cluster, so the local API can reach `postgres`, `dragonfly` and `forge` by
+their Kubernetes names. Press Ctrl-C to return traffic to the deployed pod.
+Re-run the command after code changes. It does not rebuild or reload a container
+image.
+
+The local process handles real cluster requests and modifies real local cluster
+data. Only run trusted code. The Svelte applications continue to use their normal
+local development servers or deployed images; the mirrord recipes cover the Rust
+services only.
+
+See [`k8s/README.md`](k8s/README.md) for the manifest layout, detailed networking,
+Forge RBAC, runtime routing and mirrord credential handling.
 
 ## Running the stack
 
