@@ -16,7 +16,6 @@ import { toast } from "svelte-sonner";
 import { browser } from "$app/environment";
 import {
     deleteAgentMemory,
-    getListAgentMemoryUrl,
     listAgentMemory,
     readAgentMemory,
 } from "$lib/api/agents/agents.js";
@@ -27,9 +26,10 @@ import { ErrorState } from "$lib/components/error-state/index.js";
 import { formatDate } from "$lib/utils/format.js";
 
 const queryClient = useQueryClient();
-const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const memoryQuery = createQuery(() => ({
-    queryKey: [msalStore.accountKey, getListAgentMemoryUrl()],
+    queryKey: ["agents", accountKey, "memory"],
     enabled,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const response = await listAgentMemory({ signal });
@@ -37,7 +37,6 @@ const memoryQuery = createQuery(() => ({
         return response.data;
     },
     staleTime: 0,
-    gcTime: 0,
     retry: false,
     refetchInterval: 10_000,
     meta: { skipGlobalErrorDialog: true },
@@ -80,7 +79,7 @@ function cancelDelete() {
 
 async function confirmDelete() {
     const memory = pendingDelete;
-    const submissionAccount = msalStore.accountKey;
+    const submissionAccount = accountKey;
     if (
         disposed ||
         !memory ||
@@ -91,9 +90,9 @@ async function confirmDelete() {
     )
         return;
 
-    const queryKey = [submissionAccount];
+    const queryKey = ["agents", submissionAccount];
     const isCurrentSubmission = () =>
-        !disposed && submissionAccount === msalStore.accountKey;
+        !disposed && submissionAccount === accountKey;
     deleting = true;
     try {
         const latest = await readAgentMemory(memory.agent_name);
@@ -118,7 +117,7 @@ async function confirmDelete() {
         showError(err);
     } finally {
         const refetchType =
-            submissionAccount === msalStore.accountKey ? "active" : "none";
+            submissionAccount === accountKey ? "active" : "none";
         await queryClient.invalidateQueries({ queryKey, refetchType });
         if (isCurrentSubmission()) deleting = false;
     }

@@ -14,23 +14,27 @@ import { loadLegalConsent } from "./legal-consent.js";
 import { initializeMsal } from "./msal-auth.js";
 import { loginRequest } from "./msal-config.js";
 
+function accountKey(account: AccountInfo | null): string | null {
+    return account
+        ? `${account.homeAccountId}:${account.tenantId}:${account.localAccountId}`
+        : null;
+}
+
+function accountKeys(accounts: AccountInfo[]): string[] {
+    return accounts.map((account) => accountKey(account) ?? "");
+}
+
 class MsalStore {
     instance = $state<PublicClientApplication | null>(null);
     accounts = $state<AccountInfo[]>([]);
     activeAccount = $state<AccountInfo | null>(null);
+    accountKey = $state<string | null>(null);
     inProgress = $state<InteractionStatus>(InteractionStatus.Startup);
 
     #initialized = false;
 
     get isAuthenticated(): boolean {
         return this.accounts.length > 0;
-    }
-
-    get accountKey(): string | null {
-        const account = this.activeAccount;
-        return account
-            ? `${account.homeAccountId}:${account.tenantId}:${account.localAccountId}`
-            : null;
     }
 
     get roles(): string[] {
@@ -55,12 +59,11 @@ class MsalStore {
         this.instance = inst;
 
         inst.addEventCallback((message: EventMessage) => {
-            // Promote the account from a successful interactive/silent flow to
-            // the active account so the rest of the app stays in sync.
+            // Promote the account selected by a successful login so the rest
+            // of the app stays in sync.
             const event = message.eventType;
             if (
-                (event === EventType.LOGIN_SUCCESS ||
-                    event === EventType.ACQUIRE_TOKEN_SUCCESS) &&
+                event === EventType.LOGIN_SUCCESS &&
                 message.payload &&
                 "account" in message.payload &&
                 message.payload.account
@@ -77,17 +80,31 @@ class MsalStore {
                 this.inProgress = status;
             }
 
-            this.#sync();
+            this.#sync(event === EventType.LOGIN_SUCCESS);
         });
 
         this.#sync();
         this.inProgress = InteractionStatus.None;
     }
 
-    #sync() {
+    #sync(refreshActiveAccount = false) {
         if (!this.instance) return;
-        this.accounts = this.instance.getAllAccounts();
-        this.activeAccount = this.instance.getActiveAccount();
+
+        const accounts = this.instance.getAllAccounts();
+        const activeAccount = this.instance.getActiveAccount();
+        const nextAccountKey = accountKey(activeAccount);
+
+        if (
+            accountKeys(this.accounts).join("\0") !==
+            accountKeys(accounts).join("\0")
+        ) {
+            this.accounts = accounts;
+        }
+
+        if (refreshActiveAccount || this.accountKey !== nextAccountKey) {
+            this.activeAccount = activeAccount;
+            this.accountKey = nextAccountKey;
+        }
     }
 
     async loginRedirect() {

@@ -3,7 +3,7 @@ import { Badge, Button, ScrollArea } from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
 import { onDestroy } from "svelte";
 import { browser } from "$app/environment";
-import { getReadAgentUrl, readAgent } from "$lib/api/agents/agents.js";
+import { readAgent } from "$lib/api/agents/agents.js";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 
 import { ErrorState } from "$lib/components/error-state/index.js";
@@ -11,9 +11,10 @@ import { ErrorState } from "$lib/components/error-state/index.js";
 import { formatDate } from "$lib/utils/format.js";
 
 let { agent }: { agent: string } = $props();
-const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const query = createQuery(() => ({
-    queryKey: [msalStore.accountKey, getReadAgentUrl(agent)],
+    queryKey: ["agents", accountKey, "detail", agent],
     enabled: enabled && Boolean(agent),
     queryFn: async ({ signal }) => {
         if (!/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(agent)) {
@@ -24,7 +25,6 @@ const query = createQuery(() => ({
         return response.data;
     },
     staleTime: 0,
-    gcTime: 0,
     retry: false,
     refetchInterval: 10_000,
     meta: { skipGlobalErrorDialog: true },

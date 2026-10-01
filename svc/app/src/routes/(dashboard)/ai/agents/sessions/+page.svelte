@@ -14,11 +14,7 @@ import { createQuery, useQueryClient } from "@tanstack/svelte-query";
 import { onDestroy } from "svelte";
 import { toast } from "svelte-sonner";
 import { browser } from "$app/environment";
-import {
-    deleteAgent,
-    getListAgentsUrl,
-    listAgents,
-} from "$lib/api/agents/agents.js";
+import { deleteAgent, listAgents } from "$lib/api/agents/agents.js";
 import type { AgentResponse } from "$lib/api/models/index.js";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
@@ -26,9 +22,10 @@ import { ErrorState } from "$lib/components/error-state/index.js";
 import { formatDate } from "$lib/utils/format.js";
 
 const queryClient = useQueryClient();
-const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const query = createQuery(() => ({
-    queryKey: [msalStore.accountKey, getListAgentsUrl()],
+    queryKey: ["agents", accountKey, "list"],
     enabled,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const response = await listAgents({ signal });
@@ -36,7 +33,6 @@ const query = createQuery(() => ({
         return response.data;
     },
     staleTime: 0,
-    gcTime: 0,
     retry: false,
     refetchInterval: 10_000,
     meta: { skipGlobalErrorDialog: true },
@@ -62,7 +58,7 @@ function cancelDelete() {
 
 async function confirmDelete() {
     const agent = pendingDelete;
-    const submissionAccount = msalStore.accountKey;
+    const submissionAccount = accountKey;
     if (
         disposed ||
         !agent?.name ||
@@ -73,9 +69,9 @@ async function confirmDelete() {
     )
         return;
 
-    const queryKey = [submissionAccount];
+    const queryKey = ["agents", submissionAccount];
     const isCurrentSubmission = () =>
-        !disposed && submissionAccount === msalStore.accountKey;
+        !disposed && submissionAccount === accountKey;
     deleting = true;
     try {
         const response = await deleteAgent(agent.name);
@@ -92,7 +88,7 @@ async function confirmDelete() {
         showError(err);
     } finally {
         const refetchType =
-            submissionAccount === msalStore.accountKey ? "active" : "none";
+            submissionAccount === accountKey ? "active" : "none";
         await queryClient.invalidateQueries({ queryKey, refetchType });
         if (isCurrentSubmission()) deleting = false;
     }

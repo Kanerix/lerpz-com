@@ -4,8 +4,9 @@ import type { PageProps } from "./$types.js";
 import RuntimeDetails from "./RuntimeDetails.svelte";
 
 let { params }: PageProps = $props();
+const accountKey = $derived(msalStore.accountKey);
 </script>
 
-{#key `${msalStore.accountKey}:${params.agent}`}
+{#key `${accountKey}:${params.agent}`}
   <RuntimeDetails agent={params.agent} />
 {/key}

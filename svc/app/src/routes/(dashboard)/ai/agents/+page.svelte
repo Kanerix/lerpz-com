@@ -6,11 +6,7 @@ import { onDestroy } from "svelte";
 import { toast } from "svelte-sonner";
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
-import {
-    createAgent,
-    getListAgentMemoryUrl,
-    listAgentMemory,
-} from "$lib/api/agents/agents.js";
+import { createAgent, listAgentMemory } from "$lib/api/agents/agents.js";
 import type {
     AgentMemoryChoice,
     CreateAgentRequest,
@@ -21,9 +17,10 @@ import { ErrorState } from "$lib/components/error-state/index.js";
 import { optionCardVariants } from "./agents-variants.js";
 
 const queryClient = useQueryClient();
-const enabled = $derived(browser && Boolean(msalStore.accountKey));
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const memoryQuery = createQuery(() => ({
-    queryKey: [msalStore.accountKey, getListAgentMemoryUrl()],
+    queryKey: ["agents", accountKey, "memory"],
     enabled,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const response = await listAgentMemory({ signal });
@@ -31,7 +28,6 @@ const memoryQuery = createQuery(() => ({
         return response.data;
     },
     staleTime: 0,
-    gcTime: 0,
     retry: false,
     refetchInterval: 10_000,
     meta: { skipGlobalErrorDialog: true },
@@ -87,10 +83,10 @@ async function create(event: SubmitEvent) {
     event.preventDefault();
     if (disposed || !canCreate || creating) return;
 
-    const submissionAccount = msalStore.accountKey;
+    const submissionAccount = accountKey;
     if (!enabled || !submissionAccount) return;
 
-    const queryKey = [submissionAccount];
+    const queryKey = ["agents", submissionAccount];
     const request: CreateAgentRequest = {
         name,
         memory: memoryMode,
@@ -108,7 +104,7 @@ async function create(event: SubmitEvent) {
             : {}),
     };
     const isCurrentSubmission = () =>
-        !disposed && submissionAccount === msalStore.accountKey;
+        !disposed && submissionAccount === accountKey;
 
     creating = true;
     try {
@@ -124,7 +120,7 @@ async function create(event: SubmitEvent) {
     } finally {
         // Keep invalidation on the submitting account, even if the page was replaced.
         const refetchType =
-            submissionAccount === msalStore.accountKey ? "active" : "none";
+            submissionAccount === accountKey ? "active" : "none";
         await queryClient.invalidateQueries({ queryKey, refetchType });
         if (isCurrentSubmission()) creating = false;
     }
