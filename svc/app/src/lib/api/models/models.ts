@@ -80,51 +80,58 @@ export const listModels = async ( options?: RequestInit): Promise<listModelsResp
 
 
 
-export const getListModelsMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listModels>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof listModels>>, TError,void, TContext> => {
 
-const mutationKey = ['listModels'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getListModelsQueryKey = () => {
+    return [
+    `/api/v1/models`
+    ] as const;
+    }
 
 
+export const getListModelsQueryOptions = <TData = Awaited<ReturnType<typeof listModels>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listModels>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListModelsQueryKey();
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listModels>>, void> = () => {
 
-
-          return  listModels(requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listModels>>> = ({ signal }) => listModels({ signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof listModels>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type ListModelsMutationResult = NonNullable<Awaited<ReturnType<typeof listModels>>>
+export type ListModelsQueryResult = NonNullable<Awaited<ReturnType<typeof listModels>>>
+export type ListModelsQueryError = ErrorType<ProblemSchema>
 
-    export type ListModelsMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get available models
  */
-export const createListModels = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listModels>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof listModels>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return createMutation(() => ({ ...getListModelsMutationOptions(options?.()) }), queryClient);
-    }
-    export type createModelResponse201 = {
+
+export function createListModels<TData = Awaited<ReturnType<typeof listModels>>, TError = ErrorType<ProblemSchema>>(
+  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listModels>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getListModelsQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type createModelResponse201 = {
   data: ModelResponse
   status: 201
 }
@@ -184,58 +191,51 @@ export const createModel = async (createModelRequest: CreateModelRequest, option
 
 
 
+export const getCreateModelMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createModel>>, TError,{data: CreateModelRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof createModel>>, TError,{data: CreateModelRequest}, TContext> => {
 
-export const getCreateModelQueryKey = (createModelRequest?: CreateModelRequest,) => {
-    return [
-    'POST', `/api/v1/models`, createModelRequest
-    ] as const;
-    }
-
-
-export const getCreateModelQueryOptions = <TData = Awaited<ReturnType<typeof createModel>>, TError = ErrorType<ProblemSchema>>(createModelRequest: CreateModelRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getCreateModelQueryKey(createModelRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof createModel>>> = ({ signal }) => createModel(createModelRequest, { signal, ...requestOptions });
+const mutationKey = ['createModel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createModel>>, {data: CreateModelRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof createModel>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type CreateModelQueryResult = NonNullable<Awaited<ReturnType<typeof createModel>>>
-export type CreateModelQueryError = ErrorType<ProblemSchema>
+          return  createModel(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateModelMutationResult = NonNullable<Awaited<ReturnType<typeof createModel>>>
+    export type CreateModelMutationBody = CreateModelRequest
+    export type CreateModelMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Create a new model
  */
-
-export function createCreateModel<TData = Awaited<ReturnType<typeof createModel>>, TError = ErrorType<ProblemSchema>>(
- createModelRequest: () =>  CreateModelRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getCreateModelQueryOptions(createModelRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type getModelResponse200 = {
+export const createCreateModel = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createModel>>, TError,{data: CreateModelRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof createModel>>,
+        TError,
+        {data: CreateModelRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getCreateModelMutationOptions(options?.()) }), queryClient);
+    }
+    export type getModelResponse200 = {
   data: ModelResponse
   status: 200
 }
@@ -290,51 +290,58 @@ export const getModel = async (id: string, options?: RequestInit): Promise<getMo
 
 
 
-export const getGetModelMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getModel>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof getModel>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['getModel'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getGetModelQueryKey = (id: string,) => {
+    return [
+    `/api/v1/models/${id}`
+    ] as const;
+    }
 
 
+export const getGetModelQueryOptions = <TData = Awaited<ReturnType<typeof getModel>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetModelQueryKey(id);
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getModel>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
 
-          return  getModel(id,requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getModel>>> = ({ signal }) => getModel(id, { signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof getModel>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type GetModelMutationResult = NonNullable<Awaited<ReturnType<typeof getModel>>>
+export type GetModelQueryResult = NonNullable<Awaited<ReturnType<typeof getModel>>>
+export type GetModelQueryError = ErrorType<ProblemSchema>
 
-    export type GetModelMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get a specific model
  */
-export const createGetModel = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getModel>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof getModel>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return createMutation(() => ({ ...getGetModelMutationOptions(options?.()) }), queryClient);
-    }
-    export type deleteModelResponse204 = {
+
+export function createGetModel<TData = Awaited<ReturnType<typeof getModel>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getGetModelQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type deleteModelResponse204 = {
   data: void
   status: 204
 }
@@ -389,58 +396,51 @@ export const deleteModel = async (id: string, options?: RequestInit): Promise<de
 
 
 
+export const getDeleteModelMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteModel>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof deleteModel>>, TError,{id: string}, TContext> => {
 
-export const getDeleteModelQueryKey = (id: string,) => {
-    return [
-    'DELETE', `/api/v1/models/${id}`
-    ] as const;
-    }
-
-
-export const getDeleteModelQueryOptions = <TData = Awaited<ReturnType<typeof deleteModel>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getDeleteModelQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteModel>>> = ({ signal }) => deleteModel(id, { signal, ...requestOptions });
+const mutationKey = ['deleteModel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteModel>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteModel>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type DeleteModelQueryResult = NonNullable<Awaited<ReturnType<typeof deleteModel>>>
-export type DeleteModelQueryError = ErrorType<ProblemSchema>
+          return  deleteModel(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteModelMutationResult = NonNullable<Awaited<ReturnType<typeof deleteModel>>>
+
+    export type DeleteModelMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Delete a model
  */
-
-export function createDeleteModel<TData = Awaited<ReturnType<typeof deleteModel>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getDeleteModelQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type updateModelResponse200 = {
+export const createDeleteModel = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteModel>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof deleteModel>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getDeleteModelMutationOptions(options?.()) }), queryClient);
+    }
+    export type updateModelResponse200 = {
   data: ModelResponse
   status: 200
 }
@@ -506,58 +506,47 @@ export const updateModel = async (id: string,
 
 
 
+export const getUpdateModelMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof updateModel>>, TError,{id: string;data: UpdateModelRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof updateModel>>, TError,{id: string;data: UpdateModelRequest}, TContext> => {
 
-export const getUpdateModelQueryKey = (id: string,
-    updateModelRequest?: UpdateModelRequest,) => {
-    return [
-    'PATCH', `/api/v1/models/${id}`, updateModelRequest
-    ] as const;
-    }
-
-
-export const getUpdateModelQueryOptions = <TData = Awaited<ReturnType<typeof updateModel>>, TError = ErrorType<ProblemSchema>>(id: string,
-    updateModelRequest: UpdateModelRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getUpdateModelQueryKey(id,updateModelRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof updateModel>>> = ({ signal }) => updateModel(id,updateModelRequest, { signal, ...requestOptions });
+const mutationKey = ['updateModel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateModel>>, {id: string;data: UpdateModelRequest}> = (props) => {
+          const {id,data} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof updateModel>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type UpdateModelQueryResult = NonNullable<Awaited<ReturnType<typeof updateModel>>>
-export type UpdateModelQueryError = ErrorType<ProblemSchema>
+          return  updateModel(id,data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateModelMutationResult = NonNullable<Awaited<ReturnType<typeof updateModel>>>
+    export type UpdateModelMutationBody = UpdateModelRequest
+    export type UpdateModelMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Update a specific model
  */
-
-export function createUpdateModel<TData = Awaited<ReturnType<typeof updateModel>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string,
-    updateModelRequest: () =>  UpdateModelRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateModel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getUpdateModelQueryOptions(id(),
-    updateModelRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
+export const createUpdateModel = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof updateModel>>, TError,{id: string;data: UpdateModelRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof updateModel>>,
+        TError,
+        {id: string;data: UpdateModelRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getUpdateModelMutationOptions(options?.()) }), queryClient);
+    }

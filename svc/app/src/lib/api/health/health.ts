@@ -1,12 +1,14 @@
 // @ts-nocheck
 import {
-  createMutation
+  createQuery
 } from '@tanstack/svelte-query';
 import type {
-  CreateMutationOptions,
-  CreateMutationResult,
-  MutationFunction,
-  QueryClient
+  CreateQueryOptions,
+  CreateQueryResult,
+  DataTag,
+  QueryClient,
+  QueryFunction,
+  QueryKey
 } from '@tanstack/svelte-query';
 
 import type {
@@ -60,51 +62,58 @@ export const triggerFailure = async ( options?: RequestInit): Promise<triggerFai
 
 
 
-export const getTriggerFailureMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof triggerFailure>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof triggerFailure>>, TError,void, TContext> => {
 
-const mutationKey = ['triggerFailure'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getTriggerFailureQueryKey = () => {
+    return [
+    `/api/v1/failure`
+    ] as const;
+    }
 
 
+export const getTriggerFailureQueryOptions = <TData = Awaited<ReturnType<typeof triggerFailure>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof triggerFailure>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTriggerFailureQueryKey();
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof triggerFailure>>, void> = () => {
 
-
-          return  triggerFailure(requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof triggerFailure>>> = ({ signal }) => triggerFailure({ signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof triggerFailure>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type TriggerFailureMutationResult = NonNullable<Awaited<ReturnType<typeof triggerFailure>>>
+export type TriggerFailureQueryResult = NonNullable<Awaited<ReturnType<typeof triggerFailure>>>
+export type TriggerFailureQueryError = ErrorType<ProblemSchema>
 
-    export type TriggerFailureMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Force an API failure
  */
-export const createTriggerFailure = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof triggerFailure>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof triggerFailure>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return createMutation(() => ({ ...getTriggerFailureMutationOptions(options?.()) }), queryClient);
-    }
-    export type healthCheckResponse200 = {
+
+export function createTriggerFailure<TData = Awaited<ReturnType<typeof triggerFailure>>, TError = ErrorType<ProblemSchema>>(
+  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof triggerFailure>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getTriggerFailureQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type healthCheckResponse200 = {
   data: HealthCheckResponse
   status: 200
 }
@@ -149,47 +158,48 @@ export const healthCheck = async ( options?: RequestInit): Promise<healthCheckRe
 
 
 
-export const getHealthCheckMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof healthCheck>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof healthCheck>>, TError,void, TContext> => {
 
-const mutationKey = ['healthCheck'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getHealthCheckQueryKey = () => {
+    return [
+    `/api/v1/health`
+    ] as const;
+    }
 
 
+export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getHealthCheckQueryKey();
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof healthCheck>>, void> = () => {
 
-
-          return  healthCheck(requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthCheck>>> = ({ signal }) => healthCheck({ signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type HealthCheckMutationResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
+export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
+export type HealthCheckQueryError = ErrorType<ProblemSchema>
 
-    export type HealthCheckMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get API health status
  */
-export const createHealthCheck = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof healthCheck>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof healthCheck>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return createMutation(() => ({ ...getHealthCheckMutationOptions(options?.()) }), queryClient);
-    }
+
+export function createHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<ProblemSchema>>(
+  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getHealthCheckQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}

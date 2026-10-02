@@ -1,14 +1,12 @@
 // @ts-nocheck
 import {
-  createQuery
+  createMutation
 } from '@tanstack/svelte-query';
 import type {
-  CreateQueryOptions,
-  CreateQueryResult,
-  DataTag,
-  QueryClient,
-  QueryFunction,
-  QueryKey
+  CreateMutationOptions,
+  CreateMutationResult,
+  MutationFunction,
+  QueryClient
 } from '@tanstack/svelte-query';
 
 import type {
@@ -72,58 +70,51 @@ export const startSession = async ( options?: RequestInit): Promise<startSession
 
 
 
+export const getStartSessionMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof startSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof startSession>>, TError,void, TContext> => {
 
-export const getStartSessionQueryKey = () => {
-    return [
-    'POST', `/api/v1/sessions`
-    ] as const;
-    }
-
-
-export const getStartSessionQueryOptions = <TData = Awaited<ReturnType<typeof startSession>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof startSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getStartSessionQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof startSession>>> = ({ signal }) => startSession({ signal, ...requestOptions });
+const mutationKey = ['startSession'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
-
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof startSession>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type StartSessionQueryResult = NonNullable<Awaited<ReturnType<typeof startSession>>>
-export type StartSessionQueryError = ErrorType<ProblemSchema>
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startSession>>, void> = () => {
 
 
-/**
+          return  startSession(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartSessionMutationResult = NonNullable<Awaited<ReturnType<typeof startSession>>>
+
+    export type StartSessionMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Start a new session
  */
-
-export function createStartSession<TData = Awaited<ReturnType<typeof startSession>>, TError = ErrorType<ProblemSchema>>(
-  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof startSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getStartSessionQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type deleteSessionResponse200 = {
+export const createStartSession = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof startSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof startSession>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return createMutation(() => ({ ...getStartSessionMutationOptions(options?.()) }), queryClient);
+    }
+    export type deleteSessionResponse200 = {
   data: void
   status: 200
 }
@@ -177,58 +168,51 @@ export const deleteSession = async (id: string, options?: RequestInit): Promise<
 
 
 
+export const getDeleteSessionMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteSession>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof deleteSession>>, TError,{id: string}, TContext> => {
 
-export const getDeleteSessionQueryKey = (id: string,) => {
-    return [
-    'DELETE', `/api/v1/sessions/${id}`
-    ] as const;
-    }
-
-
-export const getDeleteSessionQueryOptions = <TData = Awaited<ReturnType<typeof deleteSession>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getDeleteSessionQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteSession>>> = ({ signal }) => deleteSession(id, { signal, ...requestOptions });
+const mutationKey = ['deleteSession'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSession>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteSession>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type DeleteSessionQueryResult = NonNullable<Awaited<ReturnType<typeof deleteSession>>>
-export type DeleteSessionQueryError = ErrorType<ProblemSchema>
+          return  deleteSession(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSessionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSession>>>
+
+    export type DeleteSessionMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Delete a specific session
  */
-
-export function createDeleteSession<TData = Awaited<ReturnType<typeof deleteSession>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getDeleteSessionQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type stopSessionResponse200 = {
+export const createDeleteSession = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteSession>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof deleteSession>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getDeleteSessionMutationOptions(options?.()) }), queryClient);
+    }
+    export type stopSessionResponse200 = {
   data: void
   status: 200
 }
@@ -282,54 +266,47 @@ export const stopSession = async (id: string, options?: RequestInit): Promise<st
 
 
 
+export const getStopSessionMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof stopSession>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof stopSession>>, TError,{id: string}, TContext> => {
 
-export const getStopSessionQueryKey = (id: string,) => {
-    return [
-    'POST', `/api/v1/sessions/${id}/stop`
-    ] as const;
-    }
-
-
-export const getStopSessionQueryOptions = <TData = Awaited<ReturnType<typeof stopSession>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof stopSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getStopSessionQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof stopSession>>> = ({ signal }) => stopSession(id, { signal, ...requestOptions });
+const mutationKey = ['stopSession'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stopSession>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof stopSession>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type StopSessionQueryResult = NonNullable<Awaited<ReturnType<typeof stopSession>>>
-export type StopSessionQueryError = ErrorType<ProblemSchema>
+          return  stopSession(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StopSessionMutationResult = NonNullable<Awaited<ReturnType<typeof stopSession>>>
+
+    export type StopSessionMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Stop a specific session
  */
-
-export function createStopSession<TData = Awaited<ReturnType<typeof stopSession>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof stopSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getStopSessionQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
+export const createStopSession = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof stopSession>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof stopSession>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getStopSessionMutationOptions(options?.()) }), queryClient);
+    }

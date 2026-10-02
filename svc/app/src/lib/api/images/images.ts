@@ -89,51 +89,58 @@ export const listImages = async (params?: ListImagesParams, options?: RequestIni
 
 
 
-export const getListImagesMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listImages>>, TError,{params?: ListImagesParams}, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof listImages>>, TError,{params?: ListImagesParams}, TContext> => {
 
-const mutationKey = ['listImages'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getListImagesQueryKey = (params?: ListImagesParams,) => {
+    return [
+    `/api/v1/images`, ...(params ? [params] : [])
+    ] as const;
+    }
 
 
+export const getListImagesQueryOptions = <TData = Awaited<ReturnType<typeof listImages>>, TError = ErrorType<ProblemSchema>>(params?: ListImagesParams, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listImages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListImagesQueryKey(params);
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listImages>>, {params?: ListImagesParams}> = (props) => {
-          const {params} = props ?? {};
 
-          return  listImages(params,requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listImages>>> = ({ signal }) => listImages(params, { signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof listImages>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type ListImagesMutationResult = NonNullable<Awaited<ReturnType<typeof listImages>>>
+export type ListImagesQueryResult = NonNullable<Awaited<ReturnType<typeof listImages>>>
+export type ListImagesQueryError = ErrorType<ProblemSchema>
 
-    export type ListImagesMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary List generated images
  */
-export const createListImages = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listImages>>, TError,{params?: ListImagesParams}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof listImages>>,
-        TError,
-        {params?: ListImagesParams},
-        TContext
-      > => {
-      return createMutation(() => ({ ...getListImagesMutationOptions(options?.()) }), queryClient);
-    }
-    export type createImageResponse400 = {
+
+export function createListImages<TData = Awaited<ReturnType<typeof listImages>>, TError = ErrorType<ProblemSchema>>(
+ params?: () =>  ListImagesParams, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listImages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getListImagesQueryOptions(params?.(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type createImageResponse400 = {
   data: ProblemSchema
   status: 400
 }
@@ -180,58 +187,51 @@ export const createImage = async (imageRequest: ImageRequest, options?: RequestI
 
 
 
+export const getCreateImageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createImage>>, TError,{data: ImageRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof createImage>>, TError,{data: ImageRequest}, TContext> => {
 
-export const getCreateImageQueryKey = (imageRequest?: ImageRequest,) => {
-    return [
-    'POST', `/api/v1/images`, imageRequest
-    ] as const;
-    }
-
-
-export const getCreateImageQueryOptions = <TData = Awaited<ReturnType<typeof createImage>>, TError = ErrorType<ProblemSchema>>(imageRequest: ImageRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getCreateImageQueryKey(imageRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof createImage>>> = ({ signal }) => createImage(imageRequest, { signal, ...requestOptions });
+const mutationKey = ['createImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createImage>>, {data: ImageRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof createImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type CreateImageQueryResult = NonNullable<Awaited<ReturnType<typeof createImage>>>
-export type CreateImageQueryError = ErrorType<ProblemSchema>
+          return  createImage(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateImageMutationResult = NonNullable<Awaited<ReturnType<typeof createImage>>>
+    export type CreateImageMutationBody = ImageRequest
+    export type CreateImageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Create a new image
  */
-
-export function createCreateImage<TData = Awaited<ReturnType<typeof createImage>>, TError = ErrorType<ProblemSchema>>(
- imageRequest: () =>  ImageRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getCreateImageQueryOptions(imageRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type analyzeUploadedImageResponse200 = {
+export const createCreateImage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createImage>>, TError,{data: ImageRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof createImage>>,
+        TError,
+        {data: ImageRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getCreateImageMutationOptions(options?.()) }), queryClient);
+    }
+    export type analyzeUploadedImageResponse200 = {
   data: ImageAnalysisResponse
   status: 200
 }
@@ -286,58 +286,51 @@ export const analyzeUploadedImage = async (analyzeUploadRequest: AnalyzeUploadRe
 
 
 
+export const getAnalyzeUploadedImageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError,{data: AnalyzeUploadRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError,{data: AnalyzeUploadRequest}, TContext> => {
 
-export const getAnalyzeUploadedImageQueryKey = (analyzeUploadRequest?: AnalyzeUploadRequest,) => {
-    return [
-    'POST', `/api/v1/images/analysis`, analyzeUploadRequest
-    ] as const;
-    }
-
-
-export const getAnalyzeUploadedImageQueryOptions = <TData = Awaited<ReturnType<typeof analyzeUploadedImage>>, TError = ErrorType<ProblemSchema>>(analyzeUploadRequest: AnalyzeUploadRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getAnalyzeUploadedImageQueryKey(analyzeUploadRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeUploadedImage>>> = ({ signal }) => analyzeUploadedImage(analyzeUploadRequest, { signal, ...requestOptions });
+const mutationKey = ['analyzeUploadedImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeUploadedImage>>, {data: AnalyzeUploadRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type AnalyzeUploadedImageQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeUploadedImage>>>
-export type AnalyzeUploadedImageQueryError = ErrorType<ProblemSchema>
+          return  analyzeUploadedImage(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeUploadedImageMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeUploadedImage>>>
+    export type AnalyzeUploadedImageMutationBody = AnalyzeUploadRequest
+    export type AnalyzeUploadedImageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Analyse an uploaded image
  */
-
-export function createAnalyzeUploadedImage<TData = Awaited<ReturnType<typeof analyzeUploadedImage>>, TError = ErrorType<ProblemSchema>>(
- analyzeUploadRequest: () =>  AnalyzeUploadRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getAnalyzeUploadedImageQueryOptions(analyzeUploadRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type editImageResponse200 = {
+export const createAnalyzeUploadedImage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof analyzeUploadedImage>>, TError,{data: AnalyzeUploadRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof analyzeUploadedImage>>,
+        TError,
+        {data: AnalyzeUploadRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getAnalyzeUploadedImageMutationOptions(options?.()) }), queryClient);
+    }
+    export type editImageResponse200 = {
   data: void
   status: 200
 }
@@ -386,58 +379,51 @@ export const editImage = async ( options?: RequestInit): Promise<editImageRespon
 
 
 
+export const getEditImageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof editImage>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof editImage>>, TError,void, TContext> => {
 
-export const getEditImageQueryKey = () => {
-    return [
-    'POST', `/api/v1/images/edit`
-    ] as const;
-    }
-
-
-export const getEditImageQueryOptions = <TData = Awaited<ReturnType<typeof editImage>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof editImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getEditImageQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof editImage>>> = ({ signal }) => editImage({ signal, ...requestOptions });
+const mutationKey = ['editImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
-
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof editImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EditImageQueryResult = NonNullable<Awaited<ReturnType<typeof editImage>>>
-export type EditImageQueryError = ErrorType<ProblemSchema>
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editImage>>, void> = () => {
 
 
-/**
+          return  editImage(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditImageMutationResult = NonNullable<Awaited<ReturnType<typeof editImage>>>
+
+    export type EditImageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Create a new image from existing images
  */
-
-export function createEditImage<TData = Awaited<ReturnType<typeof editImage>>, TError = ErrorType<ProblemSchema>>(
-  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof editImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getEditImageQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type deleteImageResponse200 = {
+export const createEditImage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof editImage>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof editImage>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return createMutation(() => ({ ...getEditImageMutationOptions(options?.()) }), queryClient);
+    }
+    export type deleteImageResponse200 = {
   data: void
   status: 200
 }
@@ -491,58 +477,51 @@ export const deleteImage = async (id: string, options?: RequestInit): Promise<de
 
 
 
+export const getDeleteImageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteImage>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof deleteImage>>, TError,{id: string}, TContext> => {
 
-export const getDeleteImageQueryKey = (id: string,) => {
-    return [
-    'DELETE', `/api/v1/images/${id}`
-    ] as const;
-    }
-
-
-export const getDeleteImageQueryOptions = <TData = Awaited<ReturnType<typeof deleteImage>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getDeleteImageQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteImage>>> = ({ signal }) => deleteImage(id, { signal, ...requestOptions });
+const mutationKey = ['deleteImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteImage>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type DeleteImageQueryResult = NonNullable<Awaited<ReturnType<typeof deleteImage>>>
-export type DeleteImageQueryError = ErrorType<ProblemSchema>
+          return  deleteImage(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteImageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteImage>>>
+
+    export type DeleteImageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Delete a specific image
  */
-
-export function createDeleteImage<TData = Awaited<ReturnType<typeof deleteImage>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getDeleteImageQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type analyzeImageResponse200 = {
+export const createDeleteImage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteImage>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof deleteImage>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getDeleteImageMutationOptions(options?.()) }), queryClient);
+    }
+    export type analyzeImageResponse200 = {
   data: ImageAnalysisResponse
   status: 200
 }
@@ -597,54 +576,47 @@ export const analyzeImage = async (id: string, options?: RequestInit): Promise<a
 
 
 
+export const getAnalyzeImageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof analyzeImage>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof analyzeImage>>, TError,{id: string}, TContext> => {
 
-export const getAnalyzeImageQueryKey = (id: string,) => {
-    return [
-    'POST', `/api/v1/images/${id}/analysis`
-    ] as const;
-    }
-
-
-export const getAnalyzeImageQueryOptions = <TData = Awaited<ReturnType<typeof analyzeImage>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getAnalyzeImageQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeImage>>> = ({ signal }) => analyzeImage(id, { signal, ...requestOptions });
+const mutationKey = ['analyzeImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeImage>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof analyzeImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type AnalyzeImageQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeImage>>>
-export type AnalyzeImageQueryError = ErrorType<ProblemSchema>
+          return  analyzeImage(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeImageMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeImage>>>
+
+    export type AnalyzeImageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Analyse an image
  */
-
-export function createAnalyzeImage<TData = Awaited<ReturnType<typeof analyzeImage>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof analyzeImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getAnalyzeImageQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
+export const createAnalyzeImage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof analyzeImage>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof analyzeImage>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getAnalyzeImageMutationOptions(options?.()) }), queryClient);
+    }

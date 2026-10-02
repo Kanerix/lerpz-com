@@ -1,14 +1,12 @@
 // @ts-nocheck
 import {
-  createQuery
+  createMutation
 } from '@tanstack/svelte-query';
 import type {
-  CreateQueryOptions,
-  CreateQueryResult,
-  DataTag,
-  QueryClient,
-  QueryFunction,
-  QueryKey
+  CreateMutationOptions,
+  CreateMutationResult,
+  MutationFunction,
+  QueryClient
 } from '@tanstack/svelte-query';
 
 import type {
@@ -80,58 +78,51 @@ export const enhanceChatPrompt = async (enhanceRequest: EnhanceRequest, options?
 
 
 
+export const getEnhanceChatPromptMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof enhanceChatPrompt>>, TError,{data: EnhanceRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof enhanceChatPrompt>>, TError,{data: EnhanceRequest}, TContext> => {
 
-export const getEnhanceChatPromptQueryKey = (enhanceRequest?: EnhanceRequest,) => {
-    return [
-    'POST', `/api/v1/enhance/chat`, enhanceRequest
-    ] as const;
-    }
-
-
-export const getEnhanceChatPromptQueryOptions = <TData = Awaited<ReturnType<typeof enhanceChatPrompt>>, TError = ErrorType<ProblemSchema>>(enhanceRequest: EnhanceRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof enhanceChatPrompt>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getEnhanceChatPromptQueryKey(enhanceRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof enhanceChatPrompt>>> = ({ signal }) => enhanceChatPrompt(enhanceRequest, { signal, ...requestOptions });
+const mutationKey = ['enhanceChatPrompt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enhanceChatPrompt>>, {data: EnhanceRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof enhanceChatPrompt>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EnhanceChatPromptQueryResult = NonNullable<Awaited<ReturnType<typeof enhanceChatPrompt>>>
-export type EnhanceChatPromptQueryError = ErrorType<ProblemSchema>
+          return  enhanceChatPrompt(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnhanceChatPromptMutationResult = NonNullable<Awaited<ReturnType<typeof enhanceChatPrompt>>>
+    export type EnhanceChatPromptMutationBody = EnhanceRequest
+    export type EnhanceChatPromptMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Enhance a chat prompt
  */
-
-export function createEnhanceChatPrompt<TData = Awaited<ReturnType<typeof enhanceChatPrompt>>, TError = ErrorType<ProblemSchema>>(
- enhanceRequest: () =>  EnhanceRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof enhanceChatPrompt>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getEnhanceChatPromptQueryOptions(enhanceRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type enhanceImagePromptResponse200 = {
+export const createEnhanceChatPrompt = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof enhanceChatPrompt>>, TError,{data: EnhanceRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof enhanceChatPrompt>>,
+        TError,
+        {data: EnhanceRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getEnhanceChatPromptMutationOptions(options?.()) }), queryClient);
+    }
+    export type enhanceImagePromptResponse200 = {
   data: EnhanceResponse
   status: 200
 }
@@ -186,58 +177,51 @@ export const enhanceImagePrompt = async (enhanceRequest: EnhanceRequest, options
 
 
 
+export const getEnhanceImagePromptMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof enhanceImagePrompt>>, TError,{data: EnhanceRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof enhanceImagePrompt>>, TError,{data: EnhanceRequest}, TContext> => {
 
-export const getEnhanceImagePromptQueryKey = (enhanceRequest?: EnhanceRequest,) => {
-    return [
-    'POST', `/api/v1/enhance/image`, enhanceRequest
-    ] as const;
-    }
-
-
-export const getEnhanceImagePromptQueryOptions = <TData = Awaited<ReturnType<typeof enhanceImagePrompt>>, TError = ErrorType<ProblemSchema>>(enhanceRequest: EnhanceRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof enhanceImagePrompt>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getEnhanceImagePromptQueryKey(enhanceRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof enhanceImagePrompt>>> = ({ signal }) => enhanceImagePrompt(enhanceRequest, { signal, ...requestOptions });
+const mutationKey = ['enhanceImagePrompt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enhanceImagePrompt>>, {data: EnhanceRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof enhanceImagePrompt>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EnhanceImagePromptQueryResult = NonNullable<Awaited<ReturnType<typeof enhanceImagePrompt>>>
-export type EnhanceImagePromptQueryError = ErrorType<ProblemSchema>
+          return  enhanceImagePrompt(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnhanceImagePromptMutationResult = NonNullable<Awaited<ReturnType<typeof enhanceImagePrompt>>>
+    export type EnhanceImagePromptMutationBody = EnhanceRequest
+    export type EnhanceImagePromptMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Enhance an image prompt
  */
-
-export function createEnhanceImagePrompt<TData = Awaited<ReturnType<typeof enhanceImagePrompt>>, TError = ErrorType<ProblemSchema>>(
- enhanceRequest: () =>  EnhanceRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof enhanceImagePrompt>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getEnhanceImagePromptQueryOptions(enhanceRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type enhanceVideoPromptResponse200 = {
+export const createEnhanceImagePrompt = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof enhanceImagePrompt>>, TError,{data: EnhanceRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof enhanceImagePrompt>>,
+        TError,
+        {data: EnhanceRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getEnhanceImagePromptMutationOptions(options?.()) }), queryClient);
+    }
+    export type enhanceVideoPromptResponse200 = {
   data: EnhanceResponse
   status: 200
 }
@@ -292,54 +276,47 @@ export const enhanceVideoPrompt = async (enhanceRequest: EnhanceRequest, options
 
 
 
+export const getEnhanceVideoPromptMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError,{data: EnhanceRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError,{data: EnhanceRequest}, TContext> => {
 
-export const getEnhanceVideoPromptQueryKey = (enhanceRequest?: EnhanceRequest,) => {
-    return [
-    'POST', `/api/v1/enhance/video`, enhanceRequest
-    ] as const;
-    }
-
-
-export const getEnhanceVideoPromptQueryOptions = <TData = Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError = ErrorType<ProblemSchema>>(enhanceRequest: EnhanceRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getEnhanceVideoPromptQueryKey(enhanceRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof enhanceVideoPrompt>>> = ({ signal }) => enhanceVideoPrompt(enhanceRequest, { signal, ...requestOptions });
+const mutationKey = ['enhanceVideoPrompt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enhanceVideoPrompt>>, {data: EnhanceRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EnhanceVideoPromptQueryResult = NonNullable<Awaited<ReturnType<typeof enhanceVideoPrompt>>>
-export type EnhanceVideoPromptQueryError = ErrorType<ProblemSchema>
+          return  enhanceVideoPrompt(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnhanceVideoPromptMutationResult = NonNullable<Awaited<ReturnType<typeof enhanceVideoPrompt>>>
+    export type EnhanceVideoPromptMutationBody = EnhanceRequest
+    export type EnhanceVideoPromptMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Enhance a video prompt
  */
-
-export function createEnhanceVideoPrompt<TData = Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError = ErrorType<ProblemSchema>>(
- enhanceRequest: () =>  EnhanceRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getEnhanceVideoPromptQueryOptions(enhanceRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
+export const createEnhanceVideoPrompt = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof enhanceVideoPrompt>>, TError,{data: EnhanceRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof enhanceVideoPrompt>>,
+        TError,
+        {data: EnhanceRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getEnhanceVideoPromptMutationOptions(options?.()) }), queryClient);
+    }

@@ -89,51 +89,58 @@ export const listVideos = async (params?: ListVideosParams, options?: RequestIni
 
 
 
-export const getListVideosMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listVideos>>, TError,{params?: ListVideosParams}, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof listVideos>>, TError,{params?: ListVideosParams}, TContext> => {
 
-const mutationKey = ['listVideos'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getListVideosQueryKey = (params?: ListVideosParams,) => {
+    return [
+    `/api/v1/videos`, ...(params ? [params] : [])
+    ] as const;
+    }
 
 
+export const getListVideosQueryOptions = <TData = Awaited<ReturnType<typeof listVideos>>, TError = ErrorType<ProblemSchema>>(params?: ListVideosParams, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listVideos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListVideosQueryKey(params);
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listVideos>>, {params?: ListVideosParams}> = (props) => {
-          const {params} = props ?? {};
 
-          return  listVideos(params,requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listVideos>>> = ({ signal }) => listVideos(params, { signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof listVideos>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type ListVideosMutationResult = NonNullable<Awaited<ReturnType<typeof listVideos>>>
+export type ListVideosQueryResult = NonNullable<Awaited<ReturnType<typeof listVideos>>>
+export type ListVideosQueryError = ErrorType<ProblemSchema>
 
-    export type ListVideosMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary List generated videos
  */
-export const createListVideos = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listVideos>>, TError,{params?: ListVideosParams}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof listVideos>>,
-        TError,
-        {params?: ListVideosParams},
-        TContext
-      > => {
-      return createMutation(() => ({ ...getListVideosMutationOptions(options?.()) }), queryClient);
-    }
-    export type createVideoResponse202 = {
+
+export function createListVideos<TData = Awaited<ReturnType<typeof listVideos>>, TError = ErrorType<ProblemSchema>>(
+ params?: () =>  ListVideosParams, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listVideos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getListVideosQueryOptions(params?.(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type createVideoResponse202 = {
   data: CreateVideoResponse
   status: 202
 }
@@ -193,58 +200,51 @@ export const createVideo = async (videoRequest: VideoRequest, options?: RequestI
 
 
 
+export const getCreateVideoMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createVideo>>, TError,{data: VideoRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof createVideo>>, TError,{data: VideoRequest}, TContext> => {
 
-export const getCreateVideoQueryKey = (videoRequest?: VideoRequest,) => {
-    return [
-    'POST', `/api/v1/videos`, videoRequest
-    ] as const;
-    }
-
-
-export const getCreateVideoQueryOptions = <TData = Awaited<ReturnType<typeof createVideo>>, TError = ErrorType<ProblemSchema>>(videoRequest: VideoRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createVideo>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getCreateVideoQueryKey(videoRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof createVideo>>> = ({ signal }) => createVideo(videoRequest, { signal, ...requestOptions });
+const mutationKey = ['createVideo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createVideo>>, {data: VideoRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof createVideo>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type CreateVideoQueryResult = NonNullable<Awaited<ReturnType<typeof createVideo>>>
-export type CreateVideoQueryError = ErrorType<ProblemSchema>
+          return  createVideo(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateVideoMutationResult = NonNullable<Awaited<ReturnType<typeof createVideo>>>
+    export type CreateVideoMutationBody = VideoRequest
+    export type CreateVideoMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Create a new video
  */
-
-export function createCreateVideo<TData = Awaited<ReturnType<typeof createVideo>>, TError = ErrorType<ProblemSchema>>(
- videoRequest: () =>  VideoRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createVideo>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getCreateVideoQueryOptions(videoRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type getVideoJobResponse200 = {
+export const createCreateVideo = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createVideo>>, TError,{data: VideoRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof createVideo>>,
+        TError,
+        {data: VideoRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getCreateVideoMutationOptions(options?.()) }), queryClient);
+    }
+    export type getVideoJobResponse200 = {
   data: VideoJobResponse
   status: 200
 }
@@ -299,47 +299,48 @@ export const getVideoJob = async (id: string, options?: RequestInit): Promise<ge
 
 
 
-export const getGetVideoJobMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getVideoJob>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof getVideoJob>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['getVideoJob'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getGetVideoJobQueryKey = (id: string,) => {
+    return [
+    `/api/v1/videos/jobs/${id}`
+    ] as const;
+    }
 
 
+export const getGetVideoJobQueryOptions = <TData = Awaited<ReturnType<typeof getVideoJob>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getVideoJob>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVideoJobQueryKey(id);
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getVideoJob>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
 
-          return  getVideoJob(id,requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVideoJob>>> = ({ signal }) => getVideoJob(id, { signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof getVideoJob>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type GetVideoJobMutationResult = NonNullable<Awaited<ReturnType<typeof getVideoJob>>>
+export type GetVideoJobQueryResult = NonNullable<Awaited<ReturnType<typeof getVideoJob>>>
+export type GetVideoJobQueryError = ErrorType<ProblemSchema>
 
-    export type GetVideoJobMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get video job status
  */
-export const createGetVideoJob = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getVideoJob>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof getVideoJob>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return createMutation(() => ({ ...getGetVideoJobMutationOptions(options?.()) }), queryClient);
-    }
+
+export function createGetVideoJob<TData = Awaited<ReturnType<typeof getVideoJob>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getVideoJob>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getGetVideoJobQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}

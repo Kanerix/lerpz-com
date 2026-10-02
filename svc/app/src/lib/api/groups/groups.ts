@@ -76,51 +76,58 @@ export const listGroups = async ( options?: RequestInit): Promise<listGroupsResp
 
 
 
-export const getListGroupsMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listGroups>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof listGroups>>, TError,void, TContext> => {
 
-const mutationKey = ['listGroups'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getListGroupsQueryKey = () => {
+    return [
+    `/api/v1/groups`
+    ] as const;
+    }
 
 
+export const getListGroupsQueryOptions = <TData = Awaited<ReturnType<typeof listGroups>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listGroups>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListGroupsQueryKey();
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listGroups>>, void> = () => {
 
-
-          return  listGroups(requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listGroups>>> = ({ signal }) => listGroups({ signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof listGroups>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type ListGroupsMutationResult = NonNullable<Awaited<ReturnType<typeof listGroups>>>
+export type ListGroupsQueryResult = NonNullable<Awaited<ReturnType<typeof listGroups>>>
+export type ListGroupsQueryError = ErrorType<ProblemSchema>
 
-    export type ListGroupsMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get a list of groups
  */
-export const createListGroups = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listGroups>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof listGroups>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return createMutation(() => ({ ...getListGroupsMutationOptions(options?.()) }), queryClient);
-    }
-    export type createGroupResponse200 = {
+
+export function createListGroups<TData = Awaited<ReturnType<typeof listGroups>>, TError = ErrorType<ProblemSchema>>(
+  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listGroups>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getListGroupsQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type createGroupResponse200 = {
   data: void
   status: 200
 }
@@ -169,58 +176,51 @@ export const createGroup = async ( options?: RequestInit): Promise<createGroupRe
 
 
 
+export const getCreateGroupMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createGroup>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof createGroup>>, TError,void, TContext> => {
 
-export const getCreateGroupQueryKey = () => {
-    return [
-    'POST', `/api/v1/groups`
-    ] as const;
-    }
-
-
-export const getCreateGroupQueryOptions = <TData = Awaited<ReturnType<typeof createGroup>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getCreateGroupQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof createGroup>>> = ({ signal }) => createGroup({ signal, ...requestOptions });
+const mutationKey = ['createGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
-
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof createGroup>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type CreateGroupQueryResult = NonNullable<Awaited<ReturnType<typeof createGroup>>>
-export type CreateGroupQueryError = ErrorType<ProblemSchema>
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createGroup>>, void> = () => {
 
 
-/**
+          return  createGroup(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateGroupMutationResult = NonNullable<Awaited<ReturnType<typeof createGroup>>>
+
+    export type CreateGroupMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Create a new group
  */
-
-export function createCreateGroup<TData = Awaited<ReturnType<typeof createGroup>>, TError = ErrorType<ProblemSchema>>(
-  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getCreateGroupQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type getGroupResponse200 = {
+export const createCreateGroup = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createGroup>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof createGroup>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return createMutation(() => ({ ...getCreateGroupMutationOptions(options?.()) }), queryClient);
+    }
+    export type getGroupResponse200 = {
   data: void
   status: 200
 }
@@ -274,51 +274,58 @@ export const getGroup = async (id: string, options?: RequestInit): Promise<getGr
 
 
 
-export const getGetGroupMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getGroup>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof getGroup>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['getGroup'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getGetGroupQueryKey = (id: string,) => {
+    return [
+    `/api/v1/groups/${id}`
+    ] as const;
+    }
 
 
+export const getGetGroupQueryOptions = <TData = Awaited<ReturnType<typeof getGroup>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGroupQueryKey(id);
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getGroup>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
 
-          return  getGroup(id,requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGroup>>> = ({ signal }) => getGroup(id, { signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof getGroup>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type GetGroupMutationResult = NonNullable<Awaited<ReturnType<typeof getGroup>>>
+export type GetGroupQueryResult = NonNullable<Awaited<ReturnType<typeof getGroup>>>
+export type GetGroupQueryError = ErrorType<ProblemSchema>
 
-    export type GetGroupMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get a specific group
  */
-export const createGetGroup = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getGroup>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof getGroup>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return createMutation(() => ({ ...getGetGroupMutationOptions(options?.()) }), queryClient);
-    }
-    export type deleteGroupResponse200 = {
+
+export function createGetGroup<TData = Awaited<ReturnType<typeof getGroup>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getGetGroupQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type deleteGroupResponse200 = {
   data: void
   status: 200
 }
@@ -372,58 +379,51 @@ export const deleteGroup = async (id: string, options?: RequestInit): Promise<de
 
 
 
+export const getDeleteGroupMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteGroup>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof deleteGroup>>, TError,{id: string}, TContext> => {
 
-export const getDeleteGroupQueryKey = (id: string,) => {
-    return [
-    'DELETE', `/api/v1/groups/${id}`
-    ] as const;
-    }
-
-
-export const getDeleteGroupQueryOptions = <TData = Awaited<ReturnType<typeof deleteGroup>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getDeleteGroupQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteGroup>>> = ({ signal }) => deleteGroup(id, { signal, ...requestOptions });
+const mutationKey = ['deleteGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteGroup>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteGroup>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type DeleteGroupQueryResult = NonNullable<Awaited<ReturnType<typeof deleteGroup>>>
-export type DeleteGroupQueryError = ErrorType<ProblemSchema>
+          return  deleteGroup(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteGroupMutationResult = NonNullable<Awaited<ReturnType<typeof deleteGroup>>>
+
+    export type DeleteGroupMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Delete a group
  */
-
-export function createDeleteGroup<TData = Awaited<ReturnType<typeof deleteGroup>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getDeleteGroupQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type updateGroupResponse200 = {
+export const createDeleteGroup = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteGroup>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof deleteGroup>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getDeleteGroupMutationOptions(options?.()) }), queryClient);
+    }
+    export type updateGroupResponse200 = {
   data: void
   status: 200
 }
@@ -477,54 +477,47 @@ export const updateGroup = async (id: string, options?: RequestInit): Promise<up
 
 
 
+export const getUpdateGroupMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof updateGroup>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof updateGroup>>, TError,{id: string}, TContext> => {
 
-export const getUpdateGroupQueryKey = (id: string,) => {
-    return [
-    'PATCH', `/api/v1/groups/${id}`
-    ] as const;
-    }
-
-
-export const getUpdateGroupQueryOptions = <TData = Awaited<ReturnType<typeof updateGroup>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getUpdateGroupQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof updateGroup>>> = ({ signal }) => updateGroup(id, { signal, ...requestOptions });
+const mutationKey = ['updateGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGroup>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof updateGroup>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type UpdateGroupQueryResult = NonNullable<Awaited<ReturnType<typeof updateGroup>>>
-export type UpdateGroupQueryError = ErrorType<ProblemSchema>
+          return  updateGroup(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateGroupMutationResult = NonNullable<Awaited<ReturnType<typeof updateGroup>>>
+
+    export type UpdateGroupMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Update a specific group
  */
-
-export function createUpdateGroup<TData = Awaited<ReturnType<typeof updateGroup>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateGroup>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getUpdateGroupQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
+export const createUpdateGroup = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof updateGroup>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof updateGroup>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getUpdateGroupMutationOptions(options?.()) }), queryClient);
+    }

@@ -83,51 +83,58 @@ export const listChats = async ( options?: RequestInit): Promise<listChatsRespon
 
 
 
-export const getListChatsMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listChats>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof listChats>>, TError,void, TContext> => {
 
-const mutationKey = ['listChats'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getListChatsQueryKey = () => {
+    return [
+    `/api/v1/chats`
+    ] as const;
+    }
 
 
+export const getListChatsQueryOptions = <TData = Awaited<ReturnType<typeof listChats>>, TError = ErrorType<ProblemSchema>>( options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listChats>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListChatsQueryKey();
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof listChats>>, void> = () => {
 
-
-          return  listChats(requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listChats>>> = ({ signal }) => listChats({ signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof listChats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type ListChatsMutationResult = NonNullable<Awaited<ReturnType<typeof listChats>>>
+export type ListChatsQueryResult = NonNullable<Awaited<ReturnType<typeof listChats>>>
+export type ListChatsQueryError = ErrorType<ProblemSchema>
 
-    export type ListChatsMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get a list of chats
  */
-export const createListChats = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof listChats>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof listChats>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return createMutation(() => ({ ...getListChatsMutationOptions(options?.()) }), queryClient);
-    }
-    export type createChatResponse200 = {
+
+export function createListChats<TData = Awaited<ReturnType<typeof listChats>>, TError = ErrorType<ProblemSchema>>(
+  options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof listChats>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getListChatsQueryOptions(options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type createChatResponse200 = {
   data: string
   status: 200
 }
@@ -189,58 +196,51 @@ export const createChat = async (chatRequest: ChatRequest, options?: RequestInit
 
 
 
+export const getCreateChatMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createChat>>, TError,{data: ChatRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof createChat>>, TError,{data: ChatRequest}, TContext> => {
 
-export const getCreateChatQueryKey = (chatRequest?: ChatRequest,) => {
-    return [
-    'POST', `/api/v1/chats`, chatRequest
-    ] as const;
-    }
-
-
-export const getCreateChatQueryOptions = <TData = Awaited<ReturnType<typeof createChat>>, TError = ErrorType<ProblemSchema>>(chatRequest: ChatRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getCreateChatQueryKey(chatRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof createChat>>> = ({ signal }) => createChat(chatRequest, { signal, ...requestOptions });
+const mutationKey = ['createChat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createChat>>, {data: ChatRequest}> = (props) => {
+          const {data} = props ?? {};
 
-   return  { queryKey, queryFn, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof createChat>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type CreateChatQueryResult = NonNullable<Awaited<ReturnType<typeof createChat>>>
-export type CreateChatQueryError = ErrorType<ProblemSchema>
+          return  createChat(data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateChatMutationResult = NonNullable<Awaited<ReturnType<typeof createChat>>>
+    export type CreateChatMutationBody = ChatRequest
+    export type CreateChatMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Create a new chat
  */
-
-export function createCreateChat<TData = Awaited<ReturnType<typeof createChat>>, TError = ErrorType<ProblemSchema>>(
- chatRequest: () =>  ChatRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof createChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getCreateChatQueryOptions(chatRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type getChatResponse200 = {
+export const createCreateChat = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof createChat>>, TError,{data: ChatRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof createChat>>,
+        TError,
+        {data: ChatRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getCreateChatMutationOptions(options?.()) }), queryClient);
+    }
+    export type getChatResponse200 = {
   data: ConversationDetailResponse
   status: 200
 }
@@ -295,51 +295,58 @@ export const getChat = async (id: string, options?: RequestInit): Promise<getCha
 
 
 
-export const getGetChatMutationOptions = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getChat>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): CreateMutationOptions<Awaited<ReturnType<typeof getChat>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['getChat'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getGetChatQueryKey = (id: string,) => {
+    return [
+    `/api/v1/chats/${id}`
+    ] as const;
+    }
 
 
+export const getGetChatQueryOptions = <TData = Awaited<ReturnType<typeof getChat>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChatQueryKey(id);
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getChat>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
 
-          return  getChat(id,requestOptions)
-        }
-
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChat>>> = ({ signal }) => getChat(id, { signal, ...requestOptions });
 
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof getChat>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    export type GetChatMutationResult = NonNullable<Awaited<ReturnType<typeof getChat>>>
+export type GetChatQueryResult = NonNullable<Awaited<ReturnType<typeof getChat>>>
+export type GetChatQueryError = ErrorType<ProblemSchema>
 
-    export type GetChatMutationError = ErrorType<ProblemSchema>
 
-    /**
+/**
  * @summary Get a specific chat
  */
-export const createGetChat = <TError = ErrorType<ProblemSchema>,
-    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof getChat>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient): CreateMutationResult<
-        Awaited<ReturnType<typeof getChat>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return createMutation(() => ({ ...getGetChatMutationOptions(options?.()) }), queryClient);
-    }
-    export type sendChatMessageResponse200 = {
+
+export function createGetChat<TData = Awaited<ReturnType<typeof getChat>>, TError = ErrorType<ProblemSchema>>(
+ id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof getChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient
+ ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+
+
+  const query = createQuery(() => getGetChatQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return query
+}
+
+
+
+
+
+
+export type sendChatMessageResponse200 = {
   data: string
   status: 200
 }
@@ -406,62 +413,51 @@ export const sendChatMessage = async (id: string,
 
 
 
+export const getSendChatMessageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof sendChatMessage>>, TError,{id: string;data: MessageRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof sendChatMessage>>, TError,{id: string;data: MessageRequest}, TContext> => {
 
-export const getSendChatMessageQueryKey = (id: string,
-    messageRequest?: MessageRequest,) => {
-    return [
-    'POST', `/api/v1/chats/${id}`, messageRequest
-    ] as const;
-    }
-
-
-export const getSendChatMessageQueryOptions = <TData = Awaited<ReturnType<typeof sendChatMessage>>, TError = ErrorType<ProblemSchema>>(id: string,
-    messageRequest: MessageRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof sendChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSendChatMessageQueryKey(id,messageRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof sendChatMessage>>> = ({ signal }) => sendChatMessage(id,messageRequest, { signal, ...requestOptions });
+const mutationKey = ['sendChatMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendChatMessage>>, {id: string;data: MessageRequest}> = (props) => {
+          const {id,data} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof sendChatMessage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SendChatMessageQueryResult = NonNullable<Awaited<ReturnType<typeof sendChatMessage>>>
-export type SendChatMessageQueryError = ErrorType<ProblemSchema>
+          return  sendChatMessage(id,data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendChatMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendChatMessage>>>
+    export type SendChatMessageMutationBody = MessageRequest
+    export type SendChatMessageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Send a message in an existing chat
  */
-
-export function createSendChatMessage<TData = Awaited<ReturnType<typeof sendChatMessage>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string,
-    messageRequest: () =>  MessageRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof sendChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getSendChatMessageQueryOptions(id(),
-    messageRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type deleteChatResponse204 = {
+export const createSendChatMessage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof sendChatMessage>>, TError,{id: string;data: MessageRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof sendChatMessage>>,
+        TError,
+        {id: string;data: MessageRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getSendChatMessageMutationOptions(options?.()) }), queryClient);
+    }
+    export type deleteChatResponse204 = {
   data: void
   status: 204
 }
@@ -516,58 +512,51 @@ export const deleteChat = async (id: string, options?: RequestInit): Promise<del
 
 
 
+export const getDeleteChatMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteChat>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof deleteChat>>, TError,{id: string}, TContext> => {
 
-export const getDeleteChatQueryKey = (id: string,) => {
-    return [
-    'DELETE', `/api/v1/chats/${id}`
-    ] as const;
-    }
-
-
-export const getDeleteChatQueryOptions = <TData = Awaited<ReturnType<typeof deleteChat>>, TError = ErrorType<ProblemSchema>>(id: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getDeleteChatQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteChat>>> = ({ signal }) => deleteChat(id, { signal, ...requestOptions });
+const mutationKey = ['deleteChat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteChat>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteChat>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type DeleteChatQueryResult = NonNullable<Awaited<ReturnType<typeof deleteChat>>>
-export type DeleteChatQueryError = ErrorType<ProblemSchema>
+          return  deleteChat(id,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteChatMutationResult = NonNullable<Awaited<ReturnType<typeof deleteChat>>>
+
+    export type DeleteChatMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Delete a chat
  */
-
-export function createDeleteChat<TData = Awaited<ReturnType<typeof deleteChat>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getDeleteChatQueryOptions(id(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type updateChatResponse200 = {
+export const createDeleteChat = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteChat>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof deleteChat>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getDeleteChatMutationOptions(options?.()) }), queryClient);
+    }
+    export type updateChatResponse200 = {
   data: ConversationResponse
   status: 200
 }
@@ -623,62 +612,51 @@ export const updateChat = async (id: string,
 
 
 
+export const getUpdateChatMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof updateChat>>, TError,{id: string;data: UpdateChatRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof updateChat>>, TError,{id: string;data: UpdateChatRequest}, TContext> => {
 
-export const getUpdateChatQueryKey = (id: string,
-    updateChatRequest?: UpdateChatRequest,) => {
-    return [
-    'PATCH', `/api/v1/chats/${id}`, updateChatRequest
-    ] as const;
-    }
-
-
-export const getUpdateChatQueryOptions = <TData = Awaited<ReturnType<typeof updateChat>>, TError = ErrorType<ProblemSchema>>(id: string,
-    updateChatRequest: UpdateChatRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getUpdateChatQueryKey(id,updateChatRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof updateChat>>> = ({ signal }) => updateChat(id,updateChatRequest, { signal, ...requestOptions });
+const mutationKey = ['updateChat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateChat>>, {id: string;data: UpdateChatRequest}> = (props) => {
+          const {id,data} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof updateChat>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type UpdateChatQueryResult = NonNullable<Awaited<ReturnType<typeof updateChat>>>
-export type UpdateChatQueryError = ErrorType<ProblemSchema>
+          return  updateChat(id,data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateChatMutationResult = NonNullable<Awaited<ReturnType<typeof updateChat>>>
+    export type UpdateChatMutationBody = UpdateChatRequest
+    export type UpdateChatMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Update a chat
  */
-
-export function createUpdateChat<TData = Awaited<ReturnType<typeof updateChat>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string,
-    updateChatRequest: () =>  UpdateChatRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof updateChat>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getUpdateChatQueryOptions(id(),
-    updateChatRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type editLatestChatMessageResponse200 = {
+export const createUpdateChat = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof updateChat>>, TError,{id: string;data: UpdateChatRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof updateChat>>,
+        TError,
+        {id: string;data: UpdateChatRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getUpdateChatMutationOptions(options?.()) }), queryClient);
+    }
+    export type editLatestChatMessageResponse200 = {
   data: string
   status: 200
 }
@@ -750,62 +728,51 @@ export const editLatestChatMessage = async (id: string,
 
 
 
+export const getEditLatestChatMessageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError,{id: string;data: EditLatestMessageRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError,{id: string;data: EditLatestMessageRequest}, TContext> => {
 
-export const getEditLatestChatMessageQueryKey = (id: string,
-    editLatestMessageRequest?: EditLatestMessageRequest,) => {
-    return [
-    'POST', `/api/v1/chats/${id}/messages/latest`, editLatestMessageRequest
-    ] as const;
-    }
-
-
-export const getEditLatestChatMessageQueryOptions = <TData = Awaited<ReturnType<typeof editLatestChatMessage>>, TError = ErrorType<ProblemSchema>>(id: string,
-    editLatestMessageRequest: EditLatestMessageRequest, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getEditLatestChatMessageQueryKey(id,editLatestMessageRequest);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof editLatestChatMessage>>> = ({ signal }) => editLatestChatMessage(id,editLatestMessageRequest, { signal, ...requestOptions });
+const mutationKey = ['editLatestChatMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editLatestChatMessage>>, {id: string;data: EditLatestMessageRequest}> = (props) => {
+          const {id,data} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EditLatestChatMessageQueryResult = NonNullable<Awaited<ReturnType<typeof editLatestChatMessage>>>
-export type EditLatestChatMessageQueryError = ErrorType<ProblemSchema>
+          return  editLatestChatMessage(id,data,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditLatestChatMessageMutationResult = NonNullable<Awaited<ReturnType<typeof editLatestChatMessage>>>
+    export type EditLatestChatMessageMutationBody = EditLatestMessageRequest
+    export type EditLatestChatMessageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Edit the latest message in a chat
  */
-
-export function createEditLatestChatMessage<TData = Awaited<ReturnType<typeof editLatestChatMessage>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string,
-    editLatestMessageRequest: () =>  EditLatestMessageRequest, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getEditLatestChatMessageQueryOptions(id(),
-    editLatestMessageRequest(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
-export type deleteChatMessageResponse204 = {
+export const createEditLatestChatMessage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof editLatestChatMessage>>, TError,{id: string;data: EditLatestMessageRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof editLatestChatMessage>>,
+        TError,
+        {id: string;data: EditLatestMessageRequest},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getEditLatestChatMessageMutationOptions(options?.()) }), queryClient);
+    }
+    export type deleteChatMessageResponse204 = {
   data: void
   status: 204
 }
@@ -862,58 +829,47 @@ export const deleteChatMessage = async (id: string,
 
 
 
+export const getDeleteChatMessageMutationOptions = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteChatMessage>>, TError,{id: string;messageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): CreateMutationOptions<Awaited<ReturnType<typeof deleteChatMessage>>, TError,{id: string;messageId: string}, TContext> => {
 
-export const getDeleteChatMessageQueryKey = (id: string,
-    messageId: string,) => {
-    return [
-    'DELETE', `/api/v1/chats/${id}/messages/${messageId}`
-    ] as const;
-    }
-
-
-export const getDeleteChatMessageQueryOptions = <TData = Awaited<ReturnType<typeof deleteChatMessage>>, TError = ErrorType<ProblemSchema>>(id: string,
-    messageId: string, options?: { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getDeleteChatMessageQueryKey(id,messageId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteChatMessage>>> = ({ signal }) => deleteChatMessage(id,messageId, { signal, ...requestOptions });
+const mutationKey = ['deleteChatMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
 
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteChatMessage>>, {id: string;messageId: string}> = (props) => {
+          const {id,messageId} = props ?? {};
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && messageId !== null && messageId !== undefined, ...queryOptions} as CreateQueryOptions<Awaited<ReturnType<typeof deleteChatMessage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type DeleteChatMessageQueryResult = NonNullable<Awaited<ReturnType<typeof deleteChatMessage>>>
-export type DeleteChatMessageQueryError = ErrorType<ProblemSchema>
+          return  deleteChatMessage(id,messageId,requestOptions)
+        }
 
 
-/**
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteChatMessageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteChatMessage>>>
+
+    export type DeleteChatMessageMutationError = ErrorType<ProblemSchema>
+
+    /**
  * @summary Delete a message and everything after it
  */
-
-export function createDeleteChatMessage<TData = Awaited<ReturnType<typeof deleteChatMessage>>, TError = ErrorType<ProblemSchema>>(
- id: () =>  string,
-    messageId: () =>  string, options?: () => { query?:Partial<CreateQueryOptions<Awaited<ReturnType<typeof deleteChatMessage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: () => QueryClient
- ): CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-
-
-  const query = createQuery(() => getDeleteChatMessageQueryOptions(id(),
-    messageId(),options?.()), queryClient) as CreateQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return query
-}
-
-
-
-
-
-
+export const createDeleteChatMessage = <TError = ErrorType<ProblemSchema>,
+    TContext = unknown>(options?: () => { mutation?:CreateMutationOptions<Awaited<ReturnType<typeof deleteChatMessage>>, TError,{id: string;messageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: () => QueryClient): CreateMutationResult<
+        Awaited<ReturnType<typeof deleteChatMessage>>,
+        TError,
+        {id: string;messageId: string},
+        TContext
+      > => {
+      return createMutation(() => ({ ...getDeleteChatMessageMutationOptions(options?.()) }), queryClient);
+    }
