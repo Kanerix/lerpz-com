@@ -17,26 +17,32 @@ import {
 import { createQuery, useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
 import { toast } from "svelte-sonner";
+import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
-import {
-    deleteChat,
-    getListChatsUrl,
-    listChats,
-} from "$lib/api/chats/chats.js";
+import { deleteChat, listChats } from "$lib/api/chats/chats.js";
 import type { ConversationResponse } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 import ChatInfoDialog from "./ChatInfoDialog.svelte";
 
 const pathname = $derived(page.url.pathname);
 
 const queryClient = useQueryClient();
+const accountKey = $derived(msalStore.accountKey);
 
 const query = createQuery(() => ({
-    queryKey: [getListChatsUrl()],
-    queryFn: ({ signal }: { signal: AbortSignal }) => listChats({ signal }),
+    queryKey: queryKeys.chats.list(accountKey),
+    enabled: browser && accountKey !== null,
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        const response = await listChats({ signal });
+        if (response.status !== 200) throw response.data;
+        return response.data;
+    },
+    meta: { skipGlobalErrorDialog: true },
 }));
 
 // The conversation shown in the info dialog, and whether it is open.
@@ -53,21 +59,31 @@ function openInfo(conv: ConversationResponse) {
 }
 
 async function handleDelete(conv: ConversationResponse) {
-    if (pendingIds.includes(conv.id)) return;
+    const submissionAccount = accountKey;
+    if (!submissionAccount || pendingIds.includes(conv.id)) return;
+
+    const listQueryKey = queryKeys.chats.list(submissionAccount);
+    const detailQueryKey = queryKeys.chats.detail(submissionAccount, conv.id);
+    const isCurrentSubmission = () => submissionAccount === accountKey;
     pendingIds = [...pendingIds, conv.id];
     try {
-        await deleteChat(conv.id);
-        await queryClient.invalidateQueries({
-            queryKey: [getListChatsUrl()],
-        });
+        const response = await deleteChat(conv.id);
+        if (response.status !== 204) throw response.data;
+        queryClient.removeQueries({ queryKey: detailQueryKey, exact: true });
+        if (!isCurrentSubmission()) return;
         // If the deleted chat is the one being viewed, leave it behind.
         if (pathname === `/ai/chats/${conv.id}`) {
             await goto("/ai/chats");
         }
         toast.success("Chat deleted");
     } catch (err) {
-        showError(err);
+        if (isCurrentSubmission()) showError(err);
     } finally {
+        const refetchType = isCurrentSubmission() ? "active" : "none";
+        await queryClient.invalidateQueries({
+            queryKey: listQueryKey,
+            refetchType,
+        });
         pendingIds = pendingIds.filter((id) => id !== conv.id);
     }
 }
@@ -107,8 +123,7 @@ function getDateGroup(dateStr: string | null | undefined): DateGroup {
 }
 
 const groups = $derived.by(() => {
-    if (query.data?.status !== 200) return [];
-    const convs = [...(query.data.data ?? [])]
+    const convs = [...(query.data ?? [])]
         .filter((conv) => !conv.archived)
         .sort((a, b) => getTime(b) - getTime(a))
         .slice(0, MAX_CHATS);
@@ -137,7 +152,7 @@ const groups = $derived.by(() => {
       </SidebarGroupContent>
     </SidebarGroup>
   </div>
-{:else if query.data?.status !== 200}
+{:else if query.isError && !query.data}
   <SidebarGroup class="group-data-[state=collapsed]:hidden">
     <SidebarGroupLabel>Chats</SidebarGroupLabel>
     <SidebarGroupContent>
@@ -151,7 +166,7 @@ const groups = $derived.by(() => {
       </div>
     </SidebarGroupContent>
   </SidebarGroup>
-{:else if (query.data.data?.length ?? 0) === 0}
+{:else if (query.data?.length ?? 0) === 0}
   <SidebarGroup class="group-data-[state=collapsed]:hidden">
     <SidebarGroupLabel>Chats</SidebarGroupLabel>
     <SidebarGroupContent>

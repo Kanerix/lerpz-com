@@ -13,8 +13,11 @@ import {
     Skeleton,
 } from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
+import { browser } from "$app/environment";
 import type { VideoItem, VideoListResponse } from "$lib/api/models";
-import { getListVideosUrl, listVideos } from "$lib/api/videos/videos.js";
+import { listVideos } from "$lib/api/videos/videos.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { formatDate, formatDuration } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 
@@ -43,9 +46,11 @@ let {
 
 // Surrounding videos: everything older than the current one, using its ID as
 // the pagination cursor.
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null && video !== null);
 const nearbyQuery = createQuery(() => ({
-    queryKey: [getListVideosUrl(), "nearby", video?.id],
-    enabled: Boolean(video),
+    queryKey: queryKeys.videos.nearby(accountKey, video?.id, NEARBY_LIMIT),
+    enabled,
     queryFn: async ({
         signal,
     }: {
@@ -55,9 +60,7 @@ const nearbyQuery = createQuery(() => ({
             { cursor: video?.id, limit: NEARBY_LIMIT },
             { signal },
         );
-        if (res.status !== 200) {
-            throw new Error("Failed to load videos");
-        }
+        if (res.status !== 200) throw res.data;
         return res.data;
     },
 }));

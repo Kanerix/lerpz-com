@@ -14,13 +14,14 @@ import type {
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { optionCardVariants } from "./agents-variants.js";
 
 const queryClient = useQueryClient();
 const accountKey = $derived(msalStore.accountKey);
 const enabled = $derived(browser && accountKey !== null);
 const memoryQuery = createQuery(() => ({
-    queryKey: ["agents", accountKey, "memory"],
+    queryKey: queryKeys.agents.memory(accountKey),
     enabled,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const response = await listAgentMemory({ signal });
@@ -86,7 +87,7 @@ async function create(event: SubmitEvent) {
     const submissionAccount = accountKey;
     if (!enabled || !submissionAccount) return;
 
-    const queryKey = ["agents", submissionAccount];
+    const queryKey = queryKeys.agents.all(submissionAccount);
     const request: CreateAgentRequest = {
         name,
         memory: memoryMode,

@@ -9,9 +9,11 @@ import {
     type Header,
     type SortingState,
 } from "@tanstack/table-core";
-import { getListChatsUrl, updateChat } from "$lib/api/chats/chats.js";
+import { updateChat } from "$lib/api/chats/chats.js";
 import type { ConversationResponse } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { createSvelteTable } from "$lib/utils/table.svelte.js";
 
 let {
@@ -21,21 +23,28 @@ let {
 } = $props();
 
 const queryClient = useQueryClient();
+const accountKey = $derived(msalStore.accountKey);
 
 let pendingIds = $state<string[]>([]);
 
 async function toggleArchive(conv: ConversationResponse) {
-    if (pendingIds.includes(conv.id)) return;
+    const submissionAccount = accountKey;
+    if (!submissionAccount || pendingIds.includes(conv.id)) return;
+
+    const queryKey = queryKeys.chats.all(submissionAccount);
+    const isCurrentSubmission = () => submissionAccount === accountKey;
     const nextArchived = !conv.archived;
     pendingIds = [...pendingIds, conv.id];
     try {
-        await updateChat(conv.id, { archived: nextArchived });
-        await queryClient.invalidateQueries({
-            queryKey: [getListChatsUrl()],
+        const response = await updateChat(conv.id, {
+            archived: nextArchived,
         });
+        if (response.status !== 200) throw response.data;
     } catch (err) {
-        showError(err);
+        if (isCurrentSubmission()) showError(err);
     } finally {
+        const refetchType = isCurrentSubmission() ? "active" : "none";
+        await queryClient.invalidateQueries({ queryKey, refetchType });
         pendingIds = pendingIds.filter((id) => id !== conv.id);
     }
 }

@@ -19,13 +19,14 @@ import type { AgentResponse } from "$lib/api/models/index.js";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { formatDate } from "$lib/utils/format.js";
 
 const queryClient = useQueryClient();
 const accountKey = $derived(msalStore.accountKey);
 const enabled = $derived(browser && accountKey !== null);
 const query = createQuery(() => ({
-    queryKey: ["agents", accountKey, "list"],
+    queryKey: queryKeys.agents.list(accountKey),
     enabled,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const response = await listAgents({ signal });
@@ -69,7 +70,7 @@ async function confirmDelete() {
     )
         return;
 
-    const queryKey = ["agents", submissionAccount];
+    const queryKey = queryKeys.agents.all(submissionAccount);
     const isCurrentSubmission = () =>
         !disposed && submissionAccount === accountKey;
     deleting = true;

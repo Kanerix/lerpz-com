@@ -16,19 +16,16 @@ import { useQueryClient } from "@tanstack/svelte-query";
 import { cubicOut } from "svelte/easing";
 import { prefersReducedMotion } from "svelte/motion";
 import { getAiContext } from "$lib/ai/context.svelte.js";
-import {
-    deleteChatMessage,
-    getChat,
-    getGetChatUrl,
-    getListChatsUrl,
-} from "$lib/api/chats/chats.js";
+import { deleteChatMessage, getChat } from "$lib/api/chats/chats.js";
 import type { ConversationMessage } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import ModelAvatar from "$lib/components/avatar/ModelAvatar.svelte";
 import UserAvatar from "$lib/components/avatar/UserAvatar.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import type { PromptExample } from "$lib/components/prompt-starter/index.js";
 import { PromptStarter } from "$lib/components/prompt-starter/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { fade } from "$lib/utils/transitions.js";
 import CopyButton from "./CopyButton.svelte";
 import DeleteButton from "./DeleteButton.svelte";
@@ -52,6 +49,7 @@ let {
 
 const ai = getAiContext();
 const queryClient = useQueryClient();
+const accountKey = $derived(msalStore.accountKey);
 
 let pendingDeleteId = $state<string | null>(null);
 let isDeleting = $state(false);
@@ -139,28 +137,33 @@ function cancelDelete() {
 async function confirmDelete() {
     const convId = ai.conversationId;
     const targetId = pendingDeleteId;
-    if (!convId || !targetId) return;
+    const submissionAccount = accountKey;
+    if (!convId || !targetId || !submissionAccount) return;
 
+    const queryKey = queryKeys.chats.all(submissionAccount);
+    const isCurrentSubmission = () => submissionAccount === accountKey;
     isDeleting = true;
     try {
-        await deleteChatMessage(convId, resolveServerId(targetId));
+        const response = await deleteChatMessage(
+            convId,
+            resolveServerId(targetId),
+        );
+        if (response.status !== 204) throw response.data;
+        if (!isCurrentSubmission()) return;
         // Trim local state immediately, then refresh the cached conversation and
         // chat list so a later reload reflects the server.
         ai.removeChatMessagesFrom(targetId);
-        await queryClient.invalidateQueries({
-            queryKey: [getGetChatUrl(convId)],
-        });
-        await queryClient.invalidateQueries({
-            queryKey: [getListChatsUrl()],
-        });
         onDelete?.(targetId);
         pendingDeleteId = null;
     } catch (err) {
+        if (!isCurrentSubmission()) return;
         // Close the confirmation dialog first so the error dialog isn't stacked
         // on top of it.
         pendingDeleteId = null;
         showError(err);
     } finally {
+        const refetchType = isCurrentSubmission() ? "active" : "none";
+        await queryClient.invalidateQueries({ queryKey, refetchType });
         isDeleting = false;
     }
 }

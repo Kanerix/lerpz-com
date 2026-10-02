@@ -16,10 +16,10 @@ import {
     type InfiniteData,
     useQueryClient,
 } from "@tanstack/svelte-query";
+import { browser } from "$app/environment";
 import {
     analyzeImage,
     analyzeUploadedImage,
-    getListImagesUrl,
     listImages,
 } from "$lib/api/images/images.js";
 import type {
@@ -27,8 +27,10 @@ import type {
     ImageItem,
     ImageListResponse,
 } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { dropZoneVariants, thumbnailVariants } from "./analysis-variants.js";
 
 const PAGE_SIZE = 24;
@@ -39,8 +41,11 @@ type Mode = "gallery" | "upload";
 
 // The picker is fed by the same list endpoint as the gallery, so images can be
 // analysed straight after they're generated.
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const query = createInfiniteQuery(() => ({
-    queryKey: [getListImagesUrl(), "analysis"],
+    queryKey: queryKeys.images.list(accountKey, PAGE_SIZE),
+    enabled,
     queryFn: async ({
         pageParam,
         signal,
@@ -63,13 +68,12 @@ const query = createInfiniteQuery(() => ({
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: ImageListResponse) =>
         lastPage.next_cursor ?? undefined,
+    meta: { skipGlobalErrorDialog: true },
 }));
 
 const images = $derived(query.data?.pages.flatMap((page) => page.items) ?? []);
 
 const queryClient = useQueryClient();
-
-const LIST_QUERY_KEY = [getListImagesUrl(), "analysis"] as const;
 
 let mode = $state<Mode>("gallery");
 
@@ -86,6 +90,16 @@ let isDragging = $state(false);
 
 let isAnalyzing = $state(false);
 let result = $state<ImageAnalysisResponse | null>(null);
+let analysisRunId = 0;
+
+$effect(() => {
+    void accountKey;
+    analysisRunId += 1;
+    isAnalyzing = false;
+    selectedId = null;
+    result = null;
+});
+
 // Fall back to any title/tags already persisted on the image so a previously
 // analysed image shows its metadata before it's re-run. Uploads have no stored
 // metadata, so they only ever show a freshly computed `result`.
@@ -174,17 +188,57 @@ function clearUpload() {
     result = null;
 }
 
+type ImageListCache =
+    | ImageListResponse
+    | InfiniteData<ImageListResponse, string | null>;
+
+function applyCachedAnalysis(
+    account: string,
+    id: string,
+    title: string,
+    tags: string[],
+) {
+    queryClient.setQueriesData<ImageListCache>(
+        { queryKey: queryKeys.images.all(account) },
+        (data) => {
+            if (!data) return data;
+            const updateItems = (items: ImageItem[]) =>
+                items.map((item) =>
+                    item.id === id ? { ...item, title, tags } : item,
+                );
+            if ("pages" in data) {
+                return {
+                    ...data,
+                    pages: data.pages.map((page) => ({
+                        ...page,
+                        items: updateItems(page.items),
+                    })),
+                };
+            }
+            return { ...data, items: updateItems(data.items) };
+        },
+    );
+}
+
 async function analyze() {
-    if (isAnalyzing || !hasImage) return;
+    const submissionAccount = accountKey;
+    if (!enabled || !submissionAccount || isAnalyzing || !hasImage) return;
+
+    const runId = ++analysisRunId;
     isAnalyzing = true;
     try {
         if (mode === "upload") {
             const image = uploadDataUrl;
             if (!image) return;
             const res = await analyzeUploadedImage({ image });
-            if (res.status !== 200) {
-                throw new Error(`Failed to analyse image (${res.status})`);
-            }
+            if (res.status !== 200) throw res.data;
+            if (
+                runId !== analysisRunId ||
+                submissionAccount !== accountKey ||
+                mode !== "upload" ||
+                uploadDataUrl !== image
+            )
+                return;
             result = res.data;
             return;
         }
@@ -192,35 +246,36 @@ async function analyze() {
         const target = selected;
         if (!target) return;
         const res = await analyzeImage(target.id);
-        if (res.status !== 200) {
-            throw new Error(`Failed to analyse image (${res.status})`);
-        }
-        result = res.data;
+        if (res.status !== 200) throw res.data;
 
-        // Persist the new title/tags into the cached list so re-selecting the
-        // image (and the gallery) reflects the analysis without a refetch.
-        const analyzedId = target.id;
-        const { title, tags } = res.data;
-        queryClient.setQueryData<
-            InfiniteData<ImageListResponse, string | null>
-        >(LIST_QUERY_KEY, (data) => {
-            if (!data) return data;
-            return {
-                ...data,
-                pages: data.pages.map((page) => ({
-                    ...page,
-                    items: page.items.map((item) =>
-                        item.id === analyzedId
-                            ? { ...item, title, tags }
-                            : item,
-                    ),
-                })),
-            };
+        await queryClient.cancelQueries({
+            queryKey: queryKeys.images.all(submissionAccount),
         });
+        applyCachedAnalysis(
+            submissionAccount,
+            target.id,
+            res.data.title,
+            res.data.tags,
+        );
+        if (
+            runId !== analysisRunId ||
+            submissionAccount !== accountKey ||
+            mode !== "gallery" ||
+            selectedId !== target.id
+        )
+            return;
+        result = res.data;
     } catch (err) {
+        if (runId !== analysisRunId || submissionAccount !== accountKey) {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.images.all(submissionAccount),
+                refetchType: "none",
+            });
+            return;
+        }
         showError(err);
     } finally {
-        isAnalyzing = false;
+        if (runId === analysisRunId) isAnalyzing = false;
     }
 }
 
@@ -322,7 +377,7 @@ const skeletonCount = 9;
               <Skeleton class="aspect-square w-full rounded-lg" />
             {/each}
           </div>
-        {:else if query.isError}
+        {:else if query.isError && !query.data}
           <ErrorState
             title="Couldn't load images"
             onRetry={() => query.refetch()}

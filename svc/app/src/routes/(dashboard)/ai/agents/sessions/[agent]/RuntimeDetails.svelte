@@ -7,6 +7,7 @@ import { readAgent } from "$lib/api/agents/agents.js";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 
 import { formatDate } from "$lib/utils/format.js";
 
@@ -14,7 +15,7 @@ let { agent }: { agent: string } = $props();
 const accountKey = $derived(msalStore.accountKey);
 const enabled = $derived(browser && accountKey !== null);
 const query = createQuery(() => ({
-    queryKey: ["agents", accountKey, "detail", agent],
+    queryKey: queryKeys.agents.detail(accountKey, agent),
     enabled: enabled && Boolean(agent),
     queryFn: async ({ signal }) => {
         if (!/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(agent)) {

@@ -9,32 +9,58 @@ import { enhanceChat, enhanceImage, enhanceVideo } from "$lib/ai/enhance.js";
 import { createImage } from "$lib/ai/image.svelte.js";
 import { createModels } from "$lib/ai/models.svelte.js";
 import { createVideo } from "$lib/ai/video.svelte.js";
-import { getListChatsUrl } from "$lib/api/chats/chats.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import Chatbox from "$lib/components/chatbox/Chatbox.svelte";
 import { chatboxStore } from "$lib/components/chatbox/chatbox.store.svelte.js";
 import { DEFAULT_REASONING_LEVEL } from "$lib/components/model-selector/reasoning.js";
 import { notificationStore } from "$lib/notifications/notifications.svelte.js";
+import { queryKeys } from "$lib/query/keys.js";
 
 let { children }: { children: Snippet } = $props();
 
 const queryClient = useQueryClient();
+const accountKey = $derived(msalStore.accountKey);
+let chatAccountKey: string | null = null;
+let imageAccountKey: string | null = null;
+let videoAccountKey: string | null = null;
 
 const chat = createChat({
     onSaved: (convId) => {
-        // Refresh the sidebar chat list so the newly created conversation
-        // shows up without a manual reload.
-        queryClient.invalidateQueries({ queryKey: [getListChatsUrl()] });
-        goto(`/ai/chats/${convId}`, { replaceState: true });
+        const submissionAccount = chatAccountKey;
+        if (!submissionAccount) return;
+        void queryClient.invalidateQueries({
+            queryKey: queryKeys.chats.all(submissionAccount),
+            refetchType: submissionAccount === accountKey ? "active" : "none",
+        });
+        if (submissionAccount === accountKey) {
+            void goto(`/ai/chats/${convId}`, { replaceState: true });
+        }
     },
 });
 
-const image = createImage();
+const image = createImage({
+    onDone: () => {
+        const submissionAccount = imageAccountKey;
+        if (!submissionAccount) return;
+        void queryClient.invalidateQueries({
+            queryKey: queryKeys.images.all(submissionAccount),
+            refetchType: submissionAccount === accountKey ? "active" : "none",
+        });
+    },
+});
 // Video renders run as background jobs, so surface their outcome through the
 // notification bell. The user may have moved to another AI page by the time a
 // render finishes. `lastVideoPrompt` gives the notification a meaningful body.
 let lastVideoPrompt = "";
 const video = createVideo({
     onDone: () => {
+        const submissionAccount = videoAccountKey;
+        if (!submissionAccount) return;
+        void queryClient.invalidateQueries({
+            queryKey: queryKeys.videos.all(submissionAccount),
+            refetchType: submissionAccount === accountKey ? "active" : "none",
+        });
+        if (submissionAccount !== accountKey) return;
         notificationStore.add({
             title: "Video ready",
             body: lastVideoPrompt || "Your video finished generating.",
@@ -43,6 +69,7 @@ const video = createVideo({
         });
     },
     onError: (message) => {
+        if (!videoAccountKey || videoAccountKey !== accountKey) return;
         notificationStore.add({
             title: "Video generation failed",
             body: message,
@@ -53,17 +80,63 @@ const video = createVideo({
 });
 const modelsHook = createModels();
 
+function sendChat(prompt: string, options?: Parameters<typeof chat.send>[1]) {
+    chatAccountKey = accountKey;
+    chat.send(prompt, options);
+}
+
+function editChat(
+    prompt: string,
+    options?: Parameters<typeof chat.editLatest>[1],
+) {
+    chatAccountKey = accountKey;
+    chat.editLatest(prompt, options);
+}
+
+function retryChat() {
+    chatAccountKey = accountKey;
+    chat.retry();
+}
+
+function enterConversation(
+    id: string,
+    messages?: Parameters<typeof chat.enterConversation>[1],
+) {
+    chatAccountKey = accountKey;
+    chat.enterConversation(id, messages);
+}
+
+function startImage(
+    prompt: string,
+    options?: Parameters<typeof image.start>[1],
+) {
+    imageAccountKey = accountKey;
+    image.start(prompt, options);
+}
+
 function startVideo(
     prompt: string,
     options?: Parameters<typeof video.start>[1],
 ) {
+    videoAccountKey = accountKey;
     // Cap the remembered prompt so a long one doesn't bloat the notification.
     lastVideoPrompt = prompt.length > 140 ? `${prompt.slice(0, 139)}…` : prompt;
     video.start(prompt, options);
 }
 
+let stateAccountKey: string | null | undefined;
 $effect(() => {
-    modelsHook.loadModels();
+    const currentAccountKey = accountKey;
+    if (currentAccountKey === stateAccountKey) return;
+
+    stateAccountKey = currentAccountKey;
+    chatAccountKey = null;
+    imageAccountKey = null;
+    videoAccountKey = null;
+    lastVideoPrompt = "";
+    chat.reset();
+    image.reset();
+    video.reset();
 });
 
 setAiContext({
@@ -87,11 +160,11 @@ setAiContext({
     },
     stopChat: chat.stop,
     resetChat: chat.reset,
-    retryChat: chat.retry,
-    enterConversation: chat.enterConversation,
+    retryChat,
+    enterConversation,
     removeChatMessagesFrom: chat.removeMessagesFrom,
-    sendChat: chat.send,
-    editChat: chat.editLatest,
+    sendChat,
+    editChat,
     get generatedImage() {
         return image.image;
     },
@@ -106,7 +179,7 @@ setAiContext({
     },
     stopImage: image.stop,
     resetImage: image.reset,
-    startImage: image.start,
+    startImage,
     get generatedVideo() {
         return video.video;
     },
@@ -163,10 +236,10 @@ const showChatbox = $derived(
         : null;
       const family = model?.family || null;
       if (chatboxStore.editingMessageId) {
-        chat.editLatest(args.prompt, { model: args.model, reasoning, family });
+        editChat(args.prompt, { model: args.model, reasoning, family });
         chatboxStore.stopEditing();
       } else {
-        chat.send(args.prompt, { model: args.model, reasoning, family });
+        sendChat(args.prompt, { model: args.model, reasoning, family });
       }
     }}
     onEnhance={enhanceChat}

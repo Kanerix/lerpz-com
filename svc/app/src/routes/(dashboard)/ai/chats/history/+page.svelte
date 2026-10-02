@@ -2,14 +2,25 @@
 import Icon from "@iconify/svelte";
 import { Badge, Input, ScrollArea, Skeleton } from "@lerpz/ui";
 import { createQuery } from "@tanstack/svelte-query";
-import { getListChatsUrl, listChats } from "$lib/api/chats/chats.js";
+import { browser } from "$app/environment";
+import { listChats } from "$lib/api/chats/chats.js";
 import type { ConversationResponse } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import ChatHistoryTable from "$lib/components/chats/ChatHistoryTable.svelte";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
+
+const accountKey = $derived(msalStore.accountKey);
 
 const query = createQuery(() => ({
-    queryKey: [getListChatsUrl()],
-    queryFn: ({ signal }: { signal: AbortSignal }) => listChats({ signal }),
+    queryKey: queryKeys.chats.list(accountKey),
+    enabled: browser && accountKey !== null,
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        const response = await listChats({ signal });
+        if (response.status !== 200) throw response.data;
+        return response.data;
+    },
+    meta: { skipGlobalErrorDialog: true },
 }));
 
 let search = $state("");
@@ -24,9 +35,7 @@ function matches(c: ConversationResponse): boolean {
     );
 }
 
-const allChats = $derived(
-    query.data?.status === 200 ? (query.data.data ?? []) : [],
-);
+const allChats = $derived(query.data ?? []);
 
 const activeChats = $derived(allChats.filter((c) => !c.archived && matches(c)));
 const archivedChats = $derived(
@@ -64,7 +73,7 @@ const archivedChats = $derived(
         <Skeleton class="h-11 w-full rounded-md" style="opacity: {1 - i * 0.13}" />
       {/each}
     </div>
-  {:else if query.data?.status !== 200}
+  {:else if query.isError && !query.data}
     <ErrorState
       title="Couldn't load chats"
       onRetry={() => query.refetch()}

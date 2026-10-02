@@ -15,24 +15,24 @@ import {
     useQueryClient,
 } from "@tanstack/svelte-query";
 import { toast } from "svelte-sonner";
-import {
-    deleteImage,
-    getListImagesUrl,
-    listImages,
-} from "$lib/api/images/images.js";
+import { browser } from "$app/environment";
+import { deleteImage, listImages } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { downloadImage } from "$lib/utils/download.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 import ImageDetailDialog from "./ImageDetailDialog.svelte";
 
 const PAGE_SIZE = 24;
 
-const GALLERY_QUERY_KEY = [getListImagesUrl(), "gallery"] as const;
-
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const query = createInfiniteQuery(() => ({
-    queryKey: GALLERY_QUERY_KEY,
+    queryKey: queryKeys.images.list(accountKey, PAGE_SIZE),
+    enabled,
     queryFn: async ({
         pageParam,
         signal,
@@ -52,6 +52,7 @@ const query = createInfiniteQuery(() => ({
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: ImageListResponse) =>
         lastPage.next_cursor ?? undefined,
+    meta: { skipGlobalErrorDialog: true },
 }));
 
 const images = $derived(query.data?.pages.flatMap((page) => page.items) ?? []);
@@ -66,6 +67,13 @@ let detailOpen = $state(false);
 // repeat clicks while the request is in flight.
 let pendingIds = $state<string[]>([]);
 
+$effect(() => {
+    void accountKey;
+    pendingIds = [];
+    activeImage = null;
+    detailOpen = false;
+});
+
 function openDetail(image: ImageItem) {
     activeImage = image;
     detailOpen = true;
@@ -77,54 +85,63 @@ function selectDetailImage(image: ImageItem) {
     activeImage = image;
 }
 
+type ImageListCache =
+    | ImageListResponse
+    | InfiniteData<ImageListResponse, string | null>;
+
+function updateCachedImageLists(
+    account: string,
+    updateItems: (items: ImageItem[]) => ImageItem[],
+) {
+    queryClient.setQueriesData<ImageListCache>(
+        { queryKey: queryKeys.images.all(account) },
+        (data) => {
+            if (!data) return data;
+            if ("pages" in data) {
+                return {
+                    ...data,
+                    pages: data.pages.map((page) => ({
+                        ...page,
+                        items: updateItems(page.items),
+                    })),
+                };
+            }
+            return { ...data, items: updateItems(data.items) };
+        },
+    );
+}
+
 async function handleDelete(image: ImageItem) {
-    if (pendingIds.includes(image.id)) return;
+    const submissionAccount = accountKey;
+    if (!enabled || !submissionAccount || pendingIds.includes(image.id)) return;
+
     pendingIds = [...pendingIds, image.id];
     try {
         const res = await deleteImage(image.id);
-        if (res.status !== 200) {
-            throw new Error(`Failed to delete image (${res.status})`);
-        }
-        // Drop the image from every cached page so it disappears without
-        // refetching (which would reset the infinite pagination).
-        queryClient.setQueryData<
-            InfiniteData<ImageListResponse, string | null>
-        >(GALLERY_QUERY_KEY, (data) => {
-            if (!data) return data;
-            return {
-                ...data,
-                pages: data.pages.map((page) => ({
-                    ...page,
-                    items: page.items.filter((item) => item.id !== image.id),
-                })),
-            };
+        if (res.status !== 200) throw res.data;
+
+        await queryClient.cancelQueries({
+            queryKey: queryKeys.images.all(submissionAccount),
         });
-        toast.success("Image deleted");
+        updateCachedImageLists(submissionAccount, (items) =>
+            items.filter((item) => item.id !== image.id),
+        );
+        if (submissionAccount === accountKey) toast.success("Image deleted");
     } catch (err) {
+        if (submissionAccount !== accountKey) {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.images.all(submissionAccount),
+                refetchType: "none",
+            });
+            return;
+        }
         showError(err);
     } finally {
         pendingIds = pendingIds.filter((id) => id !== image.id);
     }
 }
 
-// Persist a fresh analysis into every cached page (and the active image) so the
-// gallery and dialog reflect the new title/tags without a refetch.
 function applyAnalysis(id: string, title: string, tags: string[]) {
-    queryClient.setQueryData<InfiniteData<ImageListResponse, string | null>>(
-        GALLERY_QUERY_KEY,
-        (data) => {
-            if (!data) return data;
-            return {
-                ...data,
-                pages: data.pages.map((page) => ({
-                    ...page,
-                    items: page.items.map((item) =>
-                        item.id === id ? { ...item, title, tags } : item,
-                    ),
-                })),
-            };
-        },
-    );
     if (activeImage?.id === id) {
         activeImage = { ...activeImage, title, tags };
     }
@@ -174,7 +191,7 @@ const skeletonHeights = [220, 300, 180, 260, 200, 320, 240, 280];
         />
       {/each}
     </div>
-  {:else if query.isError}
+  {:else if query.isError && !query.data}
     <ErrorState
       title="Couldn't load images"
       onRetry={() => query.refetch()}

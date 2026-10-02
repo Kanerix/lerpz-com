@@ -12,14 +12,17 @@ import {
     ScrollArea,
     Skeleton,
 } from "@lerpz/ui";
-import { createQuery } from "@tanstack/svelte-query";
 import {
-    analyzeImage,
-    getListImagesUrl,
-    listImages,
-} from "$lib/api/images/images.js";
+    createQuery,
+    type InfiniteData,
+    useQueryClient,
+} from "@tanstack/svelte-query";
+import { browser } from "$app/environment";
+import { analyzeImage, listImages } from "$lib/api/images/images.js";
 import type { ImageItem, ImageListResponse } from "$lib/api/models";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { formatDate } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
 
@@ -51,9 +54,12 @@ let {
 
 // Surrounding images: everything older than the current image, using its ID as
 // the pagination cursor.
+const queryClient = useQueryClient();
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null && image !== null);
 const nearbyQuery = createQuery(() => ({
-    queryKey: [getListImagesUrl(), "nearby", image?.id],
-    enabled: Boolean(image),
+    queryKey: queryKeys.images.nearby(accountKey, image?.id, NEARBY_LIMIT),
+    enabled,
     queryFn: async ({
         signal,
     }: {
@@ -77,6 +83,15 @@ let isAnalyzing = $state(false);
 // never show one image's analysis on another.
 let result = $state<{ title: string; tags: string[] } | null>(null);
 let lastAnalyzedId = $state<string | null>(null);
+let analysisRunId = 0;
+
+$effect(() => {
+    void accountKey;
+    analysisRunId += 1;
+    isAnalyzing = false;
+    result = null;
+    lastAnalyzedId = null;
+});
 
 $effect(() => {
     if (image?.id !== lastAnalyzedId) {
@@ -118,22 +133,78 @@ const detailRows = $derived(
         : [],
 );
 
+type ImageListCache =
+    | ImageListResponse
+    | InfiniteData<ImageListResponse, string | null>;
+
+function applyCachedAnalysis(
+    account: string,
+    id: string,
+    title: string,
+    tags: string[],
+) {
+    queryClient.setQueriesData<ImageListCache>(
+        { queryKey: queryKeys.images.all(account) },
+        (data) => {
+            if (!data) return data;
+            const updateItems = (items: ImageItem[]) =>
+                items.map((item) =>
+                    item.id === id ? { ...item, title, tags } : item,
+                );
+            if ("pages" in data) {
+                return {
+                    ...data,
+                    pages: data.pages.map((page) => ({
+                        ...page,
+                        items: updateItems(page.items),
+                    })),
+                };
+            }
+            return { ...data, items: updateItems(data.items) };
+        },
+    );
+}
+
 async function analyze() {
-    if (!image || isAnalyzing) return;
     const target = image;
+    const submissionAccount = accountKey;
+    if (!target || !enabled || !submissionAccount || isAnalyzing) return;
+
+    const runId = ++analysisRunId;
     isAnalyzing = true;
     try {
         const res = await analyzeImage(target.id);
-        if (res.status !== 200) {
-            throw new Error(`Failed to analyse image (${res.status})`);
-        }
+        if (res.status !== 200) throw res.data;
+
+        await queryClient.cancelQueries({
+            queryKey: queryKeys.images.all(submissionAccount),
+        });
+        applyCachedAnalysis(
+            submissionAccount,
+            target.id,
+            res.data.title,
+            res.data.tags,
+        );
+        if (
+            runId !== analysisRunId ||
+            submissionAccount !== accountKey ||
+            image?.id !== target.id
+        )
+            return;
         lastAnalyzedId = target.id;
         result = res.data;
         onAnalyzed?.(target.id, res.data.title, res.data.tags);
     } catch (err) {
+        if (runId !== analysisRunId || submissionAccount !== accountKey) {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.images.all(submissionAccount),
+                refetchType: "none",
+            });
+            return;
+        }
         showError(err);
     } finally {
-        isAnalyzing = false;
+        if (runId === analysisRunId) isAnalyzing = false;
     }
 }
 

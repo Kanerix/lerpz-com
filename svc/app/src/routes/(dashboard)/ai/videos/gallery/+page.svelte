@@ -10,10 +10,13 @@ import {
     Skeleton,
 } from "@lerpz/ui";
 import { createInfiniteQuery } from "@tanstack/svelte-query";
+import { browser } from "$app/environment";
 import type { VideoItem, VideoListResponse } from "$lib/api/models";
-import { getListVideosUrl, listVideos } from "$lib/api/videos/videos.js";
+import { listVideos } from "$lib/api/videos/videos.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { downloadFile } from "$lib/utils/download.js";
 import { formatDuration } from "$lib/utils/format.js";
 import { fade, fly } from "$lib/utils/transitions.js";
@@ -21,10 +24,11 @@ import VideoDetailDialog from "./VideoDetailDialog.svelte";
 
 const PAGE_SIZE = 24;
 
-const GALLERY_QUERY_KEY = [getListVideosUrl(), "gallery"] as const;
-
+const accountKey = $derived(msalStore.accountKey);
+const enabled = $derived(browser && accountKey !== null);
 const query = createInfiniteQuery(() => ({
-    queryKey: GALLERY_QUERY_KEY,
+    queryKey: queryKeys.videos.list(accountKey, PAGE_SIZE),
+    enabled,
     queryFn: async ({
         pageParam,
         signal,
@@ -36,14 +40,13 @@ const query = createInfiniteQuery(() => ({
             { cursor: pageParam ?? undefined, limit: PAGE_SIZE },
             { signal },
         );
-        if (res.status !== 200) {
-            throw new Error(`Failed to load videos (${res.status})`);
-        }
+        if (res.status !== 200) throw res.data;
         return res.data;
     },
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: VideoListResponse) =>
         lastPage.next_cursor ?? undefined,
+    meta: { skipGlobalErrorDialog: true },
 }));
 
 const videos = $derived(query.data?.pages.flatMap((page) => page.items) ?? []);
@@ -51,6 +54,12 @@ const videos = $derived(query.data?.pages.flatMap((page) => page.items) ?? []);
 // The video shown in the detail dialog, and whether it's open.
 let activeVideo = $state<VideoItem | null>(null);
 let detailOpen = $state(false);
+
+$effect(() => {
+    void accountKey;
+    activeVideo = null;
+    detailOpen = false;
+});
 
 function openDetail(video: VideoItem) {
     activeVideo = video;
@@ -123,7 +132,7 @@ const skeletonHeights = [180, 384, 180, 384, 240, 180, 384, 180];
         />
       {/each}
     </div>
-  {:else if query.isError}
+  {:else if query.isError && !query.data}
     <ErrorState
       title="Couldn't load videos"
       onRetry={() => query.refetch()}

@@ -14,6 +14,7 @@ import { createQuery } from "@tanstack/svelte-query";
 import { getHealthCheckUrl } from "$lib/api/health/health.js";
 import type { HealthCheckResponse } from "$lib/api/models";
 import { publicEnv } from "$lib/env.js";
+import { queryKeys } from "$lib/query/keys.js";
 
 type ServiceStatus = "operational" | "outage" | "unknown";
 
@@ -34,7 +35,7 @@ async function fetchHealth(signal: AbortSignal): Promise<HealthCheckResponse> {
 }
 
 const query = createQuery(() => ({
-    queryKey: [getHealthCheckUrl()],
+    queryKey: queryKeys.health.status(),
     queryFn: ({ signal }: { signal: AbortSignal }) => fetchHealth(signal),
     refetchInterval: 30_000,
     // This page *is* the error surface. It reports outages inline and polls,

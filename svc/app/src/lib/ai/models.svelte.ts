@@ -1,5 +1,9 @@
+import { createQuery } from "@tanstack/svelte-query";
+import { browser } from "$app/environment";
 import type { ModelResponse as ApiModel } from "$lib/api/models";
 import { listModels } from "$lib/api/models/models.js";
+import { msalStore } from "$lib/auth/msal.svelte.js";
+import { queryKeys } from "$lib/query/keys.js";
 
 export type ChatboxVariant = "chat" | "image" | "video";
 
@@ -83,28 +87,27 @@ function toModel(model: ApiModel): Model {
 }
 
 export function createModels() {
-    let models = $state<Model[]>([]);
-    let isLoading = $state(false);
+    const accountKey = $derived(msalStore.accountKey);
+    const query = createQuery(() => ({
+        queryKey: queryKeys.models.list(accountKey),
+        enabled: browser && accountKey !== null,
+        queryFn: async ({ signal }: { signal: AbortSignal }) => {
+            const response = await listModels({ signal });
+            if (response.status !== 200) throw response.data;
+            return response.data.map(toModel);
+        },
+    }));
 
     async function loadModels(_modality?: string) {
-        isLoading = true;
-        try {
-            const response = await listModels();
-            models = response.status === 200 ? response.data.map(toModel) : [];
-        } catch (error) {
-            console.error("Failed to load models", error);
-            models = [];
-        } finally {
-            isLoading = false;
-        }
+        await query.refetch();
     }
 
     return {
         get models() {
-            return models;
+            return query.data ?? [];
         },
         get isLoading() {
-            return isLoading;
+            return query.isFetching;
         },
         loadModels,
     };

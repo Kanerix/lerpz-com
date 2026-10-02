@@ -23,13 +23,14 @@ import type { AgentMemoryResponse } from "$lib/api/models/index.js";
 import { msalStore } from "$lib/auth/msal.svelte.js";
 import { showError } from "$lib/components/error-dialog/index.js";
 import { ErrorState } from "$lib/components/error-state/index.js";
+import { queryKeys } from "$lib/query/keys.js";
 import { formatDate } from "$lib/utils/format.js";
 
 const queryClient = useQueryClient();
 const accountKey = $derived(msalStore.accountKey);
 const enabled = $derived(browser && accountKey !== null);
 const memoryQuery = createQuery(() => ({
-    queryKey: ["agents", accountKey, "memory"],
+    queryKey: queryKeys.agents.memory(accountKey),
     enabled,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const response = await listAgentMemory({ signal });
@@ -90,7 +91,7 @@ async function confirmDelete() {
     )
         return;
 
-    const queryKey = ["agents", submissionAccount];
+    const queryKey = queryKeys.agents.all(submissionAccount);
     const isCurrentSubmission = () =>
         !disposed && submissionAccount === accountKey;
     deleting = true;
