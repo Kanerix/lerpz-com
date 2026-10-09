@@ -9,7 +9,7 @@ use axum::{
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::Utc;
 use image::ImageReader;
-use lerpz_ai::generation::{Family, ImageEvent, ImageRequest as ImageGenRequest};
+use lerpz_ai::generation::{Family, ImageEvent, ImageGeneration, ImageRequest as ImageGenRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},

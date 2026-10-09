@@ -1,26 +1,8 @@
-//! Default image generation.
-//!
-//! Streams image generation through the OpenAI-compatible images API, emitting
-//! partial renders followed by the completed image. Decoding, measuring and
-//! persisting the result is the caller's responsibility.
+use std::future::Future;
 
-use async_openai::{
-    Client,
-    config::Config,
-    types::images::{
-        CreateImageRequestArgs, ImageGenCompletedEvent, ImageGenPartialImageEvent,
-        ImageGenStreamEvent, ImageModel, ImageQuality, ImageSize,
-    },
-};
-use tokio_stream::StreamExt as _;
+use async_openai::{Client, config::Config};
 
-use crate::{
-    generation::ImageStream,
-    portkey::{UpstreamError, classify_error},
-};
-
-/// Number of partial renders to request while an image is being generated.
-const PARTIAL_IMAGES: u8 = 3;
+use super::{ImageStream, UpstreamError};
 
 /// Parameters for an image generation request.
 #[derive(Debug, Clone)]
@@ -54,70 +36,17 @@ pub enum ImageEvent {
     },
 }
 
-/// Starts streaming image generation.
-pub(super) async fn generate<C: Config>(
-    client: &Client<C>,
-    request: ImageRequest,
-) -> Result<ImageStream, UpstreamError> {
-    let mut builder = CreateImageRequestArgs::default();
-    builder
-        .model(ImageModel::Other(request.model))
-        .prompt(request.prompt)
-        .n(request.amount)
-        .quality(ImageQuality::Low)
-        .size(ImageSize::S1024x1024)
-        .partial_images(PARTIAL_IMAGES)
-        .stream(true);
+/// Streams image generation through a provider.
+pub trait ImageGeneration {
+    /// The configuration used by this provider's `async-openai` client.
+    type Config: Config;
 
-    if let Some(user) = request.user {
-        builder.user(user);
-    }
-
-    let req = builder
-        .build()
-        .map_err(|err| UpstreamError::provider(err.to_string()))?;
-
-    // Portkey passes upstream provider errors straight through, often in a
-    // non-OpenAI shape `async-openai` can't deserialize. Surface the classified
-    // upstream error instead of letting it collapse into something opaque.
-    let mut stream = client
-        .images()
-        .generate_stream(req)
-        .await
-        .map_err(|err| classify_error(&err.to_string()))?;
-
-    Ok(Box::pin(async_stream::stream! {
-        tracing::trace!("starting image stream");
-        while let Some(chunk) = stream.next().await {
-            match chunk {
-                Ok(ImageGenStreamEvent::PartialImage(ImageGenPartialImageEvent {
-                    b64_json,
-                    partial_image_index,
-                    output_format,
-                    ..
-                })) => {
-                    tracing::trace!(index = %partial_image_index, format = %output_format, "receiving partial image");
-                    yield Ok(ImageEvent::Partial {
-                        b64: b64_json,
-                        format: output_format.to_string(),
-                    });
-                }
-                Ok(ImageGenStreamEvent::Completed(ImageGenCompletedEvent {
-                    b64_json,
-                    output_format,
-                    ..
-                })) => {
-                    tracing::trace!(format = %output_format, "receiving complete image");
-                    yield Ok(ImageEvent::Completed {
-                        b64: b64_json,
-                        format: output_format.to_string(),
-                    });
-                }
-                Err(err) => {
-                    yield Err(classify_error(&err.to_string()));
-                    break;
-                }
-            }
-        }
-    }))
+    /// Starts streaming image generation for `request`.
+    ///
+    /// An error here means the request could not be started at all.
+    fn generate_image(
+        &self,
+        client: &Client<Self::Config>,
+        request: ImageRequest,
+    ) -> impl Future<Output = Result<ImageStream, UpstreamError>> + Send;
 }

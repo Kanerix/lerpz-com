@@ -8,9 +8,8 @@
 
 use std::convert::Infallible;
 
-use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{http::StatusCode, response::sse::Event};
-use lerpz_ai::generation::{ChatEvent, ChatStream, Family};
+use lerpz_ai::generation::{ChatEvent, ChatGeneration, ChatRequest, ChatStream, Family};
 use lerpz_axum::problem::{HandlerResult, Problem};
 use tokio_stream::{Stream, StreamExt as _};
 use uuid::Uuid;
@@ -31,13 +30,13 @@ use crate::state::{DatabasePool, OpenAI};
 /// persisted and ends without a `saved` event.
 pub(super) async fn start_completion_sse(
     openai: OpenAI,
-    request: CreateChatCompletionRequest,
+    request: ChatRequest,
     conv_id: Uuid,
     database: DatabasePool,
     model_family: Option<String>,
 ) -> HandlerResult<impl Stream<Item = Result<Event, Infallible>>> {
     let family = Family::from_name(model_family.as_deref());
-    let stream = family.chat_stream(openai.as_ref(), request).await?;
+    let stream = family.generate_chat(openai.as_ref(), request).await?;
 
     Ok(completion_sse(stream, conv_id, database, model_family))
 }

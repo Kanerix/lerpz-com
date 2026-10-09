@@ -7,26 +7,35 @@
 //! whether the error was caused by the user's input (e.g. content moderation)
 //! so callers can log it at an appropriate level.
 //!
-//! Two optional, feature-gated integrations are also provided for wiring the
-//! gateway into an AI client:
-//!
-//! - `async-openai`: [`PortkeyConfig`], an [`async-openai`](async_openai)
-//!   `Config` that routes requests through Portkey.
-//! - `rig`: [`build_client`], which builds a [`rig-core`](rig_core) client
-//!   pointed at the gateway.
+//! [`PortkeyConfig`] routes [`async-openai`](async_openai) requests through
+//! Portkey. The optional `rig` feature also provides [`build_client`], which
+//! builds a [`rig-core`](rig_core) client pointed at the gateway.
 
-mod error;
-
-pub use error::{Error, ErrorKind, Result, UpstreamError, classify_error, humanize_error};
-
-#[cfg(feature = "async-openai")]
+mod chat;
 mod config;
+mod error;
+mod image;
+mod video;
 
-#[cfg(feature = "async-openai")]
+use crate::generation::Family;
+pub use crate::generation::{ErrorKind, UpstreamError, classify_error, humanize_error};
 pub use config::PortkeyConfig;
+pub use error::{Error, Result};
 
 #[cfg(feature = "rig")]
 mod client;
 
 #[cfg(feature = "rig")]
 pub use client::build_client;
+
+impl Family {
+    /// Resolves a model family name for Portkey routing.
+    ///
+    /// Unknown or unspecified families use the default behaviour.
+    pub fn from_name(name: Option<&str>) -> Self {
+        match name.map(str::trim) {
+            Some("google") => Self::Google,
+            _ => Self::Default,
+        }
+    }
+}

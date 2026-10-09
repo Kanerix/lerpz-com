@@ -1,15 +1,12 @@
 use std::convert::Infallible;
 
-use async_openai::types::chat::{
-    ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestUserMessageArgs,
-    CreateChatCompletionRequestArgs,
-};
 use axum::http::StatusCode;
 use axum::{
     Json,
     extract::{Path, State},
     response::{Sse, sse::Event},
 };
+use lerpz_ai::generation::{ChatMessage, ChatRequest as GenerationChatRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -137,9 +134,6 @@ pub async fn handler(
         }
     };
 
-    // Only the conversation's most recent user message can be edited. `id` is a
-    // uuidv7, so it is monotonic with insertion order: we use it both to locate
-    // that message and as the boundary for discarding everything after it.
     let latest_user_id = sqlx::query_scalar!(
         "SELECT id FROM messages
         WHERE conversation_id = $1 AND role = 'user'
@@ -162,9 +156,6 @@ pub async fn handler(
         }
     };
 
-    // Replace the message content and drop the stale reply(ies) that followed it
-    // in a single transaction, so an interrupted edit can't leave the
-    // conversation half-updated.
     tracing::trace!(%conv_id, %latest_user_id, "editing latest message");
     let mut tx = database.begin().await?;
     sqlx::query!(
@@ -183,9 +174,6 @@ pub async fn handler(
     .await?;
     tx.commit().await?;
 
-    // Honour a model override from the client, falling back to the model the
-    // conversation is currently pinned to. When the model changes, persist it so
-    // the switch sticks for subsequent messages and is reflected on reload.
     let model = match body.model {
         Some(m) if !m.trim().is_empty() => m,
         _ => conversation.model.clone(),
@@ -201,8 +189,6 @@ pub async fn handler(
         .await?;
     }
 
-    // Resolve the model's family so the assistant reply can be tagged with the
-    // provider that generated it. Unknown models leave the family unset.
     let model_family = sqlx::query_scalar!(
         "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
         &model,
@@ -210,8 +196,6 @@ pub async fn handler(
     .fetch_optional(&database)
     .await?;
 
-    // After the edit the conversation ends with the edited user message, so the
-    // loaded history already contains the prompt to complete against.
     tracing::trace!(%conv_id, "loading messages");
     let previous_messages = sqlx::query!(
         "SELECT role AS \"role: String\", content
@@ -223,48 +207,21 @@ pub async fn handler(
     .fetch_all(&database)
     .await?;
 
-    let mut messages: Vec<async_openai::types::chat::ChatCompletionRequestMessage> = Vec::new();
+    let messages = previous_messages
+        .into_iter()
+        .filter_map(|msg| match msg.role.as_str() {
+            "user" => Some(ChatMessage::User(msg.content)),
+            "assistant" => Some(ChatMessage::Assistant(msg.content)),
+            _ => None,
+        })
+        .collect();
 
-    for msg in &previous_messages {
-        match msg.role.as_str() {
-            "user" => {
-                messages.push(
-                    ChatCompletionRequestUserMessageArgs::default()
-                        .content(msg.content.clone())
-                        .build()?
-                        .into(),
-                );
-            }
-            "assistant" => {
-                messages.push(
-                    ChatCompletionRequestAssistantMessageArgs::default()
-                        .content(msg.content.clone())
-                        .build()?
-                        .into(),
-                );
-            }
-            _ => {}
-        }
-    }
-
-    let mut request_builder = CreateChatCompletionRequestArgs::default();
-
-    request_builder
-        .model(&model)
-        .messages(messages)
-        .stream(true);
-
-    // Apply an explicit reasoning level when the client provides one; otherwise
-    // let the model use its default behaviour.
-    if let Some(level) = reasoning.as_deref() {
-        request_builder.reasoning_effort(super::parse_reasoning_effort(level));
-    }
-
-    if let Some(upn) = token.upn.clone() {
-        request_builder.user(upn);
-    }
-
-    let request = request_builder.build()?;
+    let request = GenerationChatRequest {
+        model,
+        messages,
+        reasoning,
+        user: token.upn.clone(),
+    };
     let sse_stream = start_completion_sse(openai, request, conv_id, database, model_family).await?;
 
     Ok(Sse::new(sse_stream))

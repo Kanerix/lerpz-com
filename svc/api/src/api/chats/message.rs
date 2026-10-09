@@ -1,15 +1,12 @@
 use std::convert::Infallible;
 
-use async_openai::types::chat::{
-    ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestUserMessageArgs,
-    CreateChatCompletionRequestArgs,
-};
 use axum::http::StatusCode;
 use axum::{
     Json,
     extract::{Path, State},
     response::{Sse, sse::Event},
 };
+use lerpz_ai::generation::{ChatMessage, ChatRequest as GenerationChatRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -129,9 +126,6 @@ pub async fn handler(
         }
     };
 
-    // Honour a model override from the client, falling back to the model the
-    // conversation is currently pinned to. When the model changes, persist it so
-    // the switch sticks for subsequent messages and is reflected on reload.
     let model = match body.model {
         Some(m) if !m.trim().is_empty() => m,
         _ => conversation.model.clone(),
@@ -147,8 +141,6 @@ pub async fn handler(
         .await?;
     }
 
-    // Resolve the model's family so the assistant reply can be tagged with the
-    // provider that generated it. Unknown models leave the family unset.
     let model_family = sqlx::query_scalar!(
         "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
         &model,
@@ -177,55 +169,22 @@ pub async fn handler(
     .execute(&database)
     .await?;
 
-    let mut messages: Vec<async_openai::types::chat::ChatCompletionRequestMessage> = Vec::new();
+    let mut messages: Vec<ChatMessage> = previous_messages
+        .into_iter()
+        .filter_map(|msg| match msg.role.as_str() {
+            "user" => Some(ChatMessage::User(msg.content)),
+            "assistant" => Some(ChatMessage::Assistant(msg.content)),
+            _ => None,
+        })
+        .collect();
+    messages.push(ChatMessage::User(prompt));
 
-    for msg in &previous_messages {
-        match msg.role.as_str() {
-            "user" => {
-                messages.push(
-                    ChatCompletionRequestUserMessageArgs::default()
-                        .content(msg.content.clone())
-                        .build()?
-                        .into(),
-                );
-            }
-            "assistant" => {
-                messages.push(
-                    ChatCompletionRequestAssistantMessageArgs::default()
-                        .content(msg.content.clone())
-                        .build()?
-                        .into(),
-                );
-            }
-            _ => {}
-        }
-    }
-
-    messages.push(
-        ChatCompletionRequestUserMessageArgs::default()
-            .content(prompt)
-            .build()?
-            .into(),
-    );
-
-    let mut request_builder = CreateChatCompletionRequestArgs::default();
-
-    request_builder
-        .model(&model)
-        .messages(messages)
-        .stream(true);
-
-    // Apply an explicit reasoning level when the client provides one; otherwise
-    // let the model use its default behaviour.
-    if let Some(level) = reasoning.as_deref() {
-        request_builder.reasoning_effort(super::parse_reasoning_effort(level));
-    }
-
-    if let Some(upn) = token.upn.as_deref() {
-        request_builder.user(upn);
-    }
-
-    let request = request_builder.build()?;
+    let request = GenerationChatRequest {
+        model,
+        messages,
+        reasoning,
+        user: token.upn.clone(),
+    };
     let sse_stream = start_completion_sse(openai, request, conv_id, database, model_family).await?;
 
     Ok(Sse::new(sse_stream))

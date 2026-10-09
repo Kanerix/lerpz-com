@@ -1,13 +1,11 @@
 use std::convert::Infallible;
 
-use async_openai::types::chat::{
-    ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs,
-};
 use axum::{
     Json,
     extract::State,
     response::{Sse, sse::Event},
 };
+use lerpz_ai::generation::{ChatMessage, ChatRequest as GenerationChatRequest};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, ProblemSchema},
@@ -122,9 +120,6 @@ pub async fn handler(
     .execute(&database)
     .await?;
 
-    // Resolve the model's family so assistant replies can be tagged with the
-    // provider that generated them. Unknown models (e.g. a raw default that
-    // isn't registered) simply leave the family unset.
     let model_family = sqlx::query_scalar!(
         "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
         model,
@@ -132,26 +127,12 @@ pub async fn handler(
     .fetch_optional(&database)
     .await?;
 
-    let mut request_builder = CreateChatCompletionRequestArgs::default();
-
-    request_builder
-        .model(model)
-        .messages([ChatCompletionRequestUserMessageArgs::default()
-            .content(prompt)
-            .build()?
-            .into()])
-        .stream(true);
-
-    if let Some(level) = reasoning.as_deref() {
-        let reasoning_level = super::parse_reasoning_effort(level);
-        request_builder.reasoning_effort(reasoning_level);
-    }
-
-    if let Some(upn) = token.upn.as_deref() {
-        request_builder.user(upn);
-    }
-
-    let request = request_builder.build()?;
+    let request = GenerationChatRequest {
+        model: model.to_string(),
+        messages: vec![ChatMessage::User(prompt)],
+        reasoning,
+        user: token.upn.clone(),
+    };
     let reply_stream =
         start_completion_sse(openai, request, conv_id, database, model_family).await?;
 

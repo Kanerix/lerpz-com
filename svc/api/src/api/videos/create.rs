@@ -5,7 +5,9 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use chrono::Utc;
-use lerpz_ai::generation::{Family, VertexConfig, VideoEvent, VideoRequest as VideoGenRequest};
+use lerpz_ai::generation::{
+    Family, VertexConfig, VideoEvent, VideoGeneration, VideoRequest as VideoGenRequest,
+};
 use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
@@ -158,7 +160,7 @@ pub async fn handler(
 
     // Kick off the provider render. A failure here means the job could not be
     // created at all, so surface it synchronously rather than via a job record.
-    let job = family.start_video(openai.as_ref(), request).await.map_err(|upstream| {
+    let job = family.generate_video(openai.as_ref(), request).await.map_err(|upstream| {
         if upstream.is_user() {
             tracing::warn!(%oid, model = %model_name, reason = %upstream.message, "provider rejects video generation");
         } else {
