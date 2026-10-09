@@ -9,7 +9,7 @@ use tokio::time::timeout;
 use utoipa::ToSchema;
 
 use crate::oapi::HEALTH_TAG;
-use crate::state::{AppState, DatabasePool, RedisPool, S3Client};
+use crate::state::{AppState, DatabasePool, RedisConnection, S3Client};
 
 /// Maximum time to wait for each dependency health ping before considering it
 /// unhealthy.
@@ -50,7 +50,7 @@ pub struct HealthCheckResponse {
 #[axum::debug_handler(state = AppState)]
 pub async fn handler(
     State(pool): State<DatabasePool>,
-    State(redis): State<RedisPool>,
+    State(redis): State<RedisConnection>,
     State(s3): State<S3Client>,
 ) -> HandlerResult<(StatusCode, Json<HealthCheckResponse>)> {
     let database_ok = timeout(
@@ -61,14 +61,11 @@ pub async fn handler(
     .is_ok_and(|result| result.is_ok());
 
     let redis_ok = timeout(HEALTH_CHECK_TIMEOUT, async {
-        let mut conn = redis.get().await.ok()?;
-        redis::cmd("PING")
-            .query_async::<String>(&mut *conn)
-            .await
-            .ok()
+        let mut conn = redis.clone();
+        redis::cmd("PING").query_async::<String>(&mut conn).await
     })
     .await
-    .is_ok_and(|result| result.is_some());
+    .is_ok_and(|result| result.is_ok());
 
     let s3_ok = timeout(HEALTH_CHECK_TIMEOUT, s3.list_buckets().send())
         .await

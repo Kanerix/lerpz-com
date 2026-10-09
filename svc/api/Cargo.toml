@@ -14,9 +14,7 @@ lerpz-ai = { workspace = true, features = ["portkey"] }
 lerpz-utils = { workspace = true }
 # Services
 aws-sdk-s3 = { workspace = true }
-bb8 = { workspace = true }
-bb8-redis = { workspace = true }
-redis = { workspace = true, features = ["tokio-comp"] }
+redis = { workspace = true, features = ["tokio-comp", "connection-manager"] }
 reqwest = { workspace = true, features = ["json"] }
 sqlx = { workspace = true, features = [
     "chrono",

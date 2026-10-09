@@ -11,12 +11,12 @@ use aws_sdk_s3::config::{BehaviorVersion, Credentials, Region};
 use axum::http::Method;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{Json, routing::get};
-use bb8_redis::RedisConnectionManager;
 use lerpz_ai::portkey::PortkeyConfig;
 use lerpz_axum::middleware::azure::AzureConfig;
 use lerpz_axum::middleware::instance::CaptureInstanceLayer;
 use lerpz_axum::oapi::EntraAuth;
 use lerpz_axum::shutdown_signal;
+use redis::aio::ConnectionManager;
 use scalar_api_reference::scalar_html;
 use secrecy::{ExposeSecret, SecretString};
 use serde_json::json;
@@ -79,12 +79,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap_or_else(|err| panic!("can't connect to database: {err}"));
 
-    let redis_manager = RedisConnectionManager::new(CONFIG.REDIS_URL.expose_secret())
-        .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
-    let redis = bb8::Pool::builder()
-        .build(redis_manager)
+    let redis_client = redis::Client::open(CONFIG.REDIS_URL.expose_secret())
+        .unwrap_or_else(|err| panic!("can't create redis client: {err}"));
+    let redis = ConnectionManager::new(redis_client)
         .await
-        .unwrap_or_else(|err| panic!("can't create redis pool: {err}"));
+        .unwrap_or_else(|err| panic!("can't connect to redis: {err}"));
 
     let aws_credentials = Credentials::new(
         CONFIG.AWS_ACCESS_KEY_ID.as_ref(),

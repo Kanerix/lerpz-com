@@ -16,7 +16,7 @@ use super::job_store;
 use super::list::public_url;
 use crate::{
     oapi::VIDEOS_TAG,
-    state::{AppState, DatabasePool, RedisPool},
+    state::{AppState, DatabasePool, RedisConnection},
 };
 
 /// The completed video attached to a finished job.
@@ -106,7 +106,7 @@ pub async fn handler(
     token: AzureAccessToken,
     Path(id): Path<Uuid>,
     State(database): State<DatabasePool>,
-    State(redis): State<RedisPool>,
+    State(redis): State<RedisConnection>,
 ) -> HandlerResult<Json<VideoJobResponse>> {
     let oid = token.oid.as_deref().ok_or(Problem::new(
         StatusCode::INTERNAL_SERVER_ERROR,

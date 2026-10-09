@@ -25,7 +25,7 @@ use super::job_store::{self, JobRecord};
 use crate::{
     config::CONFIG,
     oapi::VIDEOS_TAG,
-    state::{AppState, DatabasePool, OpenAI, RedisPool, S3Client},
+    state::{AppState, DatabasePool, OpenAI, RedisConnection, S3Client},
 };
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -116,7 +116,7 @@ pub async fn handler(
     token: AzureAccessToken,
     State(openai): State<OpenAI>,
     State(database): State<DatabasePool>,
-    State(redis): State<RedisPool>,
+    State(redis): State<RedisConnection>,
     State(s3): State<S3Client>,
     Json(body): Json<VideoRequest>,
 ) -> HandlerResult<CreateVideoResponse> {
@@ -237,7 +237,7 @@ async fn run_job(
     operation_name: String,
     job: lerpz_ai::generation::VideoJob,
     database: DatabasePool,
-    redis: RedisPool,
+    redis: RedisConnection,
     s3: S3Client,
 ) {
     let mut stream = job.poll();

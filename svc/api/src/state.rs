@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use async_openai::Client;
 use axum::extract::FromRef;
-use bb8_redis::RedisConnectionManager;
 use lerpz_ai::portkey::PortkeyConfig;
 use lerpz_axum::middleware::azure::AzureConfig;
 
@@ -12,7 +11,7 @@ pub(crate) type OpenAI = Arc<Client<PortkeyConfig>>;
 
 pub(crate) type DatabasePool = sqlx::PgPool;
 
-pub(crate) type RedisPool = bb8::Pool<RedisConnectionManager>;
+pub(crate) type RedisConnection = redis::aio::ConnectionManager;
 
 pub(crate) type S3Client = aws_sdk_s3::Client;
 
@@ -22,7 +21,7 @@ pub(crate) struct AppState {
     pub forge: ForgeClient,
     pub openai: OpenAI,
     pub database: DatabasePool,
-    pub redis: RedisPool,
+    pub redis: RedisConnection,
     pub s3: S3Client,
 }
 
@@ -50,7 +49,7 @@ impl FromRef<AppState> for DatabasePool {
     }
 }
 
-impl FromRef<AppState> for RedisPool {
+impl FromRef<AppState> for RedisConnection {
     fn from_ref(state: &AppState) -> Self {
         state.redis.clone()
     }

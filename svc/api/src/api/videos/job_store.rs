@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::state::RedisPool;
+use crate::state::RedisConnection;
 
 /// A type alias for handling results from this module.
 pub(super) type Result<T> = std::result::Result<T, Error>;
@@ -20,8 +20,6 @@ pub(super) type Result<T> = std::result::Result<T, Error>;
 /// leave the detail to the source error, which is only ever logged.
 #[derive(Debug, thiserror::Error)]
 pub(super) enum Error {
-    #[error("no redis connection available")]
-    Connection(#[from] bb8::RunError<redis::RedisError>),
     #[error("redis command failed")]
     Command(#[from] redis::RedisError),
     #[error("job record is not valid json")]
@@ -53,25 +51,25 @@ fn job_key(id: Uuid) -> String {
 }
 
 /// Write (or overwrite) a job record, refreshing its TTL.
-pub(super) async fn write(redis: &RedisPool, id: Uuid, record: &JobRecord) -> Result<()> {
+pub(super) async fn write(redis: &RedisConnection, id: Uuid, record: &JobRecord) -> Result<()> {
     let payload = serde_json::to_string(record)?;
-    let mut conn = redis.get().await?;
+    let mut conn = redis.clone();
     redis::cmd("SET")
         .arg(job_key(id))
         .arg(payload)
         .arg("EX")
         .arg(JOB_TTL_SECS)
-        .query_async::<()>(&mut *conn)
+        .query_async::<()>(&mut conn)
         .await?;
     Ok(())
 }
 
 /// Read a job record, returning `None` if it does not exist or has expired.
-pub(super) async fn read(redis: &RedisPool, id: Uuid) -> Result<Option<JobRecord>> {
-    let mut conn = redis.get().await?;
+pub(super) async fn read(redis: &RedisConnection, id: Uuid) -> Result<Option<JobRecord>> {
+    let mut conn = redis.clone();
     let payload: Option<String> = redis::cmd("GET")
         .arg(job_key(id))
-        .query_async(&mut *conn)
+        .query_async(&mut conn)
         .await?;
     match payload {
         Some(payload) => Ok(Some(serde_json::from_str(&payload)?)),
@@ -83,7 +81,7 @@ pub(super) async fn read(redis: &RedisPool, id: Uuid) -> Result<Option<JobRecord
 ///
 /// Best-effort: a failure to persist is logged rather than propagated, since
 /// this runs in a background task with nowhere to surface the error.
-pub(super) async fn fail(redis: &RedisPool, id: Uuid, oid: &str, message: &str) {
+pub(super) async fn fail(redis: &RedisConnection, id: Uuid, oid: &str, message: &str) {
     let record = JobRecord {
         oid: oid.to_string(),
         status: "failed".to_string(),
