@@ -7,6 +7,10 @@ use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, ProblemSchema},
 };
+use lerpz_metadata::{
+    postgres::{StorageProvider, rows::VideoRow},
+    public_url,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
@@ -70,21 +74,6 @@ pub struct VideoListResponse {
     next_cursor: Option<Uuid>,
 }
 
-/// Build a public URL for a stored object.
-///
-/// The storage bucket is exposed publicly and acts as a lightweight CDN, so a
-/// stable URL can be derived directly from the bucket and key. Path-style
-/// addressing is used to match the S3 client configuration
-/// (`force_path_style`).
-pub(super) fn public_url(bucket: &str, key: &str) -> String {
-    format!(
-        "{}/{}/{}",
-        CONFIG.AWS_S3_ENDPOINT.trim_end_matches('/'),
-        bucket,
-        key,
-    )
-}
-
 #[utoipa::path(
     method(get),
     path = "/",
@@ -131,9 +120,11 @@ pub async fn handler(
     // index-backed way to page. Fetch one extra row to detect whether another
     // page exists without a separate count query.
     tracing::trace!(cursor = ?params.cursor, %limit, "listing videos");
-    let rows = sqlx::query!(
+    let rows = sqlx::query_as!(
+        VideoRow,
         r#"SELECT id, prompt, model, title, tags,
-                  storage_bucket, storage_key, format, width, height, duration, created_at
+                  storage_provider AS "storage_provider: StorageProvider",
+                  storage_bucket, storage_key, format, width, height, duration, created_at, updated_at
            FROM video_metadata
            WHERE $1::uuid IS NULL OR id < $1
            ORDER BY id DESC
@@ -149,20 +140,22 @@ pub async fn handler(
     let items: Vec<VideoItem> = rows
         .into_iter()
         .take(limit as usize)
-        .map(|r| VideoItem {
-            url: public_url(&r.storage_bucket, &r.storage_key),
-            id: r.id,
-            prompt: r.prompt,
-            model: r.model,
-            title: r.title,
-            tags: r.tags.unwrap_or_default(),
-            format: r.format,
-            width: r.width,
-            height: r.height,
-            duration: r.duration,
-            created_at: r.created_at,
+        .map(|r| -> lerpz_metadata::Result<VideoItem> {
+            Ok(VideoItem {
+                url: public_url(&r, &CONFIG.AWS_S3_ENDPOINT)?,
+                id: r.id,
+                prompt: r.prompt,
+                model: r.model,
+                title: r.title,
+                tags: r.tags.unwrap_or_default(),
+                format: r.format,
+                width: r.width,
+                height: r.height,
+                duration: r.duration,
+                created_at: r.created_at,
+            })
         })
-        .collect();
+        .collect::<lerpz_metadata::Result<_>>()?;
 
     let next_cursor = if has_more {
         items.last().map(|item| item.id)

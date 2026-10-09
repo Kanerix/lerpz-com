@@ -200,10 +200,6 @@ pub async fn handler(
 
     tracing::debug!(%job_id, %operation_name, model = %model_name, "tracking video generation job");
 
-    // Drive the render in the background. The task owns everything it needs, so
-    // it outlives the request. Note: an in-flight task is lost on restart, which
-    // leaves its record stuck in `in_progress` until the TTL expires it. That is
-    // acceptable for this scope.
     let prompt = body.prompt;
     tokio::spawn(run_job(
         job_id,
@@ -242,7 +238,6 @@ async fn run_job(
 ) {
     let mut stream = job.poll();
 
-    // The job yields a single terminal event once rendering finishes.
     let Some(event) = stream.next().await else {
         tracing::error!(%job_id, %operation_name, "video generation poll ends without an event");
         job_store::fail(
@@ -268,8 +263,6 @@ async fn run_job(
             return;
         }
         Ok(VideoEvent::Link { url }) => {
-            // We only got a link, not bytes, so we can't persist the video. Fail
-            // the job rather than silently dropping the render.
             tracing::error!(%operation_name, %url, "video provider only returned a link; cannot persist");
             job_store::fail(
                 &redis,

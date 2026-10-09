@@ -8,13 +8,17 @@ use lerpz_axum::{
     middleware::azure::AzureAccessToken,
     problem::{HandlerResult, Problem, ProblemSchema},
 };
+use lerpz_metadata::{
+    postgres::{StorageProvider, rows::VideoRow},
+    public_url,
+};
 use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::job_store;
-use super::list::public_url;
 use crate::{
+    config::CONFIG,
     oapi::VIDEOS_TAG,
     state::{AppState, DatabasePool, RedisConnection},
 };
@@ -114,14 +118,6 @@ pub async fn handler(
         "Missing Object ID from token",
     ))?;
 
-    let not_found = || {
-        Problem::new(
-            StatusCode::NOT_FOUND,
-            "Job not found",
-            "No video generation job exists with that id, or it has expired.",
-        )
-    };
-
     let record = job_store::read(&redis, id)
         .await
         .map_err(|err| {
@@ -132,30 +128,34 @@ pub async fn handler(
             )
             .with_error(err)
         })?
-        .ok_or_else(not_found)?;
+        .ok_or_else(|| {
+            Problem::new(
+                StatusCode::NOT_FOUND,
+                "Job not found",
+                "No video generation job exists with that id, or it has expired.",
+            )
+        })?;
 
-    // Don't leak another user's jobs; an ownership mismatch is a "not found".
     if record.oid != oid {
-        return Err(not_found());
+        return Err(Problem::forbidden());
     }
 
-    // On completion the durable record lives in `video_metadata`; load it by id
-    // to build the result the same way the list endpoint does.
     let video = match record.video_id {
-        Some(vid) => {
-            let row = sqlx::query!(
-                r#"SELECT prompt, model, title, tags, storage_bucket, storage_key,
-                          format, width, height, duration, created_at
+        Some(vid) => sqlx::query_as!(
+            VideoRow,
+            r#"SELECT id, prompt, model, title, tags,
+                          storage_provider AS "storage_provider: StorageProvider",
+                          storage_bucket, storage_key, format, width, height, duration, created_at, updated_at
                    FROM video_metadata
                    WHERE id = $1"#,
-                vid,
-            )
-            .fetch_optional(&database)
-            .await?;
-
-            row.map(|r| JobVideo {
-                id: vid,
-                url: public_url(&r.storage_bucket, &r.storage_key),
+            vid,
+        )
+        .fetch_optional(&database)
+        .await?
+        .map(|r| -> lerpz_metadata::Result<JobVideo> {
+            Ok(JobVideo {
+                id: r.id,
+                url: public_url(&r, &CONFIG.AWS_S3_ENDPOINT)?,
                 prompt: r.prompt,
                 model: r.model,
                 title: r.title,
@@ -166,7 +166,8 @@ pub async fn handler(
                 duration: r.duration,
                 created_at: r.created_at,
             })
-        }
+        })
+        .transpose()?,
         None => None,
     };
 

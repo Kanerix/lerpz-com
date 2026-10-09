@@ -115,8 +115,6 @@ pub async fn handler(
         .unwrap_or(&CONFIG.DEFAULT_IMAGE_MODEL)
         .to_string();
 
-    // Resolve the model's family so generation can be dispatched to the right
-    // provider behaviour. Unknown models fall back to the default family.
     let model_family = sqlx::query_scalar!(
         "SELECT family FROM models WHERE deployment_name = $1 LIMIT 1",
         &model_name,

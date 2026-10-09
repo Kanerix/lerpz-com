@@ -57,8 +57,8 @@ pub async fn handler(
 ) -> HandlerResult<StatusCode> {
     let user_id = token.sub.as_str();
 
-    // Messages are removed automatically via the `ON DELETE CASCADE` foreign key
-    // on `messages.conversation_id`.
+    // Messages are removed automatically via the `ON DELETE CASCADE` foreign
+    // key on `messages.conversation_id`.
     let result = sqlx::query!(
         "DELETE FROM conversations WHERE id = $1 AND user_id = $2",
         &conv_id,

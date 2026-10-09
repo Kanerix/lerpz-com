@@ -1,4 +1,4 @@
-mod rows;
+pub mod rows;
 
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -17,7 +17,7 @@ use rows::{AudioRow, ImageRow, VideoRow};
 /// Use [`From<&StorageMetadata>`] to convert from the domain model.
 #[derive(sqlx::Type, Debug)]
 #[sqlx(type_name = "storage_provider", rename_all = "lowercase")]
-enum StorageProvider {
+pub enum StorageProvider {
     /// S3-compatible storage provider.
     S3,
     /// Azure Blob Storage provider.

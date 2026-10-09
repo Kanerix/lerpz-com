@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, prompt, model, title, tags,\n                  storage_bucket, storage_key, format, width, height, created_at\n           FROM image_metadata\n           WHERE $1::uuid IS NULL OR id < $1\n           ORDER BY id DESC\n           LIMIT $2",
+  "query": "SELECT id, prompt, model, title, tags,\n                  storage_provider AS \"storage_provider: StorageProvider\",\n                  storage_bucket, storage_key, format, width, height, duration, created_at, updated_at\n           FROM video_metadata\n           WHERE $1::uuid IS NULL OR id < $1\n           ORDER BY id DESC\n           LIMIT $2",
   "describe": {
     "columns": [
       {
@@ -30,32 +30,57 @@
       },
       {
         "ordinal": 5,
+        "name": "storage_provider: StorageProvider",
+        "type_info": {
+          "Custom": {
+            "name": "storage_provider",
+            "kind": {
+              "Enum": [
+                "s3",
+                "abs"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
         "name": "storage_bucket",
         "type_info": "Text"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "storage_key",
         "type_info": "Text"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "format",
         "type_info": "Text"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "width",
         "type_info": "Int4"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "height",
         "type_info": "Int4"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
+        "name": "duration",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
         "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
@@ -76,8 +101,11 @@
       false,
       false,
       false,
+      false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "4eca956273dd9ca4ecd7aac6816556dd733f106433fcd2572c163481398e9801"
+  "hash": "e6be085376627fbce2fade0ebaf5946a0902823884f450d43d4b3895cc6f8246"
 }

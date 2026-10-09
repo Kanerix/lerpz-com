@@ -1,14 +1,15 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::models::{
-    AnalysisMetadata, GeneralMetadata, GenerationMetadata, Metadata, StorageMetadata,
+use crate::{
+    StorageLocation, StorageLocationSource,
+    models::{AnalysisMetadata, GeneralMetadata, GenerationMetadata, Metadata, StorageMetadata},
 };
 
 use super::StorageProvider;
 
 #[derive(sqlx::FromRow)]
-pub(super) struct ImageRow {
+pub struct ImageRow {
     pub id: Uuid,
     pub prompt: String,
     pub model: String,
@@ -25,7 +26,7 @@ pub(super) struct ImageRow {
 }
 
 #[derive(sqlx::FromRow)]
-pub(super) struct VideoRow {
+pub struct VideoRow {
     pub id: Uuid,
     pub prompt: String,
     pub model: String,
@@ -43,7 +44,7 @@ pub(super) struct VideoRow {
 }
 
 #[derive(sqlx::FromRow)]
-pub(super) struct AudioRow {
+pub struct AudioRow {
     pub id: Uuid,
     pub prompt: String,
     pub model: String,
@@ -56,6 +57,50 @@ pub(super) struct AudioRow {
     pub duration: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+fn storage_location<'a>(
+    provider: &StorageProvider,
+    bucket: &'a str,
+    key: &'a str,
+) -> StorageLocation<'a> {
+    match provider {
+        StorageProvider::S3 => StorageLocation::S3 { bucket, key },
+        StorageProvider::AzureBlob => StorageLocation::AzureBlob {
+            container: bucket,
+            blob: key,
+        },
+    }
+}
+
+impl StorageLocationSource for ImageRow {
+    fn storage_location(&self) -> StorageLocation<'_> {
+        storage_location(
+            &self.storage_provider,
+            &self.storage_bucket,
+            &self.storage_key,
+        )
+    }
+}
+
+impl StorageLocationSource for VideoRow {
+    fn storage_location(&self) -> StorageLocation<'_> {
+        storage_location(
+            &self.storage_provider,
+            &self.storage_bucket,
+            &self.storage_key,
+        )
+    }
+}
+
+impl StorageLocationSource for AudioRow {
+    fn storage_location(&self) -> StorageLocation<'_> {
+        storage_location(
+            &self.storage_provider,
+            &self.storage_bucket,
+            &self.storage_key,
+        )
+    }
 }
 
 impl From<ImageRow> for Metadata {
@@ -145,5 +190,28 @@ impl From<AudioRow> for Metadata {
             format: r.format,
             duration: r.duration as u32,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn storage_location_preserves_provider() {
+        assert_eq!(
+            storage_location(&StorageProvider::S3, "media", "file.mp4"),
+            StorageLocation::S3 {
+                bucket: "media",
+                key: "file.mp4",
+            }
+        );
+        assert_eq!(
+            storage_location(&StorageProvider::AzureBlob, "media", "file.mp4"),
+            StorageLocation::AzureBlob {
+                container: "media",
+                blob: "file.mp4",
+            }
+        );
     }
 }
